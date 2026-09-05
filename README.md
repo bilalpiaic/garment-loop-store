@@ -4,7 +4,7 @@ Premium winter apparel storefront for **GarmentLoop** — jackets, knitwear, tro
 
 Catalog, search, cart, checkout, and order confirmation run on Next.js. Orders and stock persist to **Neon Postgres** when `DATABASE_URL` is set (required on Vercel). Locally, orders fall back to a file store if Neon is not configured.
 
-Production URL: [https://garmentloop-ecommerce.vercel.app](https://garmentloop-ecommerce.vercel.app)
+Production URL: [https://garment-loop-ecommerce.vercel.app](https://garment-loop-ecommerce.vercel.app)
 
 ## Run locally
 
@@ -31,15 +31,15 @@ npm run db:migrate
 
 ## Deploy (Vercel + Neon)
 
-1. Create a Neon project named `garmentloop-ecommerce` and copy the pooled connection string (`DATABASE_URL`).
-2. Create a Vercel project named **`garmentloop-ecommerce`** so the host is `garmentloop-ecommerce.vercel.app`.
+1. Neon is already connected via `DATABASE_URL` (pooled connection string).
+2. Create a Vercel project named **`garment-loop-ecommerce`** from `bilalpiaic/garment-loop-store` so the host is `garment-loop-ecommerce.vercel.app`.
 3. Add environment variables on Vercel:
    - `DATABASE_URL` — Neon pooled URL
    - `NEXT_PUBLIC_WHATSAPP_NUMBER` — optional WhatsApp number (digits only, with country code)
 4. Deploy from this repo. Schema and catalog stock seed on first checkout if they are missing.
 
 ```bash
-npx vercel --name garmentloop-ecommerce --yes
+npx vercel --yes --name garment-loop-ecommerce
 npx vercel env add DATABASE_URL production
 npx vercel --prod --yes
 ```
