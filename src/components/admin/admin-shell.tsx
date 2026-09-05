@@ -72,7 +72,13 @@ export function AdminShell({
             <Link href="/" className="text-muted-foreground hover:text-foreground">
               View store
             </Link>
-            <Button size="sm" variant="outline" className="hidden md:inline-flex" render={<Link href="/admin/products/new" />}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden md:inline-flex"
+              nativeButton={false}
+              render={<Link href="/admin/products/new" />}
+            >
               Add product
             </Button>
           </div>

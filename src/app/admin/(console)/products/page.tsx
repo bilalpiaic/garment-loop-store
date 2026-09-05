@@ -19,7 +19,9 @@ export default async function AdminProductsPage() {
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Catalog</p>
           <h1 className="mt-1 font-serif text-3xl">Products</h1>
         </div>
-        <Button render={<Link href="/admin/products/new" />}>New product</Button>
+        <Button nativeButton={false} render={<Link href="/admin/products/new" />}>
+          New product
+        </Button>
       </div>
       <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full min-w-[720px] text-left text-sm">
