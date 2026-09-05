@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { searchProducts } from "@/lib/catalog";
+import { useCatalog } from "@/components/catalog-provider";
 import { Price } from "@/components/price";
 
 export function SearchDialog({
@@ -22,7 +23,8 @@ export function SearchDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
-  const results = useMemo(() => searchProducts(query).slice(0, 8), [query]);
+  const { products } = useCatalog();
+  const results = useMemo(() => searchProducts(query, products).slice(0, 8), [query, products]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

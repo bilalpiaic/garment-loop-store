@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { allColors, allSizes, categories } from "@/lib/catalog";
+import { allColors, allSizes } from "@/lib/catalog";
+import { useCatalog } from "@/components/catalog-provider";
 import { Button } from "@/components/ui/button";
 
 export function ShopFilters() {
   const router = useRouter();
   const params = useSearchParams();
+  const { products, categories } = useCatalog();
 
   function update(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -42,7 +44,7 @@ export function ShopFilters() {
         aria-label="Filter by color"
       >
         <option value="">All colors</option>
-        {allColors().map((color) => (
+        {allColors(products).map((color) => (
           <option key={color} value={color}>
             {color}
           </option>
@@ -55,7 +57,7 @@ export function ShopFilters() {
         aria-label="Filter by size"
       >
         <option value="">All sizes</option>
-        {allSizes().map((size) => (
+        {allSizes(products).map((size) => (
           <option key={size} value={size}>
             {size}
           </option>

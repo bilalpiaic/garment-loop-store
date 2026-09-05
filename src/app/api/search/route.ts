@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { searchProducts } from "@/lib/catalog";
+import { getPublishedCatalog } from "@/lib/platform";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q") ?? "";
-  const results = searchProducts(q).map((product) => ({
+  const catalog = await getPublishedCatalog();
+  const results = searchProducts(q, catalog.products).map((product) => ({
     slug: product.slug,
     title: product.title,
     subtitle: product.subtitle,

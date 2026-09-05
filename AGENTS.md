@@ -7,13 +7,14 @@
 - `npm run lint` for ESLint
 
 ## Stack
-Next.js App Router, TypeScript, Tailwind, shadcn/ui. Catalog lives in `src/lib/catalog.ts`. Cart is client-side (Zustand + localStorage). Checkout is `POST /api/checkout`.
+Next.js App Router, TypeScript, Tailwind, shadcn/ui. Catalog is persisted (file store locally, Neon when `DATABASE_URL` is set) and seeded from `src/lib/catalog.ts`. Cart is client-side (Zustand + localStorage). Checkout is `POST /api/checkout`. Customer accounts use email OTP. Admin uses password login with Owner / Admin / Staff roles at `/admin`.
 
 ## Conventions
 - TypeScript strict. React function components.
 - Validate mutations with Zod. Do not store secrets in source.
 - Keep the storefront premium and uncluttered; no dummy lorem.
 - Guest checkout and COD must keep working.
+- Protect `/admin/*` APIs with `requireAdmin` and a role permission.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

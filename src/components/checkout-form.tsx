@@ -12,8 +12,10 @@ import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
 import { formatMoney, shippingCostPkr } from "@/lib/money";
 import { useCartStore, usePreferenceStore } from "@/store/store";
+import { useCatalog } from "@/components/catalog-provider";
 import { Price } from "@/components/price";
 import { cn } from "@/lib/utils";
+import type { CustomerAddress } from "@/lib/identity";
 
 const payments = [
   {
@@ -33,24 +35,34 @@ const payments = [
   },
 ];
 
-export function CheckoutForm() {
+export function CheckoutForm({
+  defaults,
+}: {
+  defaults?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: CustomerAddress;
+  };
+}) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const clear = useCartStore((state) => state.clear);
   const currency = usePreferenceStore((state) => state.currency);
+  const { products } = useCatalog();
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [country, setCountry] = useState("PK");
+  const [country, setCountry] = useState(defaults?.address?.country ?? "PK");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer" | "card_demo">("cod");
 
   const subtotal = useMemo(
     () =>
       items.reduce((sum, item) => {
-        const match = getVariant(item.variantId);
+        const match = getVariant(item.variantId, products);
         if (!match) return sum;
         return sum + (match.variant.salePricePkr ?? match.variant.pricePkr) * item.quantity;
       }, 0),
-    [items],
+    [items, products],
   );
   const shipping = shippingCostPkr(subtotal, country);
   const total = subtotal + shipping;
@@ -66,6 +78,7 @@ export function CheckoutForm() {
       area: String(formData.get("area") ?? ""),
       address: String(formData.get("address") ?? ""),
       notes: String(formData.get("notes") ?? ""),
+      discountCode: String(formData.get("discountCode") ?? ""),
       paymentMethod,
       currency,
       items,
@@ -126,9 +139,22 @@ export function CheckoutForm() {
       <div className="space-y-8">
         <section className="space-y-4">
           <h2 className="font-serif text-2xl">Contact</h2>
-          <Field label="Full name" name="fullName" error={errors.fullName} autoComplete="name" />
+          <Field
+            label="Full name"
+            name="fullName"
+            error={errors.fullName}
+            autoComplete="name"
+            defaultValue={defaults?.fullName ?? defaults?.address?.fullName}
+          />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" name="email" type="email" error={errors.email} autoComplete="email" />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              error={errors.email}
+              autoComplete="email"
+              defaultValue={defaults?.email}
+            />
             <Field
               label="Phone"
               name="phone"
@@ -136,6 +162,7 @@ export function CheckoutForm() {
               error={errors.phone}
               autoComplete="tel"
               placeholder="03xx or +92"
+              defaultValue={defaults?.phone ?? defaults?.address?.phone}
             />
           </div>
         </section>
@@ -171,6 +198,7 @@ export function CheckoutForm() {
                 name="city"
                 list="city-list"
                 className="h-10"
+                defaultValue={defaults?.address?.city}
                 aria-invalid={Boolean(errors.city)}
               />
               <datalist id="city-list">
@@ -184,11 +212,18 @@ export function CheckoutForm() {
               label={country === "PK" ? "Area / locality" : "State / area"}
               name="area"
               error={errors.area}
+              defaultValue={defaults?.address?.area}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="address">Street address</Label>
-            <Textarea id="address" name="address" rows={3} aria-invalid={Boolean(errors.address)} />
+            <Textarea
+              id="address"
+              name="address"
+              rows={3}
+              defaultValue={defaults?.address?.address}
+              aria-invalid={Boolean(errors.address)}
+            />
             {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
           </div>
           <div className="space-y-2">
@@ -245,7 +280,7 @@ export function CheckoutForm() {
         <h2 className="font-serif text-2xl">Order summary</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {items.map((item) => {
-            const match = getVariant(item.variantId);
+            const match = getVariant(item.variantId, products);
             if (!match) return null;
             const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
             return (
@@ -263,6 +298,11 @@ export function CheckoutForm() {
             );
           })}
         </ul>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="discountCode">Discount code</Label>
+          <Input id="discountCode" name="discountCode" className="h-10" placeholder="Optional" />
+          {errors.discountCode ? <p className="text-xs text-destructive">{errors.discountCode}</p> : null}
+        </div>
         <div className="mt-4 space-y-1 border-t pt-4 text-sm">
           <div className="flex justify-between">
             <span>Subtotal</span>
@@ -296,6 +336,7 @@ function Field({
   type = "text",
   autoComplete,
   placeholder,
+  defaultValue,
 }: {
   label: string;
   name: string;
@@ -303,6 +344,7 @@ function Field({
   type?: string;
   autoComplete?: string;
   placeholder?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -313,6 +355,7 @@ function Field({
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         className="h-10"
         aria-invalid={Boolean(error)}
       />

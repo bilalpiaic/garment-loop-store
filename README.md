@@ -51,6 +51,18 @@ npx vercel --prod --yes
 - Switch display currency between PKR and USD
 - Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
 - Confirm the order on WhatsApp
+- Sign in as a customer with an email one-time code (`/account/login`)
+- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles
+
+## Admin (seeded locally)
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Owner | owner@garmentloop.store | GarmentLoop-Owner-2026 |
+| Admin | admin@garmentloop.store | GarmentLoop-Admin-2026 |
+| Staff | staff@garmentloop.store | GarmentLoop-Staff-2026 |
+
+Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customer OTP codes are shown on the login screen outside production.
 
 ## Stack
 

@@ -1,6 +1,24 @@
 export type PaymentMethod = "cod" | "bank_transfer" | "card_demo";
-export type OrderStatus = "pending" | "confirmed" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "failed";
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "returned";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export const ORDER_STATUSES: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "processing",
+  "packed",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "returned",
+];
 
 export type CheckoutItem = {
   variantId: string;
@@ -34,15 +52,22 @@ export type OrderLine = {
 export type Order = {
   orderNumber: string;
   createdAt: string;
+  updatedAt?: string;
+  customerId?: string;
   customer: CheckoutCustomer;
   items: OrderLine[];
   subtotalPkr: number;
   shippingPkr: number;
+  discountPkr?: number;
   totalPkr: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   currency: "PKR" | "USD";
+  trackingNumber?: string;
+  courier?: string;
+  notes?: string;
+  discountCode?: string;
 };
 
 export function whatsappOrderLink(order: Order) {

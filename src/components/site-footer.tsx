@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { categories } from "@/lib/catalog";
+import type { Category } from "@/lib/catalog";
 
-export function SiteFooter() {
+export function SiteFooter({ categories }: { categories: Category[] }) {
   return (
     <footer className="mt-auto border-t bg-[#f4f1ec]">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
@@ -36,6 +36,9 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/contact">Contact</Link>
+            </li>
+            <li>
+              <Link href="/account/login">Customer login</Link>
             </li>
           </ul>
         </div>

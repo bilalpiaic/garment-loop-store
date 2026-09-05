@@ -16,6 +16,7 @@ export const checkoutSchema = z
     notes: z.string().optional(),
     paymentMethod: z.enum(["cod", "bank_transfer", "card_demo"]),
     currency: z.enum(["PKR", "USD"]),
+    discountCode: z.string().trim().optional(),
     items: z
       .array(
         z.object({

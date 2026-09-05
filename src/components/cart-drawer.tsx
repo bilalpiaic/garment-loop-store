@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getVariant } from "@/lib/catalog";
+import { useCatalog } from "@/components/catalog-provider";
 import { useCartStore } from "@/store/store";
 import { Price } from "@/components/price";
 import { site } from "@/lib/site";
@@ -50,6 +51,7 @@ export function CartLines({
   const items = useCartStore((state) => state.items);
   const setQuantity = useCartStore((state) => state.setQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const { products } = useCatalog();
 
   if (items.length === 0) {
     return (
@@ -68,7 +70,7 @@ export function CartLines({
   return (
     <ul className={compact ? "flex-1 space-y-4 overflow-y-auto px-4" : "space-y-6"}>
       {items.map((item) => {
-        const match = getVariant(item.variantId);
+        const match = getVariant(item.variantId, products);
         if (!match) return null;
         const { product, variant } = match;
         const unit = variant.salePricePkr ?? variant.pricePkr;
@@ -146,16 +148,17 @@ export function CartSummary({
   checkoutHref?: string;
 }) {
   const items = useCartStore((state) => state.items);
+  const { products } = useCatalog();
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => {
-      const match = getVariant(item.variantId);
+      const match = getVariant(item.variantId, products);
       if (!match) return sum;
       const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
       return sum + unit * item.quantity;
     }, 0);
     const shipping = shippingCostPkr(subtotal, "PK");
     return { subtotal, shipping, total: subtotal + shipping };
-  }, [items]);
+  }, [items, products]);
 
   if (items.length === 0) {
     return null;

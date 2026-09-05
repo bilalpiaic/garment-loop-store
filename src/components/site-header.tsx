@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Menu, Search, ShoppingBag } from "lucide-react";
+import { Menu, Search, ShoppingBag, User } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,7 +11,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { categories, collections } from "@/lib/catalog";
+import { categories as seedCategories, collections as seedCollections } from "@/lib/catalog";
+import { useCatalog } from "@/components/catalog-provider";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { SearchDialog } from "@/components/search-dialog";
@@ -24,7 +25,10 @@ const nav = [
   { href: "/about", label: "About" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
+  const catalog = useCatalog();
+  const categories = catalog.categories.length ? catalog.categories : seedCategories;
+  const collections = catalog.collections.length ? catalog.collections : seedCollections;
   const items = useCartStore((state) => state.items);
   const hydrated = useHydrated();
   const currency = usePreferenceStore((state) => state.currency);
@@ -74,6 +78,13 @@ export function SiteHeader() {
                       {item.label}
                     </Link>
                   ))}
+                  <Link
+                    href={customerEmail ? "/account" : "/account/login"}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-md px-2 py-3 text-base"
+                  >
+                    {customerEmail ? "Account" : "Sign in"}
+                  </Link>
                   <p className="mt-4 px-2 text-xs uppercase tracking-widest text-muted-foreground">
                     Categories
                   </p>
@@ -151,6 +162,13 @@ export function SiteHeader() {
             >
               <Search className="size-5" />
             </button>
+            <Link
+              href={customerEmail ? "/account" : "/account/login"}
+              aria-label={customerEmail ? "Account" : "Sign in"}
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+            >
+              <User className="size-5" />
+            </Link>
             <button
               type="button"
               aria-label="Cart"
