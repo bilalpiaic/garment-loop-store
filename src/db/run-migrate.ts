@@ -36,5 +36,12 @@ if (!process.env.DATABASE_URL?.trim()) {
   process.exit(1);
 }
 
-await migrateDatabase();
-console.log("Neon schema, place_order function, and inventory seed are ready.");
+async function main() {
+  await migrateDatabase();
+  console.log("Neon schema, place_order function, and inventory seed are ready.");
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : "Migration failed.");
+  process.exit(1);
+});

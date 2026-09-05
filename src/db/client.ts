@@ -10,7 +10,17 @@ const globalForDb = globalThis as unknown as {
 };
 
 export function databaseUrl() {
-  return process.env.DATABASE_URL?.trim() || undefined;
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(raw);
+    parsed.searchParams.delete("channel_binding");
+    return parsed.toString();
+  } catch {
+    return raw;
+  }
 }
 
 export function getSql() {
