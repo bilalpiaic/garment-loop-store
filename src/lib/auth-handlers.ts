@@ -2,16 +2,23 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse, withAdmin } from "@/lib/http";
 import { startLogin, verifyCustomerOtp, logout, loginAdmin } from "@/lib/platform";
+import { isEmailSyntax } from "@/lib/email";
 
 const loginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email."),
-  password: z
-    .string({ error: "Enter your password." })
-    .min(1, "Enter your password."),
+  email: z
+    .string({ error: "Enter your email." })
+    .trim()
+    .toLowerCase()
+    .refine(isEmailSyntax, "Enter a valid email (name@example.com)."),
+  password: z.string({ error: "Enter your password." }).min(1, "Enter your password."),
 });
 
 const otpSchema = z.object({
-  email: z.string().trim().email("Enter a valid email."),
+  email: z
+    .string({ error: "Enter your email." })
+    .trim()
+    .toLowerCase()
+    .refine(isEmailSyntax, "Enter a valid email (name@example.com)."),
   code: z.string().trim().min(4, "Enter the one-time code."),
 });
 

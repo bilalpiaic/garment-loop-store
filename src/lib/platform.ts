@@ -12,6 +12,7 @@ import {
 } from "@/lib/catalog";
 import { hashPassword, sha256, verifyPassword } from "@/lib/password";
 import { createId, createToken } from "@/lib/ids";
+import { isEmailSyntax, normalizeEmail } from "@/lib/email";
 import { slugify } from "@/lib/slug";
 import {
   ADMIN_COOKIE,
@@ -640,9 +641,9 @@ export async function deleteDiscount(id: string) {
 }
 
 export async function startLogin(emailRaw: string, password: string) {
-  const email = emailRaw.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new PlatformError("Enter a valid email.");
+  const email = normalizeEmail(emailRaw);
+  if (!isEmailSyntax(email)) {
+    throw new PlatformError("Enter a valid email (name@example.com).");
   }
   if (!password) {
     throw new PlatformError("Enter your password.");
@@ -706,7 +707,7 @@ export async function startLogin(emailRaw: string, password: string) {
 }
 
 export async function verifyCustomerOtp(emailRaw: string, code: string) {
-  const email = emailRaw.trim().toLowerCase();
+  const email = normalizeEmail(emailRaw);
   if (code.trim() !== CUSTOMER_OTP_CODE) {
     throw new PlatformError("That code is incorrect. Use 123456.");
   }
@@ -757,7 +758,7 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
 }
 
 export async function loginAdmin(emailRaw: string, password: string) {
-  const email = emailRaw.trim().toLowerCase();
+  const email = normalizeEmail(emailRaw);
   const sessionId = await mutate(async (state) => {
     const user = state.adminUsers.find((item) => item.email === email);
     if (!user || !user.active) throw new PlatformError("Invalid email or password.", 401);

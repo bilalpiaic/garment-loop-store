@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CUSTOMER_OTP_CODE } from "@/lib/identity";
+import { isEmailSyntax, normalizeEmail } from "@/lib/email";
 
 export function CustomerLoginForm() {
   const router = useRouter();
@@ -17,15 +18,23 @@ export function CustomerLoginForm() {
   const [code, setCode] = useState(CUSTOMER_OTP_CODE);
   const [step, setStep] = useState<"credentials" | "code">("credentials");
   const [pending, setPending] = useState(false);
+  const [emailError, setEmailError] = useState<string>();
 
   async function submitCredentials(event?: FormEvent) {
     event?.preventDefault();
+    const normalized = normalizeEmail(email);
+    if (!isEmailSyntax(normalized)) {
+      setEmailError("Enter a valid email (name@example.com).");
+      toast.error("Enter a valid email (name@example.com).");
+      return;
+    }
+    setEmailError(undefined);
     setPending(true);
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalized, password }),
       });
       const data = (await response.json()) as {
         error?: string;
@@ -42,6 +51,7 @@ export function CustomerLoginForm() {
         router.refresh();
         return;
       }
+      setEmail(normalized);
       setCode(data.code ?? CUSTOMER_OTP_CODE);
       setStep("code");
       toast.success(`Use code ${data.code ?? CUSTOMER_OTP_CODE}`);
@@ -57,7 +67,7 @@ export function CustomerLoginForm() {
       const response = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: code || CUSTOMER_OTP_CODE }),
+        body: JSON.stringify({ email: normalizeEmail(email), code: code || CUSTOMER_OTP_CODE }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -73,17 +83,26 @@ export function CustomerLoginForm() {
   }
 
   return (
-    <form onSubmit={step === "credentials" ? submitCredentials : verify} className="space-y-4">
+    <form noValidate onSubmit={step === "credentials" ? submitCredentials : verify} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
-          type="email"
+          type="text"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setEmailError(undefined);
+          }}
           className="h-10"
           autoComplete="email"
+          aria-invalid={Boolean(emailError)}
         />
+        {emailError ? <p className="text-xs text-destructive">{emailError}</p> : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
@@ -95,6 +114,7 @@ export function CustomerLoginForm() {
           className="h-10"
           autoComplete={step === "credentials" ? "current-password" : "off"}
         />
+        <p className="text-xs text-muted-foreground">At least 8 characters. New emails create an account after OTP.</p>
       </div>
       {step === "code" ? (
         <div className="space-y-2">
@@ -115,15 +135,19 @@ export function CustomerLoginForm() {
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Staff matching owner/admin/staff credentials enter the console immediately. Everyone else
-          confirms with OTP <span className="font-medium text-foreground">123456</span>, and the
-          password is saved to their customer account.
+          Staff matching owner/admin/staff credentials enter the console immediately. A new email
+          with a valid address goes to OTP, then the password is saved.
         </p>
       )}
       <Button
         type="submit"
         className="h-11 w-full"
         disabled={pending || !email || !password}
+        onClick={(event) => {
+          event.preventDefault();
+          if (step === "credentials") void submitCredentials();
+          else void verify();
+        }}
       >
         {pending ? "Please wait…" : step === "credentials" ? "Continue" : "Sign in"}
       </Button>

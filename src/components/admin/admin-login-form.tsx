@@ -41,7 +41,11 @@ export function AdminLoginForm() {
         <Input
           id="email"
           name="email"
-          type="email"
+          type="text"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           autoComplete="username"
           className="h-10"
           value={email}
