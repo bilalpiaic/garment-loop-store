@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Newsreader, Geist } from "next/font/google";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { Providers } from "@/components/providers";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -32,15 +31,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground antialiased">
-        <Providers>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

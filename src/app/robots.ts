@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/checkout", "/cart", "/order/"],
+      disallow: ["/api/", "/checkout", "/cart", "/order/", "/admin", "/account"],
     },
     sitemap: "https://garmentloop.store/sitemap.xml",
   };

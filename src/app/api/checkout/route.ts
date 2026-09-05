@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { createOrder } from "@/lib/orders";
+import { getCustomerSession } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const session = await getCustomerSession();
+
   const result = await createOrder({
     items: parsed.data.items,
     customer: {
@@ -34,6 +37,8 @@ export async function POST(request: Request) {
     },
     paymentMethod: parsed.data.paymentMethod,
     currency: parsed.data.currency,
+    discountCode: parsed.data.discountCode,
+    customerId: session?.customer.id,
   });
 
   if (!result.ok) {

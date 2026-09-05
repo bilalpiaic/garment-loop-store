@@ -14,6 +14,8 @@ export type ProductVariant = {
   stock: number;
 };
 
+export type ProductStatus = "draft" | "published" | "archived";
+
 export type Product = {
   id: string;
   slug: string;
@@ -28,7 +30,18 @@ export type Product = {
   variants: ProductVariant[];
   featured?: boolean;
   isNew?: boolean;
+  status?: ProductStatus;
 };
+
+export type CatalogData = {
+  products: Product[];
+  categories: Category[];
+  collections: Collection[];
+};
+
+export function isPublished(product: Product) {
+  return product.status !== "draft" && product.status !== "archived";
+}
 
 export type Category = {
   slug: string;
@@ -626,12 +639,12 @@ export const products: Product[] = [
   },
 ];
 
-export function getProductBySlug(slug: string) {
-  return products.find((product) => product.slug === slug);
+export function getProductBySlug(slug: string, list: Product[] = products) {
+  return list.find((product) => product.slug === slug);
 }
 
-export function getVariant(variantId: string) {
-  for (const product of products) {
+export function getVariant(variantId: string, list: Product[] = products) {
+  for (const product of list) {
     const variant = product.variants.find((item) => item.id === variantId);
     if (variant) {
       return { product, variant };
@@ -640,34 +653,34 @@ export function getVariant(variantId: string) {
   return null;
 }
 
-export function allVariants() {
-  return products.flatMap((product) =>
+export function allVariants(list: Product[] = products) {
+  return list.flatMap((product) =>
     product.variants.map((variant) => ({ product, variant })),
   );
 }
 
-export function getCategory(slug: string) {
-  return categories.find((category) => category.slug === slug);
+export function getCategory(slug: string, list: Category[] = categories) {
+  return list.find((category) => category.slug === slug);
 }
 
-export function getCollection(slug: string) {
-  return collections.find((collection) => collection.slug === slug);
+export function getCollection(slug: string, list: Collection[] = collections) {
+  return list.find((collection) => collection.slug === slug);
 }
 
-export function productsByCategory(slug: string) {
-  return products.filter((product) => product.category === slug);
+export function productsByCategory(slug: string, list: Product[] = products) {
+  return list.filter((product) => product.category === slug);
 }
 
-export function productsByCollection(slug: string) {
-  return products.filter((product) => product.collections.includes(slug));
+export function productsByCollection(slug: string, list: Product[] = products) {
+  return list.filter((product) => product.collections.includes(slug));
 }
 
-export function featuredProducts() {
-  return products.filter((product) => product.featured);
+export function featuredProducts(list: Product[] = products) {
+  return list.filter((product) => product.featured);
 }
 
-export function relatedProducts(product: Product, limit = 4) {
-  return products
+export function relatedProducts(product: Product, limit = 4, list: Product[] = products) {
+  return list
     .filter((item) => item.id !== product.id && item.category === product.category)
     .slice(0, limit);
 }
@@ -700,12 +713,12 @@ export function comparePrice(product: Product) {
   return Math.min(...product.variants.map((variant) => variant.pricePkr));
 }
 
-export function searchProducts(query: string) {
+export function searchProducts(query: string, list: Product[] = products) {
   const q = query.trim().toLowerCase();
   if (!q) {
     return [];
   }
-  return products.filter((product) => {
+  return list.filter((product) => {
     const haystack = [
       product.title,
       product.subtitle,
@@ -720,28 +733,31 @@ export function searchProducts(query: string) {
   });
 }
 
-export function allSizes() {
-  return [...new Set(products.flatMap((product) => product.variants.map((v) => v.size)))];
+export function allSizes(list: Product[] = products) {
+  return [...new Set(list.flatMap((product) => product.variants.map((v) => v.size)))];
 }
 
-export function allColors() {
-  return [...new Set(products.flatMap((product) => product.variants.map((v) => v.color)))];
+export function allColors(list: Product[] = products) {
+  return [...new Set(list.flatMap((product) => product.variants.map((v) => v.color)))];
 }
 
-export function filterProducts(options: {
-  category?: string;
-  collection?: string;
-  color?: string;
-  size?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  q?: string;
-}) {
-  return products.filter((product) => {
+export function filterProducts(
+  options: {
+    category?: string;
+    collection?: string;
+    color?: string;
+    size?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    q?: string;
+  },
+  list: Product[] = products,
+) {
+  return list.filter((product) => {
     if (options.category && product.category !== options.category) return false;
     if (options.collection && !product.collections.includes(options.collection)) return false;
     if (options.q) {
-      const matches = searchProducts(options.q).some((item) => item.id === product.id);
+      const matches = searchProducts(options.q, list).some((item) => item.id === product.id);
       if (!matches) return false;
     }
     const variants = product.variants.filter((variant) => {

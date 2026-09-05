@@ -77,6 +77,18 @@ async function applySchema() {
   )`;
 
   await sql`CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1`;
+  await sql`CREATE TABLE IF NOT EXISTS platform_state (
+    id text PRIMARY KEY,
+    data jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at timestamptz`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_pkr integer NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code text`;
   await sql.query(PLACE_ORDER_FN);
 
   for (const { variant } of allVariants()) {
