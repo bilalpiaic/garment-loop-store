@@ -640,6 +640,12 @@ export function getVariant(variantId: string) {
   return null;
 }
 
+export function allVariants() {
+  return products.flatMap((product) =>
+    product.variants.map((variant) => ({ product, variant })),
+  );
+}
+
 export function getCategory(slug: string) {
   return categories.find((category) => category.slug === slug);
 }

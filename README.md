@@ -2,12 +2,15 @@
 
 Premium winter apparel storefront for **GarmentLoop** — jackets, knitwear, trousers, and accessories, with guest checkout and cash on delivery for Pakistan.
 
-This is the first working slice of the custom platform: catalog, search, cart, checkout, and order confirmation. Payments and inventory run locally so the shop can be used without Neon, Safepay, or other credentials.
+Catalog, search, cart, checkout, and order confirmation run on Next.js. Orders and stock persist to **Neon Postgres** when `DATABASE_URL` is set (required on Vercel). Locally, orders fall back to a file store if Neon is not configured.
+
+Production URL: [https://garmentloop-ecommerce.vercel.app](https://garmentloop-ecommerce.vercel.app)
 
 ## Run locally
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
@@ -20,6 +23,27 @@ npm start
 
 Production mode (`npm start`) is the reliable way to shop the full checkout flow.
 
+Set `DATABASE_URL` in `.env.local` to a Neon connection string, then apply schema and seed inventory:
+
+```bash
+npm run db:migrate
+```
+
+## Deploy (Vercel + Neon)
+
+1. Create a Neon project named `garmentloop-ecommerce` and copy the pooled connection string (`DATABASE_URL`).
+2. Create a Vercel project named **`garmentloop-ecommerce`** so the host is `garmentloop-ecommerce.vercel.app`.
+3. Add environment variables on Vercel:
+   - `DATABASE_URL` — Neon pooled URL
+   - `NEXT_PUBLIC_WHATSAPP_NUMBER` — optional WhatsApp number (digits only, with country code)
+4. Deploy from this repo. Schema and catalog stock seed on first checkout if they are missing.
+
+```bash
+npx vercel --name garmentloop-ecommerce --yes
+npx vercel env add DATABASE_URL production
+npx vercel --prod --yes
+```
+
 ## What you can do
 
 - Browse the winter collection, categories, and product pages with size/color variants
@@ -28,10 +52,6 @@ Production mode (`npm start`) is the reliable way to shop the full checkout flow
 - Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
 - Confirm the order on WhatsApp
 
-Orders and stock deductions live in server memory for this slice. They reset when the process restarts. Live Postgres (Neon), Auth.js email OTP, and Safepay/PayFast adapters are the next phase.
-
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zustand
-
-Optional: set `NEXT_PUBLIC_WHATSAPP_NUMBER` (digits only, with country code) to point WhatsApp links at a real number.
+Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zustand · Drizzle ORM · Neon Postgres

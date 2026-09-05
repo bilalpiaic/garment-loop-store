@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { createOrder } from "@/lib/orders";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = createOrder({
+  const result = await createOrder({
     items: parsed.data.items,
     customer: {
       fullName: parsed.data.fullName,
