@@ -8,7 +8,7 @@ export const metadata = { title: "Sign in" };
 export default async function AccountLoginPage() {
   const [customer, admin] = await Promise.all([getCustomerSession(), getAdminSession()]);
   if (admin) redirect("/admin");
-  if (customer) redirect("/account");
+  if (customer) redirect("/");
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Account</p>

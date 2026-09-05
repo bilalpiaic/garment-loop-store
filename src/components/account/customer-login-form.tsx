@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CUSTOMER_OTP_CODE } from "@/lib/identity";
 import { isEmailSyntax, normalizeEmail } from "@/lib/email";
+import { customerPostLoginPath } from "@/lib/auth-redirect";
 
 export function CustomerLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/account";
+  const next = params.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState(CUSTOMER_OTP_CODE);
@@ -74,8 +75,7 @@ export function CustomerLoginForm() {
         toast.error(data.error ?? "That code did not work.");
         return;
       }
-      const destination = next.startsWith("/admin") ? "/account" : next;
-      router.push(destination);
+      router.push(customerPostLoginPath(next));
       router.refresh();
     } finally {
       setPending(false);
