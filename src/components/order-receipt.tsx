@@ -51,10 +51,14 @@ export function OrderReceipt({ order }: { order: Order }) {
         ) : null}
       </div>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Button className="h-11 px-6" render={<a href={wa} target="_blank" rel="noreferrer" />}>
+        <Button
+          className="h-11 px-6"
+          nativeButton={false}
+          render={<a href={wa} target="_blank" rel="noreferrer" />}
+        >
           Confirm on WhatsApp
         </Button>
-        <Button variant="outline" className="h-11 px-6" render={<Link href="/shop" />}>
+        <Button variant="outline" className="h-11 px-6" nativeButton={false} render={<Link href="/shop" />}>
           Continue shopping
         </Button>
       </div>

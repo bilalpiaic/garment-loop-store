@@ -11,11 +11,12 @@ import {
   type Product,
 } from "@/lib/catalog";
 import { hashPassword, sha256, verifyPassword } from "@/lib/password";
-import { createId, createOtpCode, createToken } from "@/lib/ids";
+import { createId, createToken } from "@/lib/ids";
 import { slugify } from "@/lib/slug";
 import {
   ADMIN_COOKIE,
   CUSTOMER_COOKIE,
+  CUSTOMER_OTP_CODE,
   DEFAULT_SETTINGS,
   type AdminUser,
   type CustomerAddress,
@@ -631,7 +632,6 @@ export async function requestCustomerOtp(emailRaw: string) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new PlatformError("Enter a valid email.");
   }
-  const code = createOtpCode();
   await mutate((state) => {
     const recent = state.otp.filter(
       (item) => item.email === email && Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
@@ -642,32 +642,21 @@ export async function requestCustomerOtp(emailRaw: string) {
     state.otp = state.otp.filter((item) => item.email !== email);
     state.otp.push({
       email,
-      codeHash: sha256(`${email}:${code}`),
+      codeHash: sha256(`${email}:${CUSTOMER_OTP_CODE}`),
       expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString(),
       attempts: 0,
       createdAt: new Date().toISOString(),
     });
   });
-  console.info(`[auth] OTP for ${email}: ${code}`);
-  const show = process.env.AUTH_SHOW_OTP === "1" || process.env.NODE_ENV !== "production";
-  return { ok: true as const, devCode: show ? code : undefined };
+  return { ok: true as const, code: CUSTOMER_OTP_CODE };
 }
 
 export async function verifyCustomerOtp(emailRaw: string, code: string) {
   const email = emailRaw.trim().toLowerCase();
+  if (code.trim() !== CUSTOMER_OTP_CODE) {
+    throw new PlatformError("That code is incorrect. Use 123456.");
+  }
   const sessionId = await mutate((state) => {
-    const challenge = state.otp.find((item) => item.email === email);
-    if (!challenge) throw new PlatformError("Request a new code first.");
-    if (new Date(challenge.expiresAt).getTime() < Date.now()) {
-      throw new PlatformError("That code has expired.");
-    }
-    challenge.attempts += 1;
-    if (challenge.attempts > 5) {
-      throw new PlatformError("Too many attempts. Request a new code.");
-    }
-    if (challenge.codeHash !== sha256(`${email}:${code.trim()}`)) {
-      throw new PlatformError("That code is incorrect.");
-    }
     state.otp = state.otp.filter((item) => item.email !== email);
     let customer = state.customers.find((item) => item.email === email);
     if (!customer) {

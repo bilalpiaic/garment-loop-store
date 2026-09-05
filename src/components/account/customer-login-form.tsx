@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CUSTOMER_OTP_CODE } from "@/lib/identity";
 
 export function CustomerLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/account";
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [devCode, setDevCode] = useState<string>();
+  const [code, setCode] = useState(CUSTOMER_OTP_CODE);
   const [step, setStep] = useState<"email" | "code">("email");
   const [pending, setPending] = useState(false);
 
@@ -25,14 +25,14 @@ export function CustomerLoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json()) as { error?: string; devCode?: string };
+      const data = (await response.json()) as { error?: string; code?: string };
       if (!response.ok) {
         toast.error(data.error ?? "Could not send a code.");
         return;
       }
-      setDevCode(data.devCode);
+      setCode(data.code ?? CUSTOMER_OTP_CODE);
       setStep("code");
-      toast.success(data.devCode ? `Dev code: ${data.devCode}` : "Check your email for a sign-in code.");
+      toast.success(`Use code ${data.code ?? CUSTOMER_OTP_CODE}`);
     } finally {
       setPending(false);
     }
@@ -44,7 +44,7 @@ export function CustomerLoginForm() {
       const response = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code: code || CUSTOMER_OTP_CODE }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -80,17 +80,18 @@ export function CustomerLoginForm() {
             value={code}
             onChange={(event) => setCode(event.target.value)}
             className="h-10 tracking-[0.3em]"
-            placeholder="000000"
+            placeholder="123456"
           />
-          {devCode ? (
-            <p className="text-xs text-muted-foreground">
-              Development mode — use code <span className="font-medium text-foreground">{devCode}</span>
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Enter the 6-digit code we sent to your email.</p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Email delivery is not wired yet. Use <span className="font-medium text-foreground">123456</span>{" "}
+            for every account.
+          </p>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          After you continue, sign in with code <span className="font-medium text-foreground">123456</span>.
+        </p>
+      )}
       <Button
         type="button"
         className="h-11 w-full"
@@ -100,7 +101,11 @@ export function CustomerLoginForm() {
         {pending ? "Please wait…" : step === "email" ? "Send code" : "Sign in"}
       </Button>
       {step === "code" ? (
-        <button type="button" className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline" onClick={requestCode}>
+        <button
+          type="button"
+          className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
+          onClick={requestCode}
+        >
           Resend code
         </button>
       ) : null}

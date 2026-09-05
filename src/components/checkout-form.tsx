@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { countries, pakistanCities, site } from "@/lib/site";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
-import { formatMoney, shippingCostPkr } from "@/lib/money";
+import { formatMoney, shippingCostPkr, type Currency } from "@/lib/money";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 import { useCatalog } from "@/components/catalog-provider";
 import { Price } from "@/components/price";
@@ -51,8 +51,17 @@ export function CheckoutForm({
   const currency = usePreferenceStore((state) => state.currency);
   const { products } = useCatalog();
   const [pending, setPending] = useState(false);
+  const placingRef = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [fullName, setFullName] = useState(defaults?.fullName ?? defaults?.address?.fullName ?? "");
+  const [email, setEmail] = useState(defaults?.email ?? "");
+  const [phone, setPhone] = useState(defaults?.phone ?? defaults?.address?.phone ?? "");
   const [country, setCountry] = useState(defaults?.address?.country ?? "PK");
+  const [city, setCity] = useState(defaults?.address?.city ?? "");
+  const [area, setArea] = useState(defaults?.address?.area ?? "");
+  const [address, setAddress] = useState(defaults?.address?.address ?? "");
+  const [notes, setNotes] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer" | "card_demo">("cod");
 
   const subtotal = useMemo(
@@ -67,21 +76,28 @@ export function CheckoutForm({
   const shipping = shippingCostPkr(subtotal, country);
   const total = subtotal + shipping;
 
-  async function onSubmit(formData: FormData) {
+  async function placeOrder(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (placingRef.current) return;
     setErrors({});
+    const cartItems = useCartStore.getState().items.map((item) => ({
+      variantId: item.variantId,
+      quantity: Number(item.quantity),
+    }));
+    const displayCurrency: Currency = usePreferenceStore.getState().currency === "USD" ? "USD" : "PKR";
     const payload = {
-      fullName: String(formData.get("fullName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
+      fullName,
+      email,
+      phone,
       country,
-      city: String(formData.get("city") ?? ""),
-      area: String(formData.get("area") ?? ""),
-      address: String(formData.get("address") ?? ""),
-      notes: String(formData.get("notes") ?? ""),
-      discountCode: String(formData.get("discountCode") ?? ""),
-      paymentMethod,
-      currency,
-      items,
+      city,
+      area,
+      address,
+      notes: notes.trim() || undefined,
+      discountCode: discountCode.trim() || undefined,
+      paymentMethod: country !== "PK" && paymentMethod === "cod" ? "bank_transfer" : paymentMethod,
+      currency: displayCurrency,
+      items: cartItems,
     };
     const parsed = checkoutSchema.safeParse(payload);
     if (!parsed.success) {
@@ -91,9 +107,11 @@ export function CheckoutForm({
         if (!next[key]) next[key] = issue.message;
       }
       setErrors(next);
-      toast.error("Please check the highlighted fields.");
+      const first = parsed.error.issues[0]?.message ?? "Please check the highlighted fields.";
+      toast.error(first);
       return;
     }
+    placingRef.current = true;
     setPending(true);
     try {
       const response = await fetch("/api/checkout", {
@@ -118,6 +136,7 @@ export function CheckoutForm({
     } catch {
       toast.error("Network error. Please try again.");
     } finally {
+      placingRef.current = false;
       setPending(false);
     }
   }
@@ -127,7 +146,7 @@ export function CheckoutForm({
       <div className="rounded-xl border px-6 py-16 text-center">
         <p className="font-serif text-3xl">Nothing to check out</p>
         <p className="mt-2 text-sm text-muted-foreground">Add a jacket or knit before placing an order.</p>
-        <Button className="mt-6 h-11 px-6" render={<a href="/shop" />}>
+        <Button className="mt-6 h-11 px-6" nativeButton={false} render={<a href="/shop" />}>
           Continue shopping
         </Button>
       </div>
@@ -135,7 +154,7 @@ export function CheckoutForm({
   }
 
   return (
-    <form action={onSubmit} className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+    <form noValidate onSubmit={placeOrder} className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="space-y-8">
         <section className="space-y-4">
           <h2 className="font-serif text-2xl">Contact</h2>
@@ -144,7 +163,8 @@ export function CheckoutForm({
             name="fullName"
             error={errors.fullName}
             autoComplete="name"
-            defaultValue={defaults?.fullName ?? defaults?.address?.fullName}
+            value={fullName}
+            onChange={setFullName}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -153,7 +173,8 @@ export function CheckoutForm({
               type="email"
               error={errors.email}
               autoComplete="email"
-              defaultValue={defaults?.email}
+              value={email}
+              onChange={setEmail}
             />
             <Field
               label="Phone"
@@ -162,7 +183,8 @@ export function CheckoutForm({
               error={errors.phone}
               autoComplete="tel"
               placeholder="03xx or +92"
-              defaultValue={defaults?.phone ?? defaults?.address?.phone}
+              value={phone}
+              onChange={setPhone}
             />
           </div>
         </section>
@@ -198,12 +220,13 @@ export function CheckoutForm({
                 name="city"
                 list="city-list"
                 className="h-10"
-                defaultValue={defaults?.address?.city}
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
                 aria-invalid={Boolean(errors.city)}
               />
               <datalist id="city-list">
-                {pakistanCities.map((city) => (
-                  <option key={city} value={city} />
+                {pakistanCities.map((cityName) => (
+                  <option key={cityName} value={cityName} />
                 ))}
               </datalist>
               {errors.city ? <p className="text-xs text-destructive">{errors.city}</p> : null}
@@ -212,7 +235,8 @@ export function CheckoutForm({
               label={country === "PK" ? "Area / locality" : "State / area"}
               name="area"
               error={errors.area}
-              defaultValue={defaults?.address?.area}
+              value={area}
+              onChange={setArea}
             />
           </div>
           <div className="space-y-2">
@@ -221,14 +245,22 @@ export function CheckoutForm({
               id="address"
               name="address"
               rows={3}
-              defaultValue={defaults?.address?.address}
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
               aria-invalid={Boolean(errors.address)}
             />
             {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Order notes (optional)</Label>
-            <Textarea id="notes" name="notes" rows={2} placeholder="Gate code, preferred courier, gift note…" />
+            <Textarea
+              id="notes"
+              name="notes"
+              rows={2}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Gate code, preferred courier, gift note…"
+            />
           </div>
           {country === "PK" ? (
             <p className="text-sm text-muted-foreground">
@@ -300,7 +332,14 @@ export function CheckoutForm({
         </ul>
         <div className="mt-4 space-y-2">
           <Label htmlFor="discountCode">Discount code</Label>
-          <Input id="discountCode" name="discountCode" className="h-10" placeholder="Optional" />
+          <Input
+            id="discountCode"
+            name="discountCode"
+            className="h-10"
+            placeholder="Optional"
+            value={discountCode}
+            onChange={(event) => setDiscountCode(event.target.value)}
+          />
           {errors.discountCode ? <p className="text-xs text-destructive">{errors.discountCode}</p> : null}
         </div>
         <div className="mt-4 space-y-1 border-t pt-4 text-sm">
@@ -317,7 +356,16 @@ export function CheckoutForm({
             <span>{formatMoney(total, currency)}</span>
           </div>
         </div>
-        <Button type="submit" className="mt-5 h-11 w-full" disabled={pending}>
+        {errors.items ? <p className="mt-3 text-xs text-destructive">{errors.items}</p> : null}
+        <Button
+          type="submit"
+          className="mt-5 h-11 w-full"
+          disabled={pending}
+          onClick={(event) => {
+            event.preventDefault();
+            void placeOrder();
+          }}
+        >
           {pending ? "Placing order…" : "Place order"}
         </Button>
         <p className="mt-3 text-xs text-muted-foreground">
@@ -336,7 +384,8 @@ function Field({
   type = "text",
   autoComplete,
   placeholder,
-  defaultValue,
+  value,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -344,7 +393,8 @@ function Field({
   type?: string;
   autoComplete?: string;
   placeholder?: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -355,7 +405,8 @@ function Field({
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         className="h-10"
         aria-invalid={Boolean(error)}
       />

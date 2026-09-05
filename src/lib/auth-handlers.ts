@@ -23,7 +23,7 @@ export async function handleOtpRequest(request: Request) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
     const result = await requestCustomerOtp(parsed.data.email);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, devCode: result.code });
   } catch (error) {
     return errorResponse(error);
   }

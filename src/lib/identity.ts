@@ -98,3 +98,5 @@ export const DEFAULT_SETTINGS: StoreSettings = {
 
 export const CUSTOMER_COOKIE = "gl_customer";
 export const ADMIN_COOKIE = "gl_admin";
+/** Temporary storefront OTP until email delivery is wired up. */
+export const CUSTOMER_OTP_CODE = "123456";

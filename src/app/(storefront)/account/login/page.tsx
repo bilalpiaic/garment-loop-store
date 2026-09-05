@@ -13,7 +13,8 @@ export default async function AccountLoginPage() {
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Account</p>
       <h1 className="mt-2 font-serif text-4xl">Sign in</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Passwordless login — we email a one-time code. Guest checkout still works without an account.
+        Passwordless login with a one-time code. Guest checkout still works without an account. Use
+        code 123456 for any email until email delivery is connected.
       </p>
       <div className="mt-8">
         <Suspense>
