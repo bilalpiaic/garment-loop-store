@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 
 export function useHydrated() {
-  const [hydrated, setHydrated] = useState(() => useCartStore.persist.hasHydrated());
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -14,11 +14,15 @@ export function useHydrated() {
       }
     };
 
-    const unsub = useCartStore.persist.onFinishHydration(finish);
+    const cartPersist = useCartStore.persist;
+    const prefPersist = usePreferenceStore.persist;
+    const unsub = cartPersist?.onFinishHydration(finish) ?? (() => undefined);
+
     void Promise.all([
-      useCartStore.persist.rehydrate(),
-      usePreferenceStore.persist.rehydrate(),
+      cartPersist?.rehydrate() ?? Promise.resolve(),
+      prefPersist?.rehydrate() ?? Promise.resolve(),
     ]).finally(finish);
+
     const fallback = window.setTimeout(finish, 250);
 
     return () => {
