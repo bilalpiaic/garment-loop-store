@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
   uniqueColors,
   uniqueSizes,
@@ -20,7 +19,13 @@ export function ProductForm({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const router = useRouter();
   const [color, setColor] = useState(colors[0]?.color ?? "");
-  const [size, setSize] = useState(sizes.length === 1 ? sizes[0] : "");
+  const [size, setSize] = useState(() => {
+    const firstInStock = product.variants.find(
+      (item) => item.color === (colors[0]?.color ?? "") && item.stock > 0,
+    );
+    if (firstInStock) return firstInStock.size;
+    return sizes.length === 1 ? sizes[0] : "";
+  });
 
   const variant: ProductVariant | undefined = useMemo(
     () => product.variants.find((item) => item.color === color && item.size === size),
@@ -117,21 +122,25 @@ export function ProductForm({ product }: { product: Product }) {
       </fieldset>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          className="h-11 flex-1 px-6"
-          disabled={!selected || !inStock}
+        <button
+          type="button"
+          className={cn(
+            "h-11 flex-1 rounded-lg px-6 text-sm font-medium transition",
+            selected && inStock
+              ? "bg-primary text-primary-foreground hover:bg-primary/80"
+              : "bg-primary/40 text-primary-foreground",
+          )}
           onClick={() => addToCart(false)}
         >
           Add to bag
-        </Button>
-        <Button
-          variant="outline"
-          className="h-11 flex-1 px-6"
-          disabled={!selected || !inStock}
+        </button>
+        <button
+          type="button"
+          className="h-11 flex-1 rounded-lg border border-border bg-background px-6 text-sm font-medium hover:bg-muted"
           onClick={() => addToCart(true)}
         >
           Buy now
-        </Button>
+        </button>
       </div>
       <p className="text-xs text-muted-foreground">
         Cash on delivery available in Pakistan. Questions? Message us on WhatsApp after you order.

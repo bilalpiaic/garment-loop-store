@@ -9,8 +9,6 @@ export type CartItem = {
 
 type CartState = {
   items: CartItem[];
-  hydrated: boolean;
-  setHydrated: () => void;
   addItem: (variantId: string, quantity?: number) => void;
   setQuantity: (variantId: string, quantity: number) => void;
   removeItem: (variantId: string) => void;
@@ -21,8 +19,6 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      hydrated: false,
-      setHydrated: () => set({ hydrated: true }),
       addItem: (variantId, quantity = 1) => {
         const existing = get().items.find((item) => item.variantId === variantId);
         if (existing) {
@@ -54,9 +50,8 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "garmentloop-cart",
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
+      skipHydration: true,
+      partialize: (state) => ({ items: state.items }),
     },
   ),
 );
@@ -64,23 +59,18 @@ export const useCartStore = create<CartState>()(
 type PreferenceState = {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
-  hydrated: boolean;
-  setHydrated: () => void;
 };
 
 export const usePreferenceStore = create<PreferenceState>()(
   persist(
     (set) => ({
       currency: "PKR",
-      hydrated: false,
       setCurrency: (currency) => set({ currency }),
-      setHydrated: () => set({ hydrated: true }),
     }),
     {
       name: "garmentloop-preferences",
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
+      skipHydration: true,
+      partialize: (state) => ({ currency: state.currency }),
     },
   ),
 );

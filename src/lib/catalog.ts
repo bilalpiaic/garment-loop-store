@@ -57,7 +57,7 @@ export const categories: Category[] = [
     name: "Knitwear",
     description: "Merino, fleece, and thermal layers that hold warmth without bulk.",
     image:
-      "https://images.unsplash.com/photo-1434389676479-107e05fc987c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=1400&q=80",
   },
   {
     slug: "trousers",
@@ -150,7 +150,7 @@ export const products: Product[] = [
     featured: true,
     images: [
       {
-        src: "https://images.unsplash.com/photo-1544923246-77307dd62836?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1578932750294-f5075e85f44a?auto=format&fit=crop&w=1400&q=80",
         alt: "Black puffer jacket on a winter street",
       },
       {
@@ -198,7 +198,7 @@ export const products: Product[] = [
         alt: "Camel wool overcoat",
       },
       {
-        src: "https://images.unsplash.com/photo-1548883354-94bcfe321c0e?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?auto=format&fit=crop&w=1400&q=80",
         alt: "Wool coat worn outdoors",
       },
     ],
@@ -364,7 +364,7 @@ export const products: Product[] = [
         alt: "Grey fleece hoodie",
       },
       {
-        src: "https://images.unsplash.com/photo-1509942774463-48efc7cd1299?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=1400&q=80",
         alt: "Hoodie on a hanger",
       },
     ],
@@ -402,11 +402,11 @@ export const products: Product[] = [
     isNew: true,
     images: [
       {
-        src: "https://images.unsplash.com/photo-1594938298603-c8148cfe4893?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=1400&q=80",
         alt: "Shirt jacket",
       },
       {
-        src: "https://images.unsplash.com/photo-1608063615782-e5d142d3c1e3?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1542060748-10c28b62716f?auto=format&fit=crop&w=1400&q=80",
         alt: "Casual jacket on a rack",
       },
     ],
@@ -441,7 +441,7 @@ export const products: Product[] = [
     collections: ["essentials"],
     images: [
       {
-        src: "https://images.unsplash.com/photo-1489987707025-afc232f7ea96?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1400&q=80",
         alt: "Thermal base layer",
       },
       {
@@ -563,7 +563,7 @@ export const products: Product[] = [
     isNew: true,
     images: [
       {
-        src: "https://images.unsplash.com/photo-1576871337622-98d48d1cf9b9?auto=format&fit=crop&w=1400&q=80",
+        src: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=1400&q=80",
         alt: "Knit beanie",
       },
       {

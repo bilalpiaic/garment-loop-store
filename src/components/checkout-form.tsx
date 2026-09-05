@@ -12,6 +12,7 @@ import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
 import { formatMoney, shippingCostPkr } from "@/lib/money";
 import { useCartStore, usePreferenceStore } from "@/store/store";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { Price } from "@/components/price";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ const payments = [
 export function CheckoutForm() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const hydrated = useCartStore((state) => state.hydrated);
+  const hydrated = useHydrated();
   const clear = useCartStore((state) => state.clear);
   const currency = usePreferenceStore((state) => state.currency);
   const [pending, setPending] = useState(false);

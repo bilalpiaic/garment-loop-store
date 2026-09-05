@@ -23,6 +23,11 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
+          onError={() => {
+            if (active < images.length - 1) {
+              setActive(active + 1);
+            }
+          }}
         />
       </div>
       {images.length > 1 ? (

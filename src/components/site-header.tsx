@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Menu, Search, ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { categories, collections } from "@/lib/catalog";
 import { useCartStore, usePreferenceStore } from "@/store/store";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { SearchDialog } from "@/components/search-dialog";
 import { CartDrawer } from "@/components/cart-drawer";
 import { cn } from "@/lib/utils";
@@ -25,29 +26,12 @@ const nav = [
 
 export function SiteHeader() {
   const items = useCartStore((state) => state.items);
-  const hydrated = useCartStore((state) => state.hydrated);
-  const setCartHydrated = useCartStore((state) => state.setHydrated);
+  const hydrated = useHydrated();
   const currency = usePreferenceStore((state) => state.currency);
   const setCurrency = usePreferenceStore((state) => state.setCurrency);
-  const setPrefHydrated = usePreferenceStore((state) => state.setHydrated);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    if (useCartStore.persist.hasHydrated()) {
-      setCartHydrated();
-    }
-    const unsubCart = useCartStore.persist.onFinishHydration(() => setCartHydrated());
-    if (usePreferenceStore.persist.hasHydrated()) {
-      setPrefHydrated();
-    }
-    const unsubPref = usePreferenceStore.persist.onFinishHydration(() => setPrefHydrated());
-    return () => {
-      unsubCart();
-      unsubPref();
-    };
-  }, [setCartHydrated, setPrefHydrated]);
 
   const count = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
@@ -157,19 +141,18 @@ export function SiteHeader() {
                 </button>
               ))}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
+              type="button"
               aria-label="Search"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
               onClick={() => setSearchOpen(true)}
             >
               <Search className="size-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </button>
+            <button
+              type="button"
               aria-label="Cart"
-              className="relative"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "relative")}
               onClick={() => setCartOpen(true)}
             >
               <ShoppingBag className="size-5" />
@@ -178,7 +161,7 @@ export function SiteHeader() {
                   {count}
                 </span>
               ) : null}
-            </Button>
+            </button>
           </div>
         </div>
       </header>

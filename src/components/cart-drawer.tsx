@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { getVariant } from "@/lib/catalog";
 import { useCartStore } from "@/store/store";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { Price } from "@/components/price";
 import { site } from "@/lib/site";
 import { shippingCostPkr } from "@/lib/money";
@@ -48,7 +49,7 @@ export function CartLines({
   const items = useCartStore((state) => state.items);
   const setQuantity = useCartStore((state) => state.setQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const hydrated = useCartStore((state) => state.hydrated);
+  const hydrated = useHydrated();
 
   if (!hydrated) {
     return <p className="px-4 py-10 text-sm text-muted-foreground">Loading bag…</p>;
@@ -149,7 +150,7 @@ export function CartSummary({
   checkoutHref?: string;
 }) {
   const items = useCartStore((state) => state.items);
-  const hydrated = useCartStore((state) => state.hydrated);
+  const hydrated = useHydrated();
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => {
       const match = getVariant(item.variantId);
