@@ -12,7 +12,6 @@ import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
 import { formatMoney, shippingCostPkr } from "@/lib/money";
 import { useCartStore, usePreferenceStore } from "@/store/store";
-import { useHydrated } from "@/hooks/use-hydrated";
 import { Price } from "@/components/price";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +36,6 @@ const payments = [
 export function CheckoutForm() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const hydrated = useHydrated();
   const clear = useCartStore((state) => state.clear);
   const currency = usePreferenceStore((state) => state.currency);
   const [pending, setPending] = useState(false);
@@ -90,22 +88,25 @@ export function CheckoutForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      const data = (await response.json()) as { error?: string; orderNumber?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        orderNumber?: string;
+        order?: unknown;
+      };
       if (!response.ok || !data.orderNumber) {
         toast.error(data.error ?? "Could not place the order.");
         return;
       }
       clear();
+      if (data.order) {
+        sessionStorage.setItem(`garmentloop-order:${data.orderNumber}`, JSON.stringify(data.order));
+      }
       router.push(`/order/${data.orderNumber}`);
     } catch {
       toast.error("Network error. Please try again.");
     } finally {
       setPending(false);
     }
-  }
-
-  if (!hydrated) {
-    return <p className="text-sm text-muted-foreground">Loading checkout…</p>;
   }
 
   if (items.length === 0) {

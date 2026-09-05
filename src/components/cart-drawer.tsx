@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/sheet";
 import { getVariant } from "@/lib/catalog";
 import { useCartStore } from "@/store/store";
-import { useHydrated } from "@/hooks/use-hydrated";
 import { Price } from "@/components/price";
 import { site } from "@/lib/site";
 import { shippingCostPkr } from "@/lib/money";
@@ -28,13 +27,15 @@ export function CartDrawer({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle className="font-serif text-2xl font-normal">Your bag</SheetTitle>
-        </SheetHeader>
-        <CartLines compact onNavigate={() => onOpenChange(false)} />
-        <CartSummary onNavigate={() => onOpenChange(false)} />
-      </SheetContent>
+      {open ? (
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="font-serif text-2xl font-normal">Your bag</SheetTitle>
+          </SheetHeader>
+          <CartLines compact onNavigate={() => onOpenChange(false)} />
+          <CartSummary onNavigate={() => onOpenChange(false)} />
+        </SheetContent>
+      ) : null}
     </Sheet>
   );
 }
@@ -49,11 +50,6 @@ export function CartLines({
   const items = useCartStore((state) => state.items);
   const setQuantity = useCartStore((state) => state.setQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const hydrated = useHydrated();
-
-  if (!hydrated) {
-    return <p className="px-4 py-10 text-sm text-muted-foreground">Loading bag…</p>;
-  }
 
   if (items.length === 0) {
     return (
@@ -150,7 +146,6 @@ export function CartSummary({
   checkoutHref?: string;
 }) {
   const items = useCartStore((state) => state.items);
-  const hydrated = useHydrated();
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => {
       const match = getVariant(item.variantId);
@@ -162,7 +157,7 @@ export function CartSummary({
     return { subtotal, shipping, total: subtotal + shipping };
   }, [items]);
 
-  if (!hydrated || items.length === 0) {
+  if (items.length === 0) {
     return null;
   }
 

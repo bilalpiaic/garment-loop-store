@@ -124,6 +124,7 @@ export function ProductForm({ product }: { product: Product }) {
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
+          data-testid="add-to-bag"
           className={cn(
             "h-11 flex-1 rounded-lg px-6 text-sm font-medium transition",
             selected && inStock
@@ -136,6 +137,7 @@ export function ProductForm({ product }: { product: Product }) {
         </button>
         <button
           type="button"
+          data-testid="buy-now"
           className="h-11 flex-1 rounded-lg border border-border bg-background px-6 text-sm font-medium hover:bg-muted"
           onClick={() => addToCart(true)}
         >

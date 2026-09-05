@@ -26,6 +26,7 @@ export function SearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {open ? (
       <DialogContent className="top-[12%] translate-y-0 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Search the store</DialogTitle>
@@ -90,6 +91,7 @@ export function SearchDialog({
           )}
         </div>
       </DialogContent>
+      ) : null}
     </Dialog>
   );
 }

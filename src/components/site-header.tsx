@@ -56,6 +56,7 @@ export function SiteHeader() {
               >
                 <Menu className="size-5" />
               </SheetTrigger>
+              {mobileOpen ? (
               <SheetContent side="left" className="w-80">
                 <SheetHeader>
                   <SheetTitle className="font-serif text-2xl font-normal tracking-tight">
@@ -88,6 +89,7 @@ export function SiteHeader() {
                   ))}
                 </nav>
               </SheetContent>
+              ) : null}
             </Sheet>
             <Link href="/" className="font-serif text-xl tracking-tight sm:text-2xl">
               GarmentLoop

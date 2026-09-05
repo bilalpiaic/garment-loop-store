@@ -1,83 +1,77 @@
+import { readFileSync, writeFileSync } from "node:fs";
 import { getVariant } from "@/lib/catalog";
 import { shippingCostPkr } from "@/lib/money";
+import type {
+  CheckoutCustomer,
+  CheckoutItem,
+  Order,
+  OrderLine,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "@/lib/order-model";
 
-export type PaymentMethod = "cod" | "bank_transfer" | "card_demo";
-export type OrderStatus = "pending" | "confirmed" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "failed";
+export type {
+  CheckoutCustomer,
+  CheckoutItem,
+  Order,
+  OrderLine,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "@/lib/order-model";
+export { whatsappOrderLink } from "@/lib/order-model";
 
-export type CheckoutItem = {
-  variantId: string;
-  quantity: number;
+const DATA_FILE = "/tmp/garmentloop-store.json";
+
+type DiskState = {
+  orders: Order[];
+  stock: Record<string, number>;
 };
 
-export type CheckoutCustomer = {
-  fullName: string;
-  email: string;
-  phone: string;
-  country: string;
-  city: string;
-  area: string;
-  address: string;
-  notes?: string;
-};
+function loadDisk(): DiskState {
+  try {
+    return JSON.parse(readFileSync(DATA_FILE, "utf8")) as DiskState;
+  } catch {
+    return { orders: [], stock: {} };
+  }
+}
 
-export type OrderLine = {
-  variantId: string;
-  productId: string;
-  productTitle: string;
-  slug: string;
-  color: string;
-  size: string;
-  image: string;
-  quantity: number;
-  unitPricePkr: number;
-  totalPkr: number;
-};
-
-export type Order = {
-  orderNumber: string;
-  createdAt: string;
-  customer: CheckoutCustomer;
-  items: OrderLine[];
-  subtotalPkr: number;
-  shippingPkr: number;
-  totalPkr: number;
-  paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
-  status: OrderStatus;
-  currency: "PKR" | "USD";
-};
-
-const orders = new Map<string, Order>();
-const stockOverrides = new Map<string, number>();
+function saveDisk(state: DiskState) {
+  writeFileSync(DATA_FILE, JSON.stringify(state));
+}
 
 export function getStock(variantId: string) {
-  if (stockOverrides.has(variantId)) {
-    return stockOverrides.get(variantId) ?? 0;
+  const disk = loadDisk();
+  if (variantId in disk.stock) {
+    return disk.stock[variantId] ?? 0;
   }
   return getVariant(variantId)?.variant.stock ?? 0;
 }
 
-function decrementStock(variantId: string, quantity: number) {
-  const current = getStock(variantId);
+function decrementStock(state: DiskState, variantId: string, quantity: number) {
+  const current =
+    variantId in state.stock
+      ? (state.stock[variantId] ?? 0)
+      : (getVariant(variantId)?.variant.stock ?? 0);
   if (current < quantity) {
     return false;
   }
-  stockOverrides.set(variantId, current - quantity);
+  state.stock[variantId] = current - quantity;
   return true;
 }
 
-function nextOrderNumber() {
-  const n = orders.size + 1;
+function nextOrderNumber(state: DiskState) {
+  const n = state.orders.length + 1;
   return `GL-${String(n).padStart(4, "0")}`;
 }
 
 export function getOrder(orderNumber: string) {
-  return orders.get(orderNumber.toUpperCase());
+  return loadDisk().orders.find((order) => order.orderNumber === orderNumber.toUpperCase());
 }
 
 export function listOrders() {
-  return [...orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return [...loadDisk().orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function createOrder(input: {
@@ -90,6 +84,7 @@ export function createOrder(input: {
     return { ok: false, error: "Your cart is empty." };
   }
 
+  const state = loadDisk();
   const lines: OrderLine[] = [];
   for (const item of input.items) {
     if (item.quantity < 1) {
@@ -99,7 +94,10 @@ export function createOrder(input: {
     if (!match) {
       return { ok: false, error: "One of the items is no longer available." };
     }
-    const stock = getStock(item.variantId);
+    const stock =
+      item.variantId in state.stock
+        ? (state.stock[item.variantId] ?? 0)
+        : match.variant.stock;
     if (stock < item.quantity) {
       return {
         ok: false,
@@ -131,11 +129,11 @@ export function createOrder(input: {
       : "pending";
 
   for (const line of lines) {
-    decrementStock(line.variantId, line.quantity);
+    decrementStock(state, line.variantId, line.quantity);
   }
 
   const order: Order = {
-    orderNumber: nextOrderNumber(),
+    orderNumber: nextOrderNumber(state),
     createdAt: new Date().toISOString(),
     customer: input.customer,
     items: lines,
@@ -148,14 +146,7 @@ export function createOrder(input: {
     currency: input.currency,
   };
 
-  orders.set(order.orderNumber, order);
+  state.orders.push(order);
+  saveDisk(state);
   return { ok: true, order };
-}
-
-export function whatsappOrderLink(order: Order) {
-  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "923001234567";
-  const text = encodeURIComponent(
-    `Hi GarmentLoop, I placed order ${order.orderNumber} for ${order.customer.fullName}. Please confirm delivery to ${order.customer.city}.`,
-  );
-  return `https://wa.me/${number}?text=${text}`;
 }

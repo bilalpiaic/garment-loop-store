@@ -1,35 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 
+function subscribe() {
+  return () => undefined;
+}
+
 export function useHydrated() {
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    const finish = () => {
-      if (!cancelled) {
-        setHydrated(true);
-      }
-    };
-
-    const cartPersist = useCartStore.persist;
-    const prefPersist = usePreferenceStore.persist;
-    const unsub = cartPersist?.onFinishHydration(finish) ?? (() => undefined);
-
-    void Promise.all([
-      cartPersist?.rehydrate() ?? Promise.resolve(),
-      prefPersist?.rehydrate() ?? Promise.resolve(),
-    ]).finally(finish);
-
-    const fallback = window.setTimeout(finish, 250);
-
-    return () => {
-      cancelled = true;
-      unsub();
-      window.clearTimeout(fallback);
-    };
+    try {
+      void useCartStore.persist?.rehydrate?.();
+      void usePreferenceStore.persist?.rehydrate?.();
+    } catch {
+      // Persist APIs are client-only.
+    }
   }, []);
 
   return hydrated;

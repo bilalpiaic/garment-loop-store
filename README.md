@@ -18,6 +18,8 @@ npm run build
 npm start
 ```
 
+Production mode (`npm start`) is the reliable way to shop the full checkout flow.
+
 ## What you can do
 
 - Browse the winter collection, categories, and product pages with size/color variants

@@ -50,7 +50,6 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "garmentloop-cart",
-      skipHydration: true,
       partialize: (state) => ({ items: state.items }),
     },
   ),
@@ -69,7 +68,6 @@ export const usePreferenceStore = create<PreferenceState>()(
     }),
     {
       name: "garmentloop-preferences",
-      skipHydration: true,
       partialize: (state) => ({ currency: state.currency }),
     },
   ),
