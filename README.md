@@ -51,7 +51,7 @@ npx vercel --prod --yes
 - Switch display currency between PKR and USD
 - Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
 - Confirm the order on WhatsApp
-- Sign in as a customer at `/account/login` with any email and OTP **123456**
+- Sign in at `/account/login` with email and password. Owner/admin/staff skip OTP. Customers confirm with OTP **123456**, and that password is saved.
 - Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles
 
 ## Admin (seeded locally)
@@ -62,7 +62,7 @@ npx vercel --prod --yes
 | Admin | admin@garmentloop.store | GarmentLoop-Admin-2026 |
 | Staff | staff@garmentloop.store | GarmentLoop-Staff-2026 |
 
-Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customer accounts have no password — sign in at `/account/login` with any email and OTP **123456**.
+Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customers sign in at `/account/login` with email, password (min 8 characters), then OTP **123456**. Staff credentials skip OTP and open the admin console.
 
 ## Stack
 

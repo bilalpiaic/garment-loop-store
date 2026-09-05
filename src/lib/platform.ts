@@ -51,6 +51,12 @@ export class PlatformError extends Error {
   }
 }
 
+function publicCustomer<T extends { passwordHash?: string }>(customer: T) {
+  const copy = { ...customer };
+  delete copy.passwordHash;
+  return copy;
+}
+
 type MutateFn<T> = (state: PlatformState) => Promise<T> | T;
 
 async function run<T>(fn: MutateFn<T>, persist: boolean): Promise<T> {
@@ -546,7 +552,13 @@ export async function listCustomers() {
         (order) => order.customerId === customer.id || order.customer.email.toLowerCase() === customer.email,
       );
       return {
-        ...customer,
+        id: customer.id,
+        email: customer.email,
+        phone: customer.phone,
+        fullName: customer.fullName,
+        createdAt: customer.createdAt,
+        lastLoginAt: customer.lastLoginAt,
+        hasPassword: Boolean(customer.passwordHash),
         ordersCount: orders.length,
         lastOrderAt: orders[0]?.createdAt,
         totalSpendPkr: orders.reduce((sum, order) => sum + order.totalPkr, 0),
@@ -563,7 +575,7 @@ export async function getCustomer(id: string) {
       (order) => order.customerId === customer.id || order.customer.email.toLowerCase() === customer.email,
     );
     const addresses = state.addresses.filter((address) => address.customerId === customer.id);
-    return { customer, orders, addresses };
+    return { customer: publicCustomer(customer), orders, addresses };
   });
 }
 
@@ -627,18 +639,53 @@ export async function deleteDiscount(id: string) {
   });
 }
 
-export async function requestCustomerOtp(emailRaw: string) {
+export async function startLogin(emailRaw: string, password: string) {
   const email = emailRaw.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new PlatformError("Enter a valid email.");
   }
-  await mutate((state) => {
+  if (!password) {
+    throw new PlatformError("Enter your password.");
+  }
+  if (password.length < 8) {
+    throw new PlatformError("Password must be at least 8 characters.");
+  }
+
+  const result = await mutate(async (state) => {
+    const admin = state.adminUsers.find((item) => item.email === email);
+    if (admin) {
+      if (!admin.active) throw new PlatformError("Invalid email or password.", 401);
+      const ok = await verifyPassword(password, admin.passwordHash);
+      if (!ok) throw new PlatformError("Invalid email or password.", 401);
+      admin.lastLoginAt = new Date().toISOString();
+      const sessionId = createToken();
+      state.sessions.push({
+        id: sessionId,
+        kind: "admin",
+        userId: admin.id,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
+      });
+      return { kind: "admin" as const, sessionId };
+    }
+
+    const customer = state.customers.find((item) => item.email === email);
+    if (customer?.passwordHash) {
+      const ok = await verifyPassword(password, customer.passwordHash);
+      if (!ok) throw new PlatformError("Invalid email or password.", 401);
+    }
+
     const recent = state.otp.filter(
       (item) => item.email === email && Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
     );
     if (recent.length >= 5) {
       throw new PlatformError("Too many login attempts. Try again in an hour.", 429);
     }
+
+    const pendingPasswordHash = customer?.passwordHash
+      ? undefined
+      : await hashPassword(password);
+
     state.otp = state.otp.filter((item) => item.email !== email);
     state.otp.push({
       email,
@@ -646,9 +693,16 @@ export async function requestCustomerOtp(emailRaw: string) {
       expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString(),
       attempts: 0,
       createdAt: new Date().toISOString(),
+      pendingPasswordHash,
     });
+    return { kind: "otp" as const };
   });
-  return { ok: true as const, code: CUSTOMER_OTP_CODE };
+
+  if (result.kind === "admin") {
+    await setSessionCookie(ADMIN_COOKIE, result.sessionId, ADMIN_SESSION_MS);
+    return { ok: true as const, kind: "admin" as const };
+  }
+  return { ok: true as const, kind: "otp" as const, code: CUSTOMER_OTP_CODE };
 }
 
 export async function verifyCustomerOtp(emailRaw: string, code: string) {
@@ -657,19 +711,37 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
     throw new PlatformError("That code is incorrect. Use 123456.");
   }
   const sessionId = await mutate((state) => {
-    state.otp = state.otp.filter((item) => item.email !== email);
+    const challenge = state.otp.find((item) => item.email === email);
+    if (!challenge) throw new PlatformError("Enter your email and password first.");
+    if (new Date(challenge.expiresAt).getTime() < Date.now()) {
+      throw new PlatformError("That code has expired. Sign in again.");
+    }
+    challenge.attempts += 1;
+    if (challenge.attempts > 5) {
+      throw new PlatformError("Too many attempts. Sign in again.");
+    }
+
     let customer = state.customers.find((item) => item.email === email);
     if (!customer) {
       customer = {
         id: createId("cus"),
         email,
+        passwordHash: challenge.pendingPasswordHash,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
       };
       state.customers.unshift(customer);
     } else {
+      if (challenge.pendingPasswordHash) {
+        customer.passwordHash = challenge.pendingPasswordHash;
+      }
       customer.lastLoginAt = new Date().toISOString();
     }
+    if (!customer.passwordHash) {
+      throw new PlatformError("Enter your email and password first.");
+    }
+
+    state.otp = state.otp.filter((item) => item.email !== email);
     const sessionId = createToken();
     state.sessions.push({
       id: sessionId,
@@ -681,7 +753,7 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
     return sessionId;
   });
   await setSessionCookie(CUSTOMER_COOKIE, sessionId, CUSTOMER_SESSION_MS);
-  return { ok: true as const };
+  return { ok: true as const, kind: "customer" as const };
 }
 
 export async function loginAdmin(emailRaw: string, password: string) {
@@ -741,7 +813,7 @@ export const getCustomerSession = cache(async () => {
     const customer = state.customers.find((item) => item.id === session.userId);
     if (!customer) return undefined;
     const addresses = state.addresses.filter((item) => item.customerId === customer.id);
-    return { customer, addresses, session };
+    return { customer: publicCustomer(customer), addresses, session };
   });
 });
 

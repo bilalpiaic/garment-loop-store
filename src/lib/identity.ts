@@ -14,6 +14,7 @@ export type AdminUser = {
 export type Customer = {
   id: string;
   email: string;
+  passwordHash?: string;
   phone?: string;
   fullName?: string;
   createdAt: string;
@@ -46,6 +47,7 @@ export type OtpChallenge = {
   expiresAt: string;
   attempts: number;
   createdAt: string;
+  pendingPasswordHash?: string;
 };
 
 export type Discount = {

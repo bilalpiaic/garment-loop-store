@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,33 @@ export function CustomerLoginForm() {
   const params = useSearchParams();
   const next = params.get("next") || "/account";
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState(CUSTOMER_OTP_CODE);
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [step, setStep] = useState<"credentials" | "code">("credentials");
   const [pending, setPending] = useState(false);
 
-  async function requestCode() {
+  async function submitCredentials(event?: FormEvent) {
+    event?.preventDefault();
     setPending(true);
     try {
-      const response = await fetch("/api/auth/otp/request", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
-      const data = (await response.json()) as { error?: string; code?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        kind?: "admin" | "otp";
+        code?: string;
+      };
       if (!response.ok) {
-        toast.error(data.error ?? "Could not send a code.");
+        toast.error(data.error ?? "Could not sign in.");
+        return;
+      }
+      if (data.kind === "admin") {
+        toast.success("Signed in.");
+        router.push("/admin");
+        router.refresh();
         return;
       }
       setCode(data.code ?? CUSTOMER_OTP_CODE);
@@ -38,7 +50,8 @@ export function CustomerLoginForm() {
     }
   }
 
-  async function verify() {
+  async function verify(event?: FormEvent) {
+    event?.preventDefault();
     setPending(true);
     try {
       const response = await fetch("/api/auth/otp/verify", {
@@ -51,7 +64,8 @@ export function CustomerLoginForm() {
         toast.error(data.error ?? "That code did not work.");
         return;
       }
-      router.push(next);
+      const destination = next.startsWith("/admin") ? "/account" : next;
+      router.push(destination);
       router.refresh();
     } finally {
       setPending(false);
@@ -59,7 +73,7 @@ export function CustomerLoginForm() {
   }
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={step === "credentials" ? submitCredentials : verify} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -69,6 +83,17 @@ export function CustomerLoginForm() {
           onChange={(event) => setEmail(event.target.value)}
           className="h-10"
           autoComplete="email"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="h-10"
+          autoComplete={step === "credentials" ? "current-password" : "off"}
         />
       </div>
       {step === "code" ? (
@@ -83,32 +108,34 @@ export function CustomerLoginForm() {
             placeholder="123456"
           />
           <p className="text-xs text-muted-foreground">
-            Email delivery is not wired yet. Use <span className="font-medium text-foreground">123456</span>{" "}
-            for every account.
+            Owner, admin, and staff skip this step. For store accounts, use{" "}
+            <span className="font-medium text-foreground">123456</span> until email delivery is
+            connected.
           </p>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          After you continue, sign in with code <span className="font-medium text-foreground">123456</span>.
+          Staff matching owner/admin/staff credentials enter the console immediately. Everyone else
+          confirms with OTP <span className="font-medium text-foreground">123456</span>, and the
+          password is saved to their customer account.
         </p>
       )}
       <Button
-        type="button"
+        type="submit"
         className="h-11 w-full"
-        disabled={pending || !email}
-        onClick={step === "email" ? requestCode : verify}
+        disabled={pending || !email || !password}
       >
-        {pending ? "Please wait…" : step === "email" ? "Send code" : "Sign in"}
+        {pending ? "Please wait…" : step === "credentials" ? "Continue" : "Sign in"}
       </Button>
       {step === "code" ? (
         <button
           type="button"
           className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
-          onClick={requestCode}
+          onClick={() => void submitCredentials()}
         >
           Resend code
         </button>
       ) : null}
-    </div>
+    </form>
   );
 }
