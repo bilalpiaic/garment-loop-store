@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StoreImage } from "@/components/store-image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -81,7 +81,7 @@ export function CartLines({
               onClick={onNavigate}
               className="relative size-24 shrink-0 overflow-hidden rounded-md bg-muted"
             >
-              <Image
+              <StoreImage
                 src={product.images[0]?.src ?? ""}
                 alt={product.title}
                 fill

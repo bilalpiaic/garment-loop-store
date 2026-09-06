@@ -36,6 +36,9 @@ npm run db:migrate
 3. Add environment variables on Vercel:
    - `DATABASE_URL` — Neon pooled URL
    - `NEXT_PUBLIC_WHATSAPP_NUMBER` — optional WhatsApp number (digits only, with country code)
+   - `RESEND_API_KEY` and `EMAIL_FROM` — customer email OTP (see [docs/otp-setup.md](docs/otp-setup.md))
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` — customer SMS OTP
+   - `BLOB_READ_WRITE_TOKEN` — product image uploads on Vercel (Vercel Blob)
 4. Deploy from this repo. Schema and catalog stock seed on first checkout if they are missing.
 
 ```bash
@@ -51,8 +54,8 @@ npx vercel --prod --yes
 - Switch display currency between PKR and USD
 - Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
 - Confirm the order on WhatsApp
-- Sign in at `/account/login` with email and password. Owner/admin/staff skip OTP. Customers confirm with OTP **123456**, and that password is saved.
-- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles
+- Sign in at `/account/login` with **email or mobile number** and a password. Owner/admin/staff skip OTP. Customers receive a real 6-digit OTP by **email (Resend)** or **SMS (Twilio)** depending on what they typed. See [docs/otp-setup.md](docs/otp-setup.md).
+- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles. Product add/edit supports **image attachments** (file upload) as well as HTTPS URLs.
 
 ## Admin (seeded locally)
 
@@ -62,7 +65,16 @@ npx vercel --prod --yes
 | Admin | admin@garmentloop.store | GarmentLoop-Admin-2026 |
 | Staff | staff@garmentloop.store | GarmentLoop-Staff-2026 |
 
-Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customers sign in at `/account/login` with email, password (min 8 characters), then OTP **123456**. Staff credentials skip OTP and open the admin console.
+Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customers sign in at `/account/login` with email or mobile number, password (min 8 characters), then a one-time code sent by email or SMS. Staff credentials skip OTP and open the admin console.
+
+Without Resend/Twilio keys, local development shows a preview code. Production requires the API keys in [docs/otp-setup.md](docs/otp-setup.md).
+
+## Product images
+
+On **add** or **edit product**, attach JPEG/PNG/WebP/GIF/AVIF files (up to 4.5 MB) or paste an HTTPS URL.
+
+- Local `npm run dev` stores files in `public/uploads/`.
+- On Vercel, set `BLOB_READ_WRITE_TOKEN` ([Vercel Blob](https://vercel.com/docs/storage/vercel-blob)) so uploads persist. You can still paste Unsplash or other HTTPS URLs without Blob.
 
 ## Stack
 

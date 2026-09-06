@@ -10,16 +10,18 @@ import {
   type Collection,
   type Product,
 } from "@/lib/catalog";
-import { hashPassword, sha256, verifyPassword } from "@/lib/password";
-import { createId, createToken } from "@/lib/ids";
-import { isEmailSyntax, normalizeEmail } from "@/lib/email";
+import { hashPassword, hashesMatch, sha256, verifyPassword } from "@/lib/password";
+import { createId, createOtpCode, createToken } from "@/lib/ids";
+import { normalizeEmail } from "@/lib/email";
+import { maskDestination, parseLoginIdentifier, type LoginIdentifier } from "@/lib/login-identifier";
+import { allowOtpPreview, missingOtpProviderMessage, sendLoginOtp } from "@/lib/otp-delivery";
 import { slugify } from "@/lib/slug";
 import {
   ADMIN_COOKIE,
   CUSTOMER_COOKIE,
-  CUSTOMER_OTP_CODE,
   DEFAULT_SETTINGS,
   type AdminUser,
+  type Customer,
   type CustomerAddress,
   type Discount,
   type StoreSettings,
@@ -640,11 +642,12 @@ export async function deleteDiscount(id: string) {
   });
 }
 
-export async function startLogin(emailRaw: string, password: string) {
-  const email = normalizeEmail(emailRaw);
-  if (!isEmailSyntax(email)) {
-    throw new PlatformError("Enter a valid email (name@example.com).");
+export async function startLogin(identifierRaw: string, password: string) {
+  const parsed = parseLoginIdentifier(identifierRaw);
+  if (!parsed.ok) {
+    throw new PlatformError(parsed.error);
   }
+  const identifier = parsed.value;
   if (!password) {
     throw new PlatformError("Enter your password.");
   }
@@ -653,67 +656,108 @@ export async function startLogin(emailRaw: string, password: string) {
   }
 
   const result = await mutate(async (state) => {
-    const admin = state.adminUsers.find((item) => item.email === email);
-    if (admin) {
-      if (!admin.active) throw new PlatformError("Invalid email or password.", 401);
-      const ok = await verifyPassword(password, admin.passwordHash);
-      if (!ok) throw new PlatformError("Invalid email or password.", 401);
-      admin.lastLoginAt = new Date().toISOString();
-      const sessionId = createToken();
-      state.sessions.push({
-        id: sessionId,
-        kind: "admin",
-        userId: admin.id,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
-      });
-      return { kind: "admin" as const, sessionId };
+    if (identifier.kind === "email") {
+      const admin = state.adminUsers.find((item) => item.email === identifier.email);
+      if (admin) {
+        if (!admin.active) throw new PlatformError("Invalid email or password.", 401);
+        const ok = await verifyPassword(password, admin.passwordHash);
+        if (!ok) throw new PlatformError("Invalid email or password.", 401);
+        admin.lastLoginAt = new Date().toISOString();
+        const sessionId = createToken();
+        state.sessions.push({
+          id: sessionId,
+          kind: "admin",
+          userId: admin.id,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
+        });
+        return { kind: "admin" as const, sessionId };
+      }
     }
 
-    const customer = state.customers.find((item) => item.email === email);
+    const customer = findCustomerForLogin(state, identifier);
     if (customer?.passwordHash) {
       const ok = await verifyPassword(password, customer.passwordHash);
       if (!ok) throw new PlatformError("Invalid email or password.", 401);
     }
 
     const recent = state.otp.filter(
-      (item) => item.email === email && Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
+      (item) =>
+        otpDestination(item) === identifier.destination &&
+        Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
     );
     if (recent.length >= 5) {
       throw new PlatformError("Too many login attempts. Try again in an hour.", 429);
     }
 
-    const pendingPasswordHash = customer?.passwordHash
-      ? undefined
-      : await hashPassword(password);
+    const pendingPasswordHash = customer?.passwordHash ? undefined : await hashPassword(password);
+    const otpCode = createOtpCode();
+    const channel = identifier.kind === "phone" ? ("sms" as const) : ("email" as const);
+    const customerEmail = customer?.email ?? identifier.email;
 
-    state.otp = state.otp.filter((item) => item.email !== email);
+    state.otp = state.otp.filter((item) => otpDestination(item) !== identifier.destination);
     state.otp.push({
-      email,
-      codeHash: sha256(`${email}:${CUSTOMER_OTP_CODE}`),
+      email: customerEmail,
+      destination: identifier.destination,
+      channel,
+      codeHash: sha256(`${identifier.destination}:${otpCode}`),
       expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString(),
       attempts: 0,
       createdAt: new Date().toISOString(),
       pendingPasswordHash,
     });
-    return { kind: "otp" as const };
+    return {
+      kind: "otp" as const,
+      otpCode,
+      channel,
+      destination: identifier.destination,
+      email: customerEmail,
+    };
   });
 
   if (result.kind === "admin") {
     await setSessionCookie(ADMIN_COOKIE, result.sessionId, ADMIN_SESSION_MS);
     return { ok: true as const, kind: "admin" as const };
   }
-  return { ok: true as const, kind: "otp" as const, code: CUSTOMER_OTP_CODE };
+
+  const delivery = await sendLoginOtp({
+    channel: result.channel,
+    destination: result.destination,
+    code: result.otpCode,
+  });
+  const preview = allowOtpPreview();
+  if (!delivery.ok && !preview) {
+    throw new PlatformError(delivery.error || missingOtpProviderMessage(result.channel), 503);
+  }
+  if (preview) {
+    console.info(`[otp] ${result.channel} ${result.destination}: ${result.otpCode}`);
+  }
+
+  return {
+    ok: true as const,
+    kind: "otp" as const,
+    email: result.email,
+    channel: result.channel,
+    destinationLabel: maskDestination(result.channel, result.destination),
+    delivered: delivery.ok,
+    otpPreview: preview && (!delivery.ok || process.env.AUTH_SHOW_OTP === "true") ? result.otpCode : undefined,
+  };
 }
 
-export async function verifyCustomerOtp(emailRaw: string, code: string) {
-  const email = normalizeEmail(emailRaw);
-  if (code.trim() !== CUSTOMER_OTP_CODE) {
-    throw new PlatformError("That code is incorrect. Use 123456.");
+export async function verifyCustomerOtp(identifierRaw: string, codeRaw: string) {
+  const parsed = parseLoginIdentifier(identifierRaw);
+  if (!parsed.ok) {
+    throw new PlatformError(parsed.error);
   }
+  const identifier = parsed.value;
+  const code = codeRaw.trim();
+  if (!/^\d{6}$/.test(code)) {
+    throw new PlatformError("Enter the 6-digit code.");
+  }
+  const expectedHash = sha256(`${identifier.destination}:${code}`);
   const sessionId = await mutate((state) => {
-    const challenge = state.otp.find((item) => item.email === email);
-    if (!challenge) throw new PlatformError("Enter your email and password first.");
+    const challenge = state.otp.find((item) => otpDestination(item) === identifier.destination);
+    if (!challenge) throw new PlatformError("Enter your email or mobile number and password first.");
     if (new Date(challenge.expiresAt).getTime() < Date.now()) {
       throw new PlatformError("That code has expired. Sign in again.");
     }
@@ -721,12 +765,16 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
     if (challenge.attempts > 5) {
       throw new PlatformError("Too many attempts. Sign in again.");
     }
+    if (!hashesMatch(expectedHash, challenge.codeHash)) {
+      throw new PlatformError("That code is incorrect.");
+    }
 
-    let customer = state.customers.find((item) => item.email === email);
+    let customer = findCustomerForLogin(state, identifier) ?? state.customers.find((item) => item.email === challenge.email);
     if (!customer) {
       customer = {
         id: createId("cus"),
-        email,
+        email: challenge.email,
+        phone: identifier.kind === "phone" ? identifier.phone : undefined,
         passwordHash: challenge.pendingPasswordHash,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -736,13 +784,16 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
       if (challenge.pendingPasswordHash) {
         customer.passwordHash = challenge.pendingPasswordHash;
       }
+      if (identifier.kind === "phone") {
+        customer.phone = identifier.phone;
+      }
       customer.lastLoginAt = new Date().toISOString();
     }
     if (!customer.passwordHash) {
-      throw new PlatformError("Enter your email and password first.");
+      throw new PlatformError("Enter your email or mobile number and password first.");
     }
 
-    state.otp = state.otp.filter((item) => item.email !== email);
+    state.otp = state.otp.filter((item) => otpDestination(item) !== identifier.destination);
     const sessionId = createToken();
     state.sessions.push({
       id: sessionId,
@@ -755,6 +806,17 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
   });
   await setSessionCookie(CUSTOMER_COOKIE, sessionId, CUSTOMER_SESSION_MS);
   return { ok: true as const, kind: "customer" as const };
+}
+
+function otpDestination(challenge: { destination?: string; email: string }) {
+  return challenge.destination || challenge.email;
+}
+
+function findCustomerForLogin(state: { customers: Customer[] }, identifier: LoginIdentifier) {
+  if (identifier.kind === "email") {
+    return state.customers.find((item) => item.email === identifier.email);
+  }
+  return state.customers.find((item) => item.phone === identifier.phone || item.email === identifier.email);
 }
 
 export async function loginAdmin(emailRaw: string, password: string) {

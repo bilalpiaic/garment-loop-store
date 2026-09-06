@@ -4,7 +4,38 @@ import { errorResponse, withAdmin } from "@/lib/http";
 import { startLogin, verifyCustomerOtp, logout, loginAdmin } from "@/lib/platform";
 import { isEmailSyntax } from "@/lib/email";
 
-const loginSchema = z.object({
+const identifierField = z
+  .string({ error: "Enter your email or mobile number." })
+  .trim()
+  .min(3, "Enter your email or mobile number.")
+  .max(120);
+
+const loginSchema = z
+  .object({
+    identifier: identifierField.optional(),
+    email: identifierField.optional(),
+    password: z
+      .string({ error: "Enter your password." })
+      .min(8, "Password must be at least 8 characters.")
+      .max(200),
+  })
+  .refine((data) => Boolean(data.identifier || data.email), {
+    message: "Enter your email or mobile number.",
+    path: ["identifier"],
+  });
+
+const otpSchema = z
+  .object({
+    identifier: identifierField.optional(),
+    email: identifierField.optional(),
+    code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
+  })
+  .refine((data) => Boolean(data.identifier || data.email), {
+    message: "Enter your email or mobile number.",
+    path: ["identifier"],
+  });
+
+const adminLoginSchema = z.object({
   email: z
     .string({ error: "Enter your email." })
     .trim()
@@ -13,16 +44,9 @@ const loginSchema = z.object({
   password: z.string({ error: "Enter your password." }).min(1, "Enter your password."),
 });
 
-const otpSchema = z.object({
-  email: z
-    .string({ error: "Enter your email." })
-    .trim()
-    .toLowerCase()
-    .refine(isEmailSyntax, "Enter a valid email (name@example.com)."),
-  code: z.string().trim().min(4, "Enter the one-time code."),
-});
-
-const adminLoginSchema = loginSchema;
+function loginIdentifier(data: { identifier?: string; email?: string }) {
+  return data.identifier || data.email || "";
+}
 
 export async function handleLogin(request: Request) {
   try {
@@ -30,7 +54,7 @@ export async function handleLogin(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const result = await startLogin(parsed.data.email, parsed.data.password);
+    const result = await startLogin(loginIdentifier(parsed.data), parsed.data.password);
     return NextResponse.json(result);
   } catch (error) {
     return errorResponse(error);
@@ -47,7 +71,7 @@ export async function handleOtpVerify(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    await verifyCustomerOtp(parsed.data.email, parsed.data.code);
+    await verifyCustomerOtp(loginIdentifier(parsed.data), parsed.data.code);
     return NextResponse.json({ ok: true, kind: "customer" });
   } catch (error) {
     return errorResponse(error);

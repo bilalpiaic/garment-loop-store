@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StoreImage } from "@/components/store-image";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ProductImage } from "@/lib/catalog";
@@ -16,7 +16,7 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
   return (
     <div className="space-y-3">
       <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
-        <Image
+        <StoreImage
           src={current.src}
           alt={current.alt || title}
           fill
@@ -43,7 +43,7 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
               )}
               aria-label={`View image ${index + 1}`}
             >
-              <Image src={image.src} alt="" fill className="object-cover" sizes="64px" />
+              <StoreImage src={image.src} alt="" fill className="object-cover" sizes="64px" />
             </button>
           ))}
         </div>

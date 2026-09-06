@@ -37,6 +37,8 @@ yarn-error.log*
 # local agent / upload folders
 /uploads
 /agent-tools
+/public/uploads/*
+!/public/uploads/.gitkeep
 
 # vercel
 .vercel

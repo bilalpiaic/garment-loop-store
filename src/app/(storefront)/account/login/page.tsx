@@ -14,9 +14,9 @@ export default async function AccountLoginPage() {
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Account</p>
       <h1 className="mt-2 font-serif text-4xl">Sign in</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Email and password first. Owner, admin, and staff go straight to the console. Customer
-        accounts confirm with OTP 123456, then the password is stored. Guest checkout still works
-        without an account.
+        Sign in with email or mobile number and a password. A one-time code is sent by email or SMS.
+        Owner, admin, and staff go straight to the console. Guest checkout still works without an
+        account.
       </p>
       <div className="mt-8">
         <Suspense>

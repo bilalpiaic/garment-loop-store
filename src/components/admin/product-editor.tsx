@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Category, Collection, Product, ProductStatus, ProductVariant } from "@/lib/catalog";
+import type { Category, Collection, Product, ProductImage, ProductStatus, ProductVariant } from "@/lib/catalog";
 import { slugify } from "@/lib/slug";
+import { ProductImageAttachments } from "@/components/admin/product-image-attachments";
 
 function emptyVariant(productId: string): ProductVariant {
   return {
@@ -46,9 +47,7 @@ export function ProductEditor({
   const [specsText, setSpecsText] = useState(
     (product?.specs ?? []).map((spec) => `${spec.label}: ${spec.value}`).join("\n"),
   );
-  const [imagesText, setImagesText] = useState(
-    (product?.images ?? []).map((image) => `${image.src} | ${image.alt}`).join("\n"),
-  );
+  const [images, setImages] = useState<ProductImage[]>(product?.images ?? []);
   const [variants, setVariants] = useState<ProductVariant[]>(
     product?.variants?.length ? product.variants : [emptyVariant(productId)],
   );
@@ -75,14 +74,10 @@ export function ProductEditor({
           const [label, ...rest] = line.split(":");
           return { label: (label ?? "").trim(), value: rest.join(":").trim() };
         }),
-      images: imagesText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [src, alt] = line.split("|").map((part) => part.trim());
-          return { src: src ?? "", alt: alt || title };
-        }),
+      images: images.map((image) => ({
+        src: image.src.trim(),
+        alt: image.alt.trim() || title,
+      })),
       variants: variants.map((variant) => ({
         ...variant,
         id: variant.id || `${productId}-${slugify(variant.color)}-${slugify(variant.size)}`,
@@ -102,7 +97,7 @@ export function ProductEditor({
       status,
       featuresText,
       specsText,
-      imagesText,
+      images,
       variants,
       productId,
     ],
@@ -215,9 +210,7 @@ export function ProductEditor({
       <Field label="Specifications (Label: value)">
         <Textarea rows={4} value={specsText} onChange={(event) => setSpecsText(event.target.value)} />
       </Field>
-      <Field label="Images (URL | alt text)">
-        <Textarea rows={4} value={imagesText} onChange={(event) => setImagesText(event.target.value)} />
-      </Field>
+      <ProductImageAttachments images={images} onChange={setImages} productTitle={title} />
       <div>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-medium">Variants</p>

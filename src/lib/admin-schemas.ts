@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isProductImageSrc } from "@/lib/product-images";
 
 export const productSchema = z.object({
   id: z.string().min(1),
@@ -11,8 +12,13 @@ export const productSchema = z.object({
   category: z.string().min(1),
   collections: z.array(z.string()),
   images: z
-    .array(z.object({ src: z.string().url(), alt: z.string() }))
-    .min(1, "Add at least one image URL."),
+    .array(
+      z.object({
+        src: z.string().refine(isProductImageSrc, "Upload an image or paste a valid URL."),
+        alt: z.string().trim().min(1, "Add alt text for each image."),
+      }),
+    )
+    .min(1, "Add at least one image."),
   variants: z
     .array(
       z.object({
