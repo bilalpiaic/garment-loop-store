@@ -39,6 +39,9 @@ export function readFileState(): PlatformState {
       otp: parsed.otp ?? [],
       discounts: parsed.discounts ?? [],
       inventoryMovements: parsed.inventoryMovements ?? [],
+      tillSessions: parsed.tillSessions ?? [],
+      tillMovements: parsed.tillMovements ?? [],
+      expenses: parsed.expenses ?? [],
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       orderSeq: parsed.orderSeq ?? parsed.orders?.length ?? 0,
     };

@@ -40,6 +40,13 @@ import { readFileState, writeFileState } from "@/lib/platform-file";
 import { loadNeonState, neonAvailable, saveNeonState } from "@/lib/platform-neon";
 import { mergeStockIntoCatalog, publicCatalog, type PlatformState } from "@/lib/platform-state";
 import { can, type Permission, type Role } from "@/lib/roles";
+import {
+  computeTillControl,
+  expectedTillCash,
+  type Expense,
+  type ExpenseCategory,
+  type TillMovementType,
+} from "@/lib/till";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const CUSTOMER_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -65,6 +72,7 @@ type MutateFn<T> = (state: PlatformState) => Promise<T> | T;
 async function run<T>(fn: MutateFn<T>, persist: boolean): Promise<T> {
   return withLock("platform", async () => {
     const state = neonAvailable() ? await loadNeonState() : readFileState();
+    ensureTillCollections(state);
     const seeded = await ensureSeed(state);
     const result = await fn(state);
     if (persist || seeded) {
@@ -73,6 +81,12 @@ async function run<T>(fn: MutateFn<T>, persist: boolean): Promise<T> {
     }
     return result;
   });
+}
+
+function ensureTillCollections(state: PlatformState) {
+  state.tillSessions ??= [];
+  state.tillMovements ??= [];
+  state.expenses ??= [];
 }
 
 async function mutate<T>(fn: MutateFn<T>): Promise<T> {
@@ -242,9 +256,11 @@ export async function createOrder(input: {
       const discountPkr = applyDiscount(discount, subtotalPkr);
       const shippingPkr = shippingFor(state, subtotalPkr - discountPkr, input.customer.country);
       const paymentStatus: PaymentStatus =
-        input.paymentMethod === "card_demo" ? "paid" : "pending";
+        input.paymentMethod === "card_demo" || input.paymentMethod === "cash" ? "paid" : "pending";
       const status: OrderStatus =
-        input.paymentMethod === "cod" || input.paymentMethod === "card_demo"
+        input.paymentMethod === "cod" ||
+        input.paymentMethod === "card_demo" ||
+        input.paymentMethod === "cash"
           ? "confirmed"
           : "pending";
 
@@ -387,6 +403,13 @@ export async function updateOrder(
     if (patch.notes !== undefined) order.notes = patch.notes;
     order.updatedAt = new Date().toISOString();
 
+    if (
+      patch.paymentStatus === "paid" &&
+      (order.paymentMethod === "cod" || order.paymentMethod === "cash")
+    ) {
+      recordCashCollection(state, order.orderNumber, order.totalPkr, undefined);
+    }
+
     const restoring = patch.status === "cancelled" && previous !== "cancelled";
     if (restoring) {
       for (const line of order.items) {
@@ -402,6 +425,281 @@ export async function updateOrder(
         });
       }
     }
+    return order;
+  });
+}
+
+function recordCashCollection(
+  state: PlatformState,
+  orderNumber: string,
+  amountPkr: number,
+  actorId?: string,
+) {
+  const open = state.tillSessions.find((session) => session.status === "open");
+  if (!open) return;
+  if (state.tillMovements.some((item) => item.relatedOrderNumber === orderNumber && item.type === "sale_cash")) {
+    return;
+  }
+  state.tillMovements.unshift({
+    id: createId("tlm"),
+    tillSessionId: open.id,
+    type: "sale_cash",
+    amountPkr,
+    relatedOrderNumber: orderNumber,
+    actorId,
+    note: `Collected ${orderNumber}`,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function getTillControl(rangeDays = 30) {
+  return readPlatform((state) =>
+    computeTillControl({
+      rangeDays,
+      orders: state.orders,
+      products: state.catalog.products,
+      stock: state.stock,
+      lowStockThreshold: state.settings.lowStockThreshold,
+      movements: state.inventoryMovements,
+      tillSessions: state.tillSessions,
+      tillMovements: state.tillMovements,
+      expenses: state.expenses,
+    }),
+  );
+}
+
+export async function openTillSession(input: {
+  openingFloatPkr: number;
+  note?: string;
+  actorId: string;
+  actorName: string;
+}) {
+  if (input.openingFloatPkr < 0) throw new PlatformError("Opening float cannot be negative.");
+  return mutate((state) => {
+    if (state.tillSessions.some((session) => session.status === "open")) {
+      throw new PlatformError("A till session is already open.");
+    }
+    const session = {
+      id: createId("till"),
+      openedAt: new Date().toISOString(),
+      openedBy: input.actorId,
+      openedByName: input.actorName,
+      openingFloatPkr: Math.round(input.openingFloatPkr),
+      note: input.note?.trim() || undefined,
+      status: "open" as const,
+    };
+    state.tillSessions.unshift(session);
+    return session;
+  });
+}
+
+export async function closeTillSession(input: {
+  countedCashPkr: number;
+  note?: string;
+  actorId: string;
+  actorName: string;
+}) {
+  if (input.countedCashPkr < 0) throw new PlatformError("Counted cash cannot be negative.");
+  return mutate((state) => {
+    const session = state.tillSessions.find((item) => item.status === "open");
+    if (!session) throw new PlatformError("No till session is open.");
+    const expectedCashPkr = expectedTillCash(session, state.tillMovements);
+    session.status = "closed";
+    session.closedAt = new Date().toISOString();
+    session.closedBy = input.actorId;
+    session.closedByName = input.actorName;
+    session.countedCashPkr = Math.round(input.countedCashPkr);
+    session.expectedCashPkr = expectedCashPkr;
+    session.variancePkr = session.countedCashPkr - expectedCashPkr;
+    if (input.note?.trim()) session.note = [session.note, input.note.trim()].filter(Boolean).join(" · ");
+    return session;
+  });
+}
+
+export async function addTillMovement(input: {
+  type: Extract<TillMovementType, "cash_in" | "cash_out">;
+  amountPkr: number;
+  note?: string;
+  actorId: string;
+}) {
+  if (!Number.isFinite(input.amountPkr) || input.amountPkr <= 0) {
+    throw new PlatformError("Enter an amount greater than zero.");
+  }
+  return mutate((state) => {
+    const session = state.tillSessions.find((item) => item.status === "open");
+    if (!session) throw new PlatformError("Open the till first.");
+    const signed = input.type === "cash_out" ? -Math.round(input.amountPkr) : Math.round(input.amountPkr);
+    const movement = {
+      id: createId("tlm"),
+      tillSessionId: session.id,
+      type: input.type,
+      amountPkr: signed,
+      note: input.note?.trim() || undefined,
+      actorId: input.actorId,
+      createdAt: new Date().toISOString(),
+    };
+    state.tillMovements.unshift(movement);
+    return movement;
+  });
+}
+
+export async function saveExpense(input: {
+  category: ExpenseCategory;
+  amountPkr: number;
+  note: string;
+  incurredAt?: string;
+  fromTill?: boolean;
+  actorId: string;
+}) {
+  if (!Number.isFinite(input.amountPkr) || input.amountPkr <= 0) {
+    throw new PlatformError("Enter an expense amount greater than zero.");
+  }
+  return mutate((state) => {
+    const open = state.tillSessions.find((item) => item.status === "open");
+    if (input.fromTill && !open) throw new PlatformError("Open the till to pay an expense from cash.");
+    const expense: Expense = {
+      id: createId("exp"),
+      category: input.category,
+      amountPkr: Math.round(input.amountPkr),
+      note: input.note.trim(),
+      incurredAt: input.incurredAt || new Date().toISOString(),
+      tillSessionId: input.fromTill ? open?.id : undefined,
+      actorId: input.actorId,
+      createdAt: new Date().toISOString(),
+    };
+    state.expenses.unshift(expense);
+    if (input.fromTill && open) {
+      state.tillMovements.unshift({
+        id: createId("tlm"),
+        tillSessionId: open.id,
+        type: "expense",
+        amountPkr: -expense.amountPkr,
+        note: expense.note,
+        relatedExpenseId: expense.id,
+        actorId: input.actorId,
+        createdAt: expense.createdAt,
+      });
+    }
+    return expense;
+  });
+}
+
+export async function deleteExpense(id: string) {
+  return mutate((state) => {
+    const expense = state.expenses.find((item) => item.id === id);
+    if (!expense) throw new PlatformError("Expense not found.", 404);
+    const open = state.tillSessions.find((item) => item.status === "open");
+    if (expense.tillSessionId && open && expense.tillSessionId !== open.id) {
+      throw new PlatformError("That expense belongs to a closed till session.");
+    }
+    state.expenses = state.expenses.filter((item) => item.id !== id);
+    state.tillMovements = state.tillMovements.filter((item) => item.relatedExpenseId !== id);
+  });
+}
+
+export async function recordTillSale(input: {
+  variantId: string;
+  quantity: number;
+  fullName?: string;
+  note?: string;
+  actorId: string;
+}) {
+  if (input.quantity < 1) throw new PlatformError("Enter a quantity of at least 1.");
+  return mutate((state) => {
+    const session = state.tillSessions.find((item) => item.status === "open");
+    if (!session) throw new PlatformError("Open the till first.");
+    const match = getVariant(input.variantId, state.catalog.products);
+    if (!match) throw new PlatformError("That variant is no longer available.");
+    const available = state.stock[input.variantId] ?? match.variant.stock;
+    if (available < input.quantity) {
+      throw new PlatformError(`${match.product.title} is out of stock.`);
+    }
+    const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
+    const now = new Date().toISOString();
+    const totalPkr = unit * input.quantity;
+    state.orderSeq += 1;
+    const orderNumber = `GL-${String(state.orderSeq).padStart(4, "0")}`;
+    state.stock[input.variantId] = available - input.quantity;
+    state.inventoryMovements.unshift({
+      id: createId("mov"),
+      variantId: input.variantId,
+      change: -input.quantity,
+      type: "sale",
+      relatedOrderNumber: orderNumber,
+      actorId: input.actorId,
+      reason: "Till sale",
+      createdAt: now,
+    });
+    const name = input.fullName?.trim() || "Walk-in";
+    const customer = upsertCustomer(state, {
+      fullName: name,
+      email: `till-${state.orderSeq}@till.garmentloop.store`,
+      phone: "03000000000",
+      country: "PK",
+      city: "Lahore",
+      area: "Store",
+      address: "GarmentLoop floor",
+    });
+    const order = {
+      orderNumber,
+      createdAt: now,
+      updatedAt: now,
+      customerId: customer.id,
+      customer: {
+        fullName: name,
+        email: customer.email,
+        phone: customer.phone ?? "03000000000",
+        country: "PK",
+        city: "Lahore",
+        area: "Store",
+        address: "GarmentLoop floor",
+        notes: input.note?.trim(),
+      },
+      items: [
+        {
+          variantId: match.variant.id,
+          productId: match.product.id,
+          productTitle: match.product.title,
+          slug: match.product.slug,
+          color: match.variant.color,
+          size: match.variant.size,
+          image: match.product.images[0]?.src ?? "",
+          quantity: input.quantity,
+          unitPricePkr: unit,
+          totalPkr,
+        },
+      ],
+      subtotalPkr: totalPkr,
+      shippingPkr: 0,
+      totalPkr,
+      paymentMethod: "cash" as const,
+      paymentStatus: "paid" as const,
+      status: "confirmed" as const,
+      currency: "PKR" as const,
+      notes: input.note?.trim() || "Till sale",
+    };
+    state.orders.unshift(order);
+    recordCashCollection(state, orderNumber, totalPkr, input.actorId);
+    return order;
+  });
+}
+
+export async function collectTillOrder(orderNumber: string, actorId: string) {
+  return mutate((state) => {
+    const order = state.orders.find((item) => item.orderNumber === orderNumber.toUpperCase());
+    if (!order) throw new PlatformError("Order not found.", 404);
+    if (order.status === "cancelled" || order.status === "returned") {
+      throw new PlatformError("That order cannot be collected.");
+    }
+    if (order.paymentStatus === "paid") throw new PlatformError("That order is already paid.");
+    if (order.paymentMethod !== "cod" && order.paymentMethod !== "cash") {
+      throw new PlatformError("Only cash / COD orders can be collected into the till.");
+    }
+    const session = state.tillSessions.find((item) => item.status === "open");
+    if (!session) throw new PlatformError("Open the till first.");
+    order.paymentStatus = "paid";
+    order.updatedAt = new Date().toISOString();
+    recordCashCollection(state, order.orderNumber, order.totalPkr, actorId);
     return order;
   });
 }

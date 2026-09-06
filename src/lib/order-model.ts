@@ -1,4 +1,4 @@
-export type PaymentMethod = "cod" | "bank_transfer" | "card_demo";
+export type PaymentMethod = "cod" | "bank_transfer" | "card_demo" | "cash";
 export type OrderStatus =
   | "pending"
   | "confirmed"

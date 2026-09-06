@@ -76,6 +76,9 @@ export async function loadNeonState(): Promise<PlatformState> {
     otp: raw?.otp ?? [],
     discounts: raw?.discounts ?? [],
     inventoryMovements: raw?.inventoryMovements ?? [],
+    tillSessions: raw?.tillSessions ?? [],
+    tillMovements: raw?.tillMovements ?? [],
+    expenses: raw?.expenses ?? [],
     settings: { ...DEFAULT_SETTINGS, ...raw?.settings },
   };
 
@@ -109,6 +112,9 @@ export async function saveNeonState(state: PlatformState) {
     otp: state.otp,
     discounts: state.discounts,
     inventoryMovements: state.inventoryMovements,
+    tillSessions: state.tillSessions ?? [],
+    tillMovements: state.tillMovements ?? [],
+    expenses: state.expenses ?? [],
     settings: state.settings,
   };
   const payload = JSON.stringify(meta);

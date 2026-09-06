@@ -12,6 +12,7 @@ export const PERMISSIONS = [
   "customers.view",
   "customers.manage",
   "discounts.manage",
+  "till.manage",
   "users.manage",
   "settings.manage",
 ] as const;
@@ -27,6 +28,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "orders.view",
     "orders.manage",
     "customers.view",
+    "till.manage",
   ],
 };
 

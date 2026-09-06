@@ -115,3 +115,70 @@ export const addressSchema = z.object({
   address: z.string().trim().min(8),
   isDefault: z.boolean().optional(),
 });
+
+export const tillOpenSchema = z.object({
+  action: z.literal("open"),
+  openingFloatPkr: z.number().min(0),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const tillCloseSchema = z.object({
+  action: z.literal("close"),
+  countedCashPkr: z.number().min(0),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const tillMovementSchema = z.object({
+  action: z.literal("movement"),
+  type: z.enum(["cash_in", "cash_out"]),
+  amountPkr: z.number().positive(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const tillExpenseSchema = z.object({
+  action: z.literal("expense"),
+  category: z.enum([
+    "rent",
+    "utilities",
+    "salaries",
+    "packaging",
+    "shipping",
+    "marketing",
+    "supplies",
+    "purchases",
+    "drawings",
+    "other",
+  ]),
+  amountPkr: z.number().positive(),
+  note: z.string().trim().min(2).max(200),
+  incurredAt: z.string().optional(),
+  fromTill: z.boolean().optional(),
+});
+
+export const tillSaleSchema = z.object({
+  action: z.literal("sale"),
+  variantId: z.string().min(1),
+  quantity: z.number().int().min(1),
+  fullName: z.string().trim().max(80).optional(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const tillCollectSchema = z.object({
+  action: z.literal("collect"),
+  orderNumber: z.string().trim().min(3),
+});
+
+export const tillDeleteExpenseSchema = z.object({
+  action: z.literal("deleteExpense"),
+  id: z.string().min(1),
+});
+
+export const tillActionSchema = z.discriminatedUnion("action", [
+  tillOpenSchema,
+  tillCloseSchema,
+  tillMovementSchema,
+  tillExpenseSchema,
+  tillSaleSchema,
+  tillCollectSchema,
+  tillDeleteExpenseSchema,
+]);

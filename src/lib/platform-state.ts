@@ -10,6 +10,7 @@ import type {
   StoreSettings,
 } from "@/lib/identity";
 import type { Order } from "@/lib/order-model";
+import type { Expense, TillMovement, TillSession } from "@/lib/till";
 
 export const PLATFORM_VERSION = 1;
 
@@ -25,6 +26,9 @@ export type PlatformState = {
   otp: OtpChallenge[];
   discounts: Discount[];
   inventoryMovements: InventoryMovement[];
+  tillSessions: TillSession[];
+  tillMovements: TillMovement[];
+  expenses: Expense[];
   settings: StoreSettings;
   orderSeq: number;
 };
@@ -56,6 +60,9 @@ export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings
     otp: [],
     discounts: [],
     inventoryMovements: [],
+    tillSessions: [],
+    tillMovements: [],
+    expenses: [],
     settings: { ...settings },
     orderSeq: 0,
   };

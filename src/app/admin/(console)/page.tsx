@@ -79,6 +79,9 @@ export default async function AdminDashboardPage() {
             <Link href="/admin/products/new" className="underline underline-offset-4">
               New product
             </Link>
+            <Link href="/admin/till" className="underline underline-offset-4">
+              Till
+            </Link>
             <Link href="/admin/inventory" className="underline underline-offset-4">
               Inventory
             </Link>

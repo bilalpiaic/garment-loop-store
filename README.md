@@ -55,7 +55,7 @@ npx vercel --prod --yes
 - Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
 - Confirm the order on WhatsApp
 - Sign in at `/account/login` with **email or mobile number** and a password. Owner/admin/staff skip OTP. Customers receive a real 6-digit OTP by **email (Resend)** or **SMS (Twilio)** depending on what they typed. See [docs/otp-setup.md](docs/otp-setup.md).
-- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles. Product add/edit supports **image attachments** (file upload) as well as HTTPS URLs.
+- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles. Product add/edit supports **image attachments** (file upload) as well as HTTPS URLs. **Till** (`/admin/till`) covers cash sessions, walk-in sales, stock value, expenses, and financial reports.
 
 ## Admin (seeded locally)
 

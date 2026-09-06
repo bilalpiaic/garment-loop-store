@@ -7,6 +7,7 @@ export const ADMIN_NAV: {
 }[] = [
   { href: "/admin", label: "Dashboard", permission: "dashboard.view" },
   { href: "/admin/orders", label: "Orders", permission: "orders.view" },
+  { href: "/admin/till", label: "Till", permission: "till.manage" },
   { href: "/admin/products", label: "Products", permission: "products.manage" },
   { href: "/admin/inventory", label: "Inventory", permission: "inventory.manage" },
   { href: "/admin/categories", label: "Categories", permission: "categories.manage" },
