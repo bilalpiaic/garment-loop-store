@@ -285,3 +285,58 @@ export function CheckoutForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="address">Street address</Label>
+            <Textarea
+              id="address"
+              name="address"
+              rows={3}
+              defaultValue={defaults?.address?.address}
+              aria-invalid={Boolean(errors.address)}
+            />
+            {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Order notes (optional)</Label>
+            <Textarea id="notes" name="notes" rows={2} placeholder="Gate code, preferred courier, gift note\u2026" />
+          </div>
+        </section>
+        <div className={cn("flex gap-3", step !== 1 && "hidden")}>
+          <Button type="button" className="h-11 px-6" onClick={() => setStep(2)}>
+            Continue to shipping
+          </Button>
+        </div>
+        <section className={cn("space-y-4", step !== 2 && step !== 3 && "hidden")}>
+          <h2 className="font-serif text-2xl">Shipping</h2>
+          {errors.shippingMethodId ? (
+            <p className="text-xs text-destructive">{errors.shippingMethodId}</p>
+          ) : null}
+          <div className="space-y-2">
+            {shippingOptions.map((option) => (
+              <label
+                key={option.id}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-xl border p-4",
+                  shippingMethodId === option.id ? "border-primary" : "border-border",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="shippingMethodId"
+                  className="mt-1"
+                  value={option.id}
+                  checked={shippingMethodId === option.id}
+                  onChange={() => setShippingMethodId(option.id)}
+                />
+                <span className="flex-1">
+                  <span className="flex items-center justify-between gap-3 text-sm font-medium">
+                    <span>{option.label}</span>
+                    <span>{option.amountPkr === 0 ? "Free" : <Price amountPkr={option.amountPkr} />}</span>
+                  </span>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    {option.description} \u00b7 ETA {option.eta}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Rates are zone-based (Pakistan, GCC, international). Live carrier APIs are next.
