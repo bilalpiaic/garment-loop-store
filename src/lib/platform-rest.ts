@@ -1,8 +1,6 @@
-import { hashPassword } from "@/lib/password";
 import { createId } from "@/lib/ids";
-import { type AdminUser, type StoreSettings } from "@/lib/identity";
+import { type StoreSettings } from "@/lib/identity";
 import { mergeStockIntoCatalog, type PlatformState } from "@/lib/platform-state";
-import { can, type Permission, type Role } from "@/lib/roles";
 import { resolveShippingOption } from "@/lib/shipping";
 import type {
   ProductReview,
@@ -13,90 +11,9 @@ import type {
 import { sendOrderConfirmation, sendReturnRequestNotice } from "@/lib/email";
 import {
   PlatformError,
-  getAdminSession,
   mutate,
   readPlatform,
 } from "@/lib/platform";
-
-export async function requireAdmin(permission?: Permission) {
-  const session = await getAdminSession();
-  if (!session) throw new PlatformError("Sign in required.", 401);
-  if (permission && !can(session.user.role, permission)) {
-    throw new PlatformError("You do not have access to this action.", 403);
-  }
-  return session;
-}
-
-export async function listAdminUsers() {
-  return readPlatform((state) =>
-    state.adminUsers.map((user) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      active: user.active,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-    })),
-  );
-}
-
-export async function saveAdminUser(input: {
-  id?: string;
-  email: string;
-  name: string;
-  role: Role;
-  password?: string;
-  active?: boolean;
-  actorRole: Role;
-}) {
-  if (input.role === "owner" && input.actorRole !== "owner") {
-    throw new PlatformError("Only the owner can assign the owner role.", 403);
-  }
-  return mutate(async (state) => {
-    const email = input.email.trim().toLowerCase();
-    if (input.id) {
-      const user = state.adminUsers.find((item) => item.id === input.id);
-      if (!user) throw new PlatformError("User not found.", 404);
-      if (user.role === "owner" && input.actorRole !== "owner") {
-        throw new PlatformError("The owner account cannot be edited.", 403);
-      }
-      user.email = email;
-      user.name = input.name;
-      user.role = input.role;
-      if (input.active !== undefined) user.active = input.active;
-      if (input.password) user.passwordHash = await hashPassword(input.password);
-      return publicAdmin(user);
-    }
-    if (state.adminUsers.some((item) => item.email === email)) {
-      throw new PlatformError("An account with that email already exists.");
-    }
-    if (!input.password) throw new PlatformError("Set an initial password.");
-    const user: AdminUser = {
-      id: createId("usr"),
-      email,
-      name: input.name,
-      role: input.role,
-      passwordHash: await hashPassword(input.password),
-      active: input.active ?? true,
-      createdAt: new Date().toISOString(),
-    };
-    state.adminUsers.push(user);
-    return publicAdmin(user);
-  });
-}
-
-function publicAdmin(user: AdminUser) {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    active: user.active,
-    createdAt: user.createdAt,
-    lastLoginAt: user.lastLoginAt,
-  };
-}
 
 export async function getDashboardMetrics() {
   return readPlatform((state) => {
