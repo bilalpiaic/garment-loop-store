@@ -857,4 +857,13 @@ export const getAdminSession = cache(async () => {
   });
 });
 
+export async function requireAdmin(permission?: Permission) {
+  const session = await getAdminSession();
+  if (!session) throw new PlatformError("Sign in required.", 401);
+  if (permission && !can(session.user.role, permission)) {
+    throw new PlatformError("You do not have access to this action.", 403);
+  }
+  return session;
+}
+
 export * from "./platform-rest";
