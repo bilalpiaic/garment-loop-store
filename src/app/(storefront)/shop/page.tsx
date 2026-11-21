@@ -13,7 +13,14 @@ export const metadata: Metadata = {
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; color?: string; size?: string; maxPrice?: string; q?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    color?: string;
+    size?: string;
+    maxPrice?: string;
+    q?: string;
+    sort?: string;
+  }>;
 }) {
   const params = await searchParams;
   const catalog = await getPublishedCatalog();
@@ -24,6 +31,7 @@ export default async function ShopPage({
       size: params.size,
       maxPrice: params.maxPrice ? Number(params.maxPrice) : undefined,
       q: params.q,
+      sort: params.sort,
     },
     catalog.products,
   );
@@ -33,13 +41,16 @@ export default async function ShopPage({
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Catalog</p>
       <h1 className="mt-2 font-serif text-4xl">Shop</h1>
       <p className="mt-2 max-w-xl text-muted-foreground">
-        Winter outerwear and layers. Filter by size, color, and price. Guest checkout and cash on
-        delivery are available.
+        Circular wardrobe essentials. Combine filters for color, size, and category — guest checkout
+        stays available.
       </p>
       <div className="mt-8">
         <Suspense>
           <ShopFilters />
         </Suspense>
+        <p className="mb-6 text-sm text-muted-foreground">
+          {products.length} piece{products.length === 1 ? "" : "s"}
+        </p>
         <ProductGrid products={products} />
       </div>
     </div>
