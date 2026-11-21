@@ -1,19 +1,17 @@
-# Admin console
+# GarmentLoop — Admin Spec
 
-Roles: **Owner**, **Admin**, **Staff** — gated by `requireAdmin` + permission.
+## Sidebar
 
-## Areas
+Dashboard · Orders · Returns · Products · Reviews · Inventory · Categories · Collections · Customers · Analytics · Discounts · **Content** · Users · Settings
 
-- Dashboard metrics (orders today, low stock, top products)
-- Catalog (products, categories, collections)
-- Orders + fulfillment / tracking
-- Customers
-- Discounts
-- Inventory movements
-- Returns queue
-- Review moderation
-- Content pages
-- Settings (shipping, tax, store profile)
-- Team (owner-managed)
+## Content
 
-Default seeds: `owner@garmentloop.store`, `admin@garmentloop.store`, `staff@garmentloop.store` (passwords in README).
+Edit Sustainability / policy pages stored in platform state (`/admin/content`).
+
+## Settings
+
+Shows persistence mode (demo vs Neon), Stripe, and email status. Database never required.
+
+## Seeds
+
+Owner/Admin/Staff credentials in README. Sample orders + pending review on first boot in demo mode.
