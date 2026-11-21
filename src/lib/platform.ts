@@ -561,4 +561,85 @@ export async function saveCollection(input: Collection) {
 
 export async function deleteCollection(slug: string) {
   return mutate((state) => {
-    state.cata
+    state.catalog.products = state.catalog.products.map((product) => ({
+      ...product,
+      collections: product.collections.filter((item) => item !== slug),
+    }));
+    state.catalog.collections = state.catalog.collections.filter((item) => item.slug !== slug);
+  });
+}
+
+export async function adjustInventory(input: {
+  variantId: string;
+  change: number;
+  reason?: string;
+  actorId?: string;
+}) {
+  return mutate((state) => {
+    const match = getVariant(input.variantId, state.catalog.products);
+    if (!match) throw new PlatformError("Variant not found.", 404);
+    const current = state.stock[input.variantId] ?? match.variant.stock;
+    const next = current + input.change;
+    if (next < 0) throw new PlatformError("Stock cannot go below zero.");
+    state.stock[input.variantId] = next;
+    match.variant.stock = next;
+    const product = state.catalog.products.find((item) => item.id === match.product.id);
+    if (product) {
+      const variant = product.variants.find((item) => item.id === input.variantId);
+      if (variant) variant.stock = next;
+    }
+    state.inventoryMovements.unshift({
+      id: createId("mov"),
+      variantId: input.variantId,
+      change: input.change,
+      type: input.change >= 0 ? "restock" : "manual",
+      reason: input.reason,
+      actorId: input.actorId,
+      createdAt: new Date().toISOString(),
+    });
+    return next;
+  });
+}
+
+export async function listInventory() {
+  return readPlatform((state) => {
+    const catalog = mergeStockIntoCatalog(state);
+    return catalog.products.flatMap((product) =>
+      product.variants.map((variant) => ({
+        productId: product.id,
+        productTitle: product.title,
+        slug: product.slug,
+        variantId: variant.id,
+        sku: variant.sku,
+        color: variant.color,
+        size: variant.size,
+        stock: variant.stock,
+        low: variant.stock <= state.settings.lowStockThreshold,
+      })),
+    );
+  });
+}
+
+export async function listMovements(limit = 50) {
+  return readPlatform((state) => state.inventoryMovements.slice(0, limit));
+}
+
+export async function listCustomers() {
+  return readPlatform((state) => {
+    return state.customers.map((customer) => {
+      const orders = state.orders.filter(
+        (order) => order.customerId === customer.id || order.customer.email.toLowerCase() === customer.email,
+      );
+      return {
+        ...customer,
+        ordersCount: orders.length,
+        lastOrderAt: orders[0]?.createdAt,
+        totalSpendPkr: orders.reduce((sum, order) => sum + order.totalPkr, 0),
+      };
+    });
+  });
+}
+
+export async function getCustomer(id: string) {
+  return readPlatform((state) => {
+    const customer = state.customers.find((item) => item.id
