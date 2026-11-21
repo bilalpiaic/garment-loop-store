@@ -259,4 +259,65 @@ export async function createOrder(input: {
   shippingMethodId: string;
   discountCode?: string;
   customerId?: string;
-}): Promise<{ ok: true; o
+}): Promise<{ ok: true; order: Order } | { ok: false; error: string }> {
+  try {
+    if (input.paymentMethod === "stripe" && !stripeConfigured()) {
+      return { ok: false, error: "Card payments are unavailable. Choose COD, bank transfer, or card demo." };
+    }
+    const order = await mutate((state) => {
+      if (input.items.length === 0) {
+        throw new PlatformError("Your cart is empty.");
+      }
+      const lines: OrderLine[] = [];
+      for (const item of input.items) {
+        if (item.quantity < 1) throw new PlatformError("Invalid quantity.");
+        const match = getVariant(item.variantId, state.catalog.products);
+        if (!match) throw new PlatformError("One of the items is no longer available.");
+        const available = state.stock[item.variantId] ?? match.variant.stock;
+        if (available < item.quantity) {
+          throw new PlatformError(
+            `${match.product.title} (${match.variant.color}, ${match.variant.size}) is out of stock.`,
+          );
+        }
+        const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
+        lines.push({
+          variantId: match.variant.id,
+          productId: match.product.id,
+          productTitle: match.product.title,
+          slug: match.product.slug,
+          color: match.variant.color,
+          size: match.variant.size,
+          image: match.product.images[0]?.src ?? "",
+          quantity: item.quantity,
+          unitPricePkr: unit,
+          totalPkr: unit * item.quantity,
+        });
+      }
+
+      const subtotalPkr = lines.reduce((sum, line) => sum + line.totalPkr, 0);
+      const code = input.discountCode?.trim().toUpperCase();
+      const discount = code
+        ? state.discounts.find((item) => item.code.toUpperCase() === code)
+        : undefined;
+      if (code && !discount) {
+        throw new PlatformError("That discount code is not valid.");
+      }
+      const discountPkr = applyDiscount(discount, subtotalPkr);
+      const afterDiscount = subtotalPkr - discountPkr;
+      const shipping = shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
+      const taxPkr = estimateTaxPkr(afterDiscount, input.customer.country);
+      const paymentStatus: PaymentStatus =
+        input.paymentMethod === "card_demo" ? "paid" : "pending";
+      const status: OrderStatus =
+        input.paymentMethod === "cod" || input.paymentMethod === "card_demo"
+          ? "confirmed"
+          : "pending";
+
+      const customer = upsertCustomer(state, input.customer, input.customerId);
+
+      state.orderSeq += 1;
+      const orderNumber = `GL-${String(state.orderSeq).padStart(4, "0")}`;
+      const now = new Date().toISOString();
+
+      for (const line of lines) {
+     
