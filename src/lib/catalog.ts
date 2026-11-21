@@ -183,6 +183,91 @@ export const products: Product[] = [
       { "Black-S": 3, "Olive-XL": 2 },
     ),
   },
+  {
+    id: "highland-overcoat",
+    slug: "highland-wool-overcoat",
+    title: "Highland Wool Overcoat",
+    subtitle: "Italian-blend wool, full length",
+    description:
+      "A single-breasted overcoat in dense wool with a clean chest and a slightly longer hem. Structured enough for the office, warm enough for open-air markets in January.",
+    features: [
+      "Italian-blend wool outer",
+      "Satin lining and notched lapel",
+      "Interior pocket and buttoned cuffs",
+      "Knee-length cut with back vent",
+    ],
+    specs: [
+      { label: "Fabric", value: "80% wool, 20% polyamide" },
+      { label: "Lining", value: "Viscose satin" },
+      { label: "Care", value: "Dry clean only" },
+      { label: "Fit", value: "Regular, tailored shoulder" },
+    ],
+    category: "jackets",
+    collections: ["winter-collection"],
+    featured: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=1400&q=80",
+        alt: "Camel wool overcoat",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?auto=format&fit=crop&w=1400&q=80",
+        alt: "Wool coat worn outdoors",
+      },
+    ],
+    variants: variants(
+      "highland-overcoat",
+      [
+        { color: "Camel", hex: "#c4a574" },
+        { color: "Charcoal", hex: "#3b3b3b" },
+      ],
+      ["S", "M", "L"],
+      24900,
+      { "Camel-S": 4, "Charcoal-L": 5 },
+    ),
+  },
+  {
+    id: "quilted-bomber",
+    slug: "quilted-bomber-jacket",
+    title: "Quilted Bomber Jacket",
+    subtitle: "Lightweight layering piece",
+    description:
+      "A diamond-quilt bomber that sits between a shirt and a coat. Wear it over merino in Lahore’s dry cold, or under the overcoat when the temperature drops further north.",
+    features: [
+      "Diamond quilt construction",
+      "Ribbed collar, cuffs, and hem",
+      "YKK zipper and welt pockets",
+      "Light insulation for 10–18°C days",
+    ],
+    specs: [
+      { label: "Shell", value: "Nylon with DWR finish" },
+      { label: "Fill", value: "Synthetic insulation" },
+      { label: "Care", value: "Machine wash cold, hang dry" },
+    ],
+    category: "jackets",
+    collections: ["winter-collection", "new-arrivals"],
+    featured: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=1400&q=80",
+        alt: "Quilted bomber jacket",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1520975661595-6453be3f7070?auto=format&fit=crop&w=1400&q=80",
+        alt: "Bomber jacket detail",
+      },
+    ],
+    variants: variants(
+      "quilted-bomber",
+      [
+        { color: "Black", hex: "#111111" },
+        { color: "Olive", hex: "#55614a" },
+      ],
+      ["S", "M", "L", "XL"],
+      12900,
+      { "Black-M": 14, "Olive-S": 1 },
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
@@ -287,6 +372,14 @@ export function allColors(list: Product[] = products) {
   return [...new Set(list.flatMap((product) => product.variants.map((v) => v.color)))];
 }
 
+function splitFacet(value?: string) {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export function filterProducts(
   options: {
     category?: string;
@@ -296,19 +389,24 @@ export function filterProducts(
     minPrice?: number;
     maxPrice?: number;
     q?: string;
+    sort?: string;
   },
   list: Product[] = products,
 ) {
-  return list.filter((product) => {
-    if (options.category && product.category !== options.category) return false;
+  const colors = splitFacet(options.color);
+  const sizes = splitFacet(options.size);
+  const categories = splitFacet(options.category);
+
+  const filtered = list.filter((product) => {
+    if (categories.length && !categories.includes(product.category)) return false;
     if (options.collection && !product.collections.includes(options.collection)) return false;
     if (options.q) {
       const matches = searchProducts(options.q, list).some((item) => item.id === product.id);
       if (!matches) return false;
     }
     const variants = product.variants.filter((variant) => {
-      if (options.color && variant.color !== options.color) return false;
-      if (options.size && variant.size !== options.size) return false;
+      if (colors.length && !colors.includes(variant.color)) return false;
+      if (sizes.length && !sizes.includes(variant.size)) return false;
       const price = variant.salePricePkr ?? variant.pricePkr;
       if (options.minPrice !== undefined && price < options.minPrice) return false;
       if (options.maxPrice !== undefined && price > options.maxPrice) return false;
@@ -316,4 +414,15 @@ export function filterProducts(
     });
     return variants.length > 0;
   });
+
+  if (options.sort === "price-asc") {
+    return [...filtered].sort((a, b) => lowestPrice(a) - lowestPrice(b));
+  }
+  if (options.sort === "price-desc") {
+    return [...filtered].sort((a, b) => lowestPrice(b) - lowestPrice(a));
+  }
+  if (options.sort === "newest") {
+    return [...filtered].sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)));
+  }
+  return filtered;
 }
