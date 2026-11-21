@@ -439,3 +439,61 @@ export function CheckoutForm({
             <span>{tax === 0 ? "—" : <Price amountPkr={tax} />}</span>
           </div>
           <div className="flex justify-between pt-2 text-base font-medium">
+            <span>Total</span>
+            <span>{formatMoney(total, currency)}</span>
+          </div>
+        </div>
+        <Button type="submit" className="mt-5 h-11 w-full" disabled={pending || step !== 3}>
+          {pending
+            ? paymentMethod === "stripe"
+              ? "Redirecting to Stripe…"
+              : "Placing order…"
+            : step !== 3
+              ? "Complete steps to place order"
+              : paymentMethod === "stripe"
+                ? "Continue to Stripe"
+                : "Place order"}
+        </Button>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Guest checkout is supported. No card data is stored on this site
+          {stripeEnabled ? " — Stripe handles payment fields." : "."}
+        </p>
+      </aside>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  name,
+  error,
+  type = "text",
+  autoComplete,
+  placeholder,
+  defaultValue,
+}: {
+  label: string;
+  name: string;
+  error?: string;
+  type?: string;
+  autoComplete?: string;
+  placeholder?: string;
+  defaultValue?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+        className="h-10"
+        aria-invalid={Boolean(error)}
+      />
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </div>
+  );
+}
