@@ -986,4 +986,112 @@ export async function getDashboardMetrics() {
   });
 }
 
+export function shippingCostFromSettings(subtotalPkr: number, countryCode: string, settings: StoreSettings) {
+  return resolveShippingOption(countryCode, undefined, subtotalPkr, settings).amountPkr;
+}
+
+export async function markOrderPaid(orderNumber: string, stripeSessionId?: string) {
+  const result = await mutate((state) => {
+    const order = state.orders.find(
+      (item) => item.orderNumber === orderNumber || item.orderNumber === orderNumber.toUpperCase(),
+    );
+    if (!order) throw new PlatformError("Order not found.", 404);
+    const newlyPaid = order.paymentStatus !== "paid";
+    order.paymentStatus = "paid";
+    if (order.status === "pending") order.status = "confirmed";
+    if (stripeSessionId) order.stripeSessionId = stripeSessionId;
+    order.updatedAt = new Date().toISOString();
+    return { order, newlyPaid };
+  });
+  if (result.newlyPaid) {
+    await sendOrderConfirmation(result.order).catch((error) => console.error("[email]", error));
+  }
+  return result.order;
+}
+
+export async function listApprovedReviews(productId?: string) {
+  return readPlatform((state) => {
+    const reviews = (state.reviews ?? []).filter((review) => review.status === "approved");
+    return productId ? reviews.filter((review) => review.productId === productId) : reviews;
+  });
+}
+
+export async function listReviewsForAdmin() {
+  return readPlatform((state) => [...(state.reviews ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+}
+
+export async function submitReview(input: {
+  productId: string;
+  productSlug: string;
+  authorName: string;
+  authorEmail: string;
+  rating: number;
+  title: string;
+  body: string;
+  customerId?: string;
+}) {
+  if (input.rating < 1 || input.rating > 5) {
+    throw new PlatformError("Rating must be between 1 and 5.");
+  }
+  return mutate((state) => {
+    state.reviews = state.reviews ?? [];
+    const review: ProductReview = {
+      id: createId("rev"),
+      productId: input.productId,
+      productSlug: input.productSlug,
+      authorName: input.authorName.trim(),
+      authorEmail: input.authorEmail.trim().toLowerCase(),
+      customerId: input.customerId,
+      rating: input.rating,
+      title: input.title.trim(),
+      body: input.body.trim(),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    state.reviews.unshift(review);
+    return review;
+  });
+}
+
+export async function moderateReview(id: string, status: "approved" | "rejected") {
+  return mutate((state) => {
+    const review = (state.reviews ?? []).find((item) => item.id === id);
+    if (!review) throw new PlatformError("Review not found.", 404);
+    review.status = status;
+    review.moderatedAt = new Date().toISOString();
+    return review;
+  });
+}
+
+export async function getWishlist(customerId: string) {
+  return readPlatform((state) => state.wishlists?.[customerId] ?? []);
+}
+
+export async function setWishlist(customerId: string, entries: WishlistEntry[]) {
+  return mutate((state) => {
+    state.wishlists = state.wishlists ?? {};
+    state.wishlists[customerId] = entries;
+    return entries;
+  });
+}
+
+export async function toggleWishlistProduct(customerId: string, productId: string) {
+  return mutate((state) => {
+    state.wishlists = state.wishlists ?? {};
+    const current = state.wishlists[customerId] ?? [];
+    const exists = current.find((item) => item.productId === productId);
+    const next = exists
+      ? current.filter((item) => item.productId !== productId)
+      : [...current, { productId, addedAt: new Date().toISOString() }];
+    state.wishlists[customerId] = next;
+    return next;
+  });
+}
+
+export async function listReturns() {
+  return readPlatform((state) =>
+    [...(state.returns ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
 export * from "./platform-rest";
