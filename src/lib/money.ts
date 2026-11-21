@@ -1,4 +1,6 @@
 import { site } from "@/lib/site";
+import { estimateShippingPkr } from "@/lib/shipping";
+import { DEFAULT_SETTINGS } from "@/lib/identity";
 
 export type Currency = "PKR" | "USD";
 
@@ -22,12 +24,13 @@ export function formatMoney(amountPkr: number, currency: Currency) {
   }).format(amount)}`;
 }
 
+/** @deprecated Prefer listShippingOptions / resolveShippingOption from shipping.ts */
 export function shippingCostPkr(subtotalPkr: number, countryCode: string) {
-  if (countryCode !== "PK") {
-    return site.internationalShippingPkr;
-  }
-  if (subtotalPkr >= site.freeShippingThresholdPkr) {
-    return 0;
-  }
-  return site.domesticShippingPkr;
+  return estimateShippingPkr(subtotalPkr, countryCode, {
+    ...DEFAULT_SETTINGS,
+    freeShippingThresholdPkr: site.freeShippingThresholdPkr,
+    domesticShippingPkr: site.domesticShippingPkr,
+    internationalShippingPkr: site.internationalShippingPkr,
+    usdRate: site.usdRate,
+  });
 }

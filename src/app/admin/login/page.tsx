@@ -17,8 +17,8 @@ export default async function AdminLoginPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">GarmentLoop</p>
         <h1 className="mt-2 font-serif text-3xl">Admin sign in</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Owner, admin, and staff sign in with email and password — no OTP. Store customers use the
-          storefront sign-in (password, then OTP).
+          Owner, admin, and staff accounts use email and password. Customer OTP login is on the
+          storefront.
         </p>
         <div className="mt-6">
           <AdminLoginForm />
