@@ -320,4 +320,86 @@ export async function createOrder(input: {
       const now = new Date().toISOString();
 
       for (const line of lines) {
-     
+        const current = state.stock[line.variantId] ?? 0;
+        if (current < line.quantity) {
+          throw new PlatformError("One of the items is out of stock.");
+        }
+        state.stock[line.variantId] = current - line.quantity;
+        state.inventoryMovements.unshift({
+          id: createId("mov"),
+          variantId: line.variantId,
+          change: -line.quantity,
+          type: "sale",
+          relatedOrderNumber: orderNumber,
+          createdAt: now,
+        });
+      }
+
+      if (discount) {
+        discount.usedCount += 1;
+      }
+
+      const order: Order = {
+        orderNumber,
+        createdAt: now,
+        updatedAt: now,
+        customerId: customer.id,
+        customer: input.customer,
+        items: lines,
+        subtotalPkr,
+        shippingPkr: shipping.amountPkr,
+        taxPkr,
+        discountPkr: discountPkr || undefined,
+        totalPkr: afterDiscount + shipping.amountPkr + taxPkr,
+        paymentMethod: input.paymentMethod,
+        paymentStatus,
+        status,
+        currency: input.currency,
+        shippingMethodId: shipping.id,
+        shippingLabel: shipping.label,
+        discountCode: code,
+      };
+      state.orders.unshift(order);
+      return order;
+    });
+    // Stripe confirmation email fires after payment (webhook / confirm). Others send now.
+    if (order.paymentMethod !== "stripe") {
+      await sendOrderConfirmation(order).catch((error) => console.error("[email]", error));
+    }
+    return { ok: true, order };
+  } catch (error) {
+    if (error instanceof PlatformError) {
+      return { ok: false, error: error.message };
+    }
+    console.error("Checkout failed", error);
+    return { ok: false, error: "Could not place the order. Please try again." };
+  }
+}
+
+function upsertCustomer(state: PlatformState, details: CheckoutCustomer, customerId?: string) {
+  const email = details.email.trim().toLowerCase();
+  let customer =
+    (customerId ? state.customers.find((item) => item.id === customerId) : undefined) ??
+    state.customers.find((item) => item.email === email);
+  if (!customer) {
+    customer = {
+      id: createId("cus"),
+      email,
+      phone: details.phone,
+      fullName: details.fullName,
+      createdAt: new Date().toISOString(),
+    };
+    state.customers.unshift(customer);
+  } else {
+    customer.phone = details.phone || customer.phone;
+    customer.fullName = details.fullName || customer.fullName;
+  }
+
+  const duplicate = state.addresses.find(
+    (address) =>
+      address.customerId === customer.id &&
+      address.address === details.address &&
+      address.city === details.city,
+  );
+  if (!duplicate) {
+    if (!state.addresses.some((address) => address.customerId === custom
