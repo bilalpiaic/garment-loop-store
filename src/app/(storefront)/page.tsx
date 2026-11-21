@@ -25,17 +25,17 @@ export default async function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/20" />
         <div className="relative mx-auto flex min-h-[78vh] max-w-6xl flex-col justify-end px-4 py-16 sm:py-24">
-          <p className="text-xs uppercase tracking-[0.28em] text-white/80">Winter 2026</p>
+          <p className="font-serif text-2xl tracking-wide text-white sm:text-3xl">GarmentLoop</p>
           <h1 className="mt-3 max-w-xl font-serif text-4xl leading-tight sm:text-6xl">
             Warmth, cut with intention.
           </h1>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/85 sm:text-base">
-            {site.tagline} Shop the winter collection — puffers, wool coats, merino, and the layers
-            underneath.
+            {site.tagline} Shop the winter collection — puffers, wool coats, merino, and layers built
+            to last beyond a single season.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
-              className="h-11 bg-white px-6 text-zinc-900 hover:bg-white/90"
+              className="h-11 bg-primary px-6 text-primary-foreground hover:bg-primary/90"
               render={<Link href="/collection/winter-collection" />}
             >
               Shop winter collection
@@ -48,6 +48,23 @@ export default async function HomePage() {
               Browse all
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="border-b bg-background">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm text-muted-foreground sm:grid-cols-3">
+          <p>
+            <span className="block font-medium text-foreground">Free standard delivery</span>
+            Over PKR {site.freeShippingThresholdPkr.toLocaleString("en-PK")} in Pakistan
+          </p>
+          <p>
+            <span className="block font-medium text-foreground">Guest checkout + COD</span>
+            No account required · pay on delivery in PK
+          </p>
+          <p>
+            <span className="block font-medium text-foreground">Circular by design</span>
+            Longevity, care, and take-back on the roadmap
+          </p>
         </div>
       </section>
 
@@ -64,7 +81,7 @@ export default async function HomePage() {
         <ProductGrid products={featured} />
       </section>
 
-      <section className="bg-[#f4f1ec]">
+      <section className="bg-secondary/60">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-16 sm:grid-cols-2 lg:grid-cols-4">
           {catalog.categories.map((category) => (
             <Link key={category.slug} href={`/category/${category.slug}`} className="group relative overflow-hidden rounded-xl">
@@ -98,13 +115,13 @@ export default async function HomePage() {
           />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The house</p>
-          <h2 className="mt-2 font-serif text-4xl">Built in Pakistan, made for winter.</h2>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Circular atelier</p>
+          <h2 className="mt-2 font-serif text-4xl">Made to last — then return.</h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            GarmentLoop is a small winter-apparel house. We cut outerwear and knits for people who
-            want quality they can feel — dense wool, honest fill power, and fits that work on a
-            Karachi evening as well as a London commute. Cash on delivery is available across
-            Pakistan because trust should be simple.
+            GarmentLoop designs outerwear and knits for longevity: dense wool, honest fill power,
+            and fits that travel from a Karachi evening to a London commute. We are building
+            take-back and care programs so pieces stay in the loop. Cash on delivery across Pakistan
+            keeps trust simple while we grow.
           </p>
           <Button variant="outline" className="mt-6 h-11 px-6" render={<Link href="/about" />}>
             Our story
