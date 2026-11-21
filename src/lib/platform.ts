@@ -177,4 +177,86 @@ async function ensureSeed(state: PlatformState) {
   return changed;
 }
 
-export async function listCo
+export async function listContentPages() {
+  return readPlatform((state) => [...(state.pages ?? [])]);
+}
+
+export async function getContentPage(slug: string) {
+  return readPlatform((state) => (state.pages ?? []).find((page) => page.slug === slug) ?? null);
+}
+
+export async function saveContentPage(page: ContentPage) {
+  return mutate((state) => {
+    state.pages = state.pages ?? [];
+    const index = state.pages.findIndex((item) => item.slug === page.slug);
+    const next = { ...page, updatedAt: new Date().toISOString() };
+    if (index >= 0) state.pages[index] = next;
+    else state.pages.push(next);
+    return next;
+  });
+}
+
+export function persistenceInfo() {
+  return {
+    neon: neonAvailable(),
+    mode: neonAvailable() ? "neon" : process.env.VERCEL ? "memory-demo" : "file-demo",
+  };
+}
+
+function pruneExpired(state: PlatformState) {
+  const now = Date.now();
+  state.sessions = state.sessions.filter((session) => new Date(session.expiresAt).getTime() > now);
+  state.otp = state.otp.filter((item) => new Date(item.expiresAt).getTime() > now);
+}
+
+function shippingFor(
+  state: PlatformState,
+  subtotal: number,
+  country: string,
+  shippingMethodId?: string,
+) {
+  return resolveShippingOption(country, shippingMethodId, subtotal, {
+    ...DEFAULT_SETTINGS,
+    ...state.settings,
+  });
+}
+
+export const getPublishedCatalog = cache(async (): Promise<CatalogData> => {
+  return readPlatform((state) => publicCatalog(state));
+});
+
+export const getAdminCatalog = cache(async (): Promise<CatalogData> => {
+  return readPlatform((state) => mergeStockIntoCatalog(state));
+});
+
+export const getSettings = cache(async (): Promise<StoreSettings> => {
+  return readPlatform((state) => ({ ...DEFAULT_SETTINGS, ...state.settings }));
+});
+
+export async function updateSettings(patch: Partial<StoreSettings>) {
+  return mutate((state) => {
+    state.settings = { ...state.settings, ...patch };
+    return state.settings;
+  });
+}
+
+function applyDiscount(discount: Discount | undefined, subtotal: number) {
+  if (!discount || !discount.active) return 0;
+  if (discount.expiresAt && new Date(discount.expiresAt).getTime() < Date.now()) return 0;
+  if (discount.usageLimit && discount.usedCount >= discount.usageLimit) return 0;
+  if (discount.minOrderPkr && subtotal < discount.minOrderPkr) return 0;
+  if (discount.type === "percentage") {
+    return Math.min(subtotal, Math.round((subtotal * discount.value) / 100));
+  }
+  return Math.min(subtotal, discount.value);
+}
+
+export async function createOrder(input: {
+  items: CheckoutItem[];
+  customer: CheckoutCustomer;
+  paymentMethod: PaymentMethod;
+  currency: "PKR" | "USD";
+  shippingMethodId: string;
+  discountCode?: string;
+  customerId?: string;
+}): Promise<{ ok: true; o
