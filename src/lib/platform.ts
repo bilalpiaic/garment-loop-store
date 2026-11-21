@@ -856,3 +856,5 @@ export const getAdminSession = cache(async () => {
     return { user, session };
   });
 });
+
+export * from "./platform-rest";
