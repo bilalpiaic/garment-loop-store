@@ -39,6 +39,7 @@ export async function createOrder(input: {
   customer: CheckoutCustomer;
   paymentMethod: PaymentMethod;
   currency: "PKR" | "USD";
+  shippingMethodId: string;
   discountCode?: string;
   customerId?: string;
 }): Promise<{ ok: true; order: Order } | { ok: false; error: string }> {
