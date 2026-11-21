@@ -623,3 +623,91 @@ export async function listInventory() {
 export async function listMovements(limit = 50) {
   return readPlatform((state) => state.inventoryMovements.slice(0, limit));
 }
+
+export async function listCustomers() {
+  return readPlatform((state) => {
+    return state.customers.map((customer) => {
+      const orders = state.orders.filter(
+        (order) => order.customerId === customer.id || order.customer.email.toLowerCase() === customer.email,
+      );
+      return {
+        ...customer,
+        ordersCount: orders.length,
+        lastOrderAt: orders[0]?.createdAt,
+        totalSpendPkr: orders.reduce((sum, order) => sum + order.totalPkr, 0),
+      };
+    });
+  });
+}
+
+export async function getCustomer(id: string) {
+  return readPlatform((state) => {
+    const customer = state.customers.find((item) => item.id === id);
+    if (!customer) return undefined;
+    const orders = state.orders.filter(
+      (order) => order.customerId === customer.id || order.customer.email.toLowerCase() === customer.email,
+    );
+    const addresses = state.addresses.filter((address) => address.customerId === customer.id);
+    return { customer, orders, addresses };
+  });
+}
+
+export async function getCustomerByEmail(email: string) {
+  return readPlatform((state) =>
+    state.customers.find((item) => item.email === email.trim().toLowerCase()),
+  );
+}
+
+export async function saveAddress(address: Omit<CustomerAddress, "id"> & { id?: string }) {
+  return mutate((state) => {
+    const next: CustomerAddress = {
+      ...address,
+      id: address.id ?? createId("adr"),
+    };
+    if (next.isDefault) {
+      for (const item of state.addresses) {
+        if (item.customerId === next.customerId) item.isDefault = false;
+      }
+    }
+    const index = state.addresses.findIndex((item) => item.id === next.id);
+    if (index >= 0) state.addresses[index] = next;
+    else state.addresses.unshift(next);
+    return next;
+  });
+}
+
+export async function listDiscounts() {
+  return readPlatform((state) => state.discounts);
+}
+
+export async function saveDiscount(input: Omit<Discount, "id" | "usedCount"> & { id?: string; usedCount?: number }) {
+  return mutate((state) => {
+    const code = input.code.trim().toUpperCase();
+    const existing = state.discounts.find(
+      (item) => item.code.toUpperCase() === code && item.id !== input.id,
+    );
+    if (existing) throw new PlatformError("That code already exists.");
+    const discount: Discount = {
+      id: input.id ?? createId("dsc"),
+      code,
+      description: input.description,
+      type: input.type,
+      value: input.value,
+      minOrderPkr: input.minOrderPkr,
+      usageLimit: input.usageLimit,
+      usedCount: input.usedCount ?? 0,
+      expiresAt: input.expiresAt,
+      active: input.active,
+    };
+    const index = state.discounts.findIndex((item) => item.id === discount.id);
+    if (index >= 0) state.discounts[index] = { ...discount, usedCount: state.discounts[index]!.usedCount };
+    else state.discounts.unshift(discount);
+    return discount;
+  });
+}
+
+export async function deleteDiscount(id: string) {
+  return mutate((state) => {
+    state.discounts = state.discounts.filter((item) => item.id !== id);
+  });
+}
