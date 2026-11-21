@@ -14,7 +14,6 @@ export type AdminUser = {
 export type Customer = {
   id: string;
   email: string;
-  passwordHash?: string;
   phone?: string;
   fullName?: string;
   createdAt: string;
@@ -43,13 +42,10 @@ export type SessionRecord = {
 
 export type OtpChallenge = {
   email: string;
-  destination: string;
-  channel: "email" | "sms";
   codeHash: string;
   expiresAt: string;
   attempts: number;
   createdAt: string;
-  pendingPasswordHash?: string;
 };
 
 export type Discount = {
