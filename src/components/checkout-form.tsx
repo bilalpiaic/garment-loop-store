@@ -400,3 +400,42 @@ export function CheckoutForm({
       </div>
       <aside className="h-fit rounded-xl border bg-card p-5 lg:sticky lg:top-24">
         <h2 className="font-serif text-2xl">Order summary</h2>
+        <ul className="mt-4 space-y-3 text-sm">
+          {items.map((item) => {
+            const match = getVariant(item.variantId, products);
+            if (!match) return null;
+            const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
+            return (
+              <li key={item.variantId} className="flex justify-between gap-3">
+                <span>
+                  {match.product.title}
+                  <span className="block text-xs text-muted-foreground">
+                    {match.variant.color} · {match.variant.size} · ×{item.quantity}
+                  </span>
+                </span>
+                <span>
+                  <Price amountPkr={unit * item.quantity} />
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="discountCode">Discount code</Label>
+          <Input id="discountCode" name="discountCode" className="h-10" placeholder="Optional" />
+          {errors.discountCode ? <p className="text-xs text-destructive">{errors.discountCode}</p> : null}
+        </div>
+        <div className="mt-4 space-y-1 border-t pt-4 text-sm">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <Price amountPkr={subtotal} />
+          </div>
+          <div className="flex justify-between">
+            <span>{shipping?.label ?? "Shipping"}</span>
+            <span>{shippingAmount === 0 ? "Free" : <Price amountPkr={shippingAmount} />}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>{taxLabel(country)}</span>
+            <span>{tax === 0 ? "—" : <Price amountPkr={tax} />}</span>
+          </div>
+          <div className="flex justify-between pt-2 text-base font-medium">
