@@ -17,6 +17,20 @@ export default async function AdminDashboardPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Overview</p>
         <h1 className="mt-1 font-serif text-3xl">Today at the house</h1>
       </div>
+      {metrics.lowStockCount > 0 ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+          <p className="font-medium text-destructive">
+            Low-stock alert · {metrics.lowStockCount} SKU{metrics.lowStockCount === 1 ? "" : "s"} at or
+            below threshold
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Review inventory before the next drop.{" "}
+            <Link href="/admin/inventory" className="underline underline-offset-4">
+              Open inventory
+            </Link>
+          </p>
+        </div>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Orders today" value={String(metrics.ordersToday)} />
         <Metric label="Revenue today" value={formatPkr(metrics.revenueToday)} />
@@ -78,9 +92,6 @@ export default async function AdminDashboardPage() {
           <div className="mt-6 flex flex-wrap gap-2 text-sm">
             <Link href="/admin/products/new" className="underline underline-offset-4">
               New product
-            </Link>
-            <Link href="/admin/till" className="underline underline-offset-4">
-              Till
             </Link>
             <Link href="/admin/inventory" className="underline underline-offset-4">
               Inventory
