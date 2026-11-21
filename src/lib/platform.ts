@@ -99,7 +99,7 @@ async function run<T>(fn: MutateFn<T>, persist: boolean): Promise<T> {
   });
 }
 
-async function mutate<T>(fn: MutateFn<T>): Promise<T> {
+export async function mutate<T>(fn: MutateFn<T>): Promise<T> {
   return run(fn, true);
 }
 
@@ -848,4 +848,11 @@ export const getAdminSession = cache(async () => {
   if (!token) return undefined;
   return readPlatform((state) => {
     const session = state.sessions.find(
-      (item) => item.id === token && item.kind === "admin" && new Date(item.expiresAt).g
+      (item) => item.id === token && item.kind === "admin" && new Date(item.expiresAt).getTime() > Date.now(),
+    );
+    if (!session) return undefined;
+    const user = state.adminUsers.find((item) => item.id === session.userId && item.active);
+    if (!user) return undefined;
+    return { user, session };
+  });
+});
