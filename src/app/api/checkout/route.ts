@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { createOrder } from "@/lib/orders";
 import { getCustomerSession } from "@/lib/platform";
+import { createStripeCheckoutSession, stripeConfigured } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,13 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Invalid checkout details." },
+      { status: 400 },
+    );
+  }
+
+  if (parsed.data.paymentMethod === "stripe" && !stripeConfigured()) {
+    return NextResponse.json(
+      { error: "Stripe keys are not configured. Use card demo, COD, or bank transfer." },
       { status: 400 },
     );
   }
@@ -37,12 +45,26 @@ export async function POST(request: Request) {
     },
     paymentMethod: parsed.data.paymentMethod,
     currency: parsed.data.currency,
+    shippingMethodId: parsed.data.shippingMethodId,
     discountCode: parsed.data.discountCode,
     customerId: session?.customer.id,
   });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 409 });
+  }
+
+  if (parsed.data.paymentMethod === "stripe") {
+    const origin = new URL(request.url).origin;
+    const stripe = await createStripeCheckoutSession(result.order, origin);
+    if (!stripe.ok) {
+      return NextResponse.json({ error: stripe.error, orderNumber: result.order.orderNumber }, { status: 502 });
+    }
+    return NextResponse.json({
+      orderNumber: result.order.orderNumber,
+      order: result.order,
+      checkoutUrl: stripe.url,
+    });
   }
 
   return NextResponse.json({ orderNumber: result.order.orderNumber, order: result.order });
