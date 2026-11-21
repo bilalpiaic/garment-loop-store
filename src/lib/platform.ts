@@ -937,4 +937,53 @@ function publicAdmin(user: AdminUser) {
   };
 }
 
+export async function getDashboardMetrics() {
+  return readPlatform((state) => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const todayOrders = state.orders.filter((order) => order.createdAt >= start && order.status !== "cancelled");
+    const revenueToday = todayOrders.reduce((sum, order) => sum + order.totalPkr, 0);
+    const pending = state.orders.filter(
+      (order) => order.status === "pending" || order.status === "confirmed" || order.status === "processing",
+    );
+    const catalog = mergeStockIntoCatalog(state);
+    const lowStock = catalog.products.flatMap((product) =>
+      product.variants
+        .filter((variant) => variant.stock <= state.settings.lowStockThreshold)
+        .map((variant) => ({
+          productTitle: product.title,
+          variantId: variant.id,
+          color: variant.color,
+          size: variant.size,
+          stock: variant.stock,
+        })),
+    );
+    const counts = new Map<string, { title: string; quantity: number; revenue: number }>();
+    for (const order of state.orders) {
+      if (order.status === "cancelled") continue;
+      for (const line of order.items) {
+        const current = counts.get(line.productId) ?? { title: line.productTitle, quantity: 0, revenue: 0 };
+        current.quantity += line.quantity;
+        current.revenue += line.totalPkr;
+        counts.set(line.productId, current);
+      }
+    }
+    const topProducts = [...counts.values()]
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+    return {
+      ordersToday: todayOrders.length,
+      revenueToday,
+      pendingOrders: pending.length,
+      lowStockCount: lowStock.length,
+      lowStock,
+      recentOrders: state.orders.slice(0, 8),
+      topProducts,
+      totalOrders: state.orders.length,
+      totalCustomers: state.customers.length,
+      publishedProducts: catalog.products.filter((product) => product.status !== "archived").length,
+    };
+  });
+}
+
 export * from "./platform-rest";
