@@ -56,9 +56,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               </div>
             ) : null}
             <div className="flex justify-between">
-              <span>Shipping</span>
+              <span>{order.shippingLabel ?? "Shipping"}</span>
               <span>{formatPkr(order.shippingPkr)}</span>
             </div>
+            {order.taxPkr ? (
+              <div className="flex justify-between">
+                <span>Tax</span>
+                <span>{formatPkr(order.taxPkr)}</span>
+              </div>
+            ) : null}
             <div className="flex justify-between font-medium">
               <span>Total</span>
               <span>{formatPkr(order.totalPkr)}</span>
