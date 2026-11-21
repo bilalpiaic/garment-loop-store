@@ -1,4 +1,4 @@
-@import { "tailwindcss" };
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -10,6 +10,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-heading);
+  --font-serif: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,7 +26,7 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
-  --color and-border: var(--border);
+  --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -39,6 +40,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-ochre: var(--ochre);
+  --color-olive: var(--olive);
+  --color-rust: var(--rust);
+  --color-sage: var(--sage);
+  --color-cream: var(--cream);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,39 +54,46 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* GarmentLoop brand tokens — see docs/design-system.md */
 :root {
-  /* Soft Cream / Charcoal / Deep Olive / Warm Ochre / Rust / Sage */
+  --cream: #f5f1e8;
+  --ochre: #e5b65b;
+  --olive: #4a5f43;
+  --charcoal: #333333;
+  --rust: #b35d44;
+  --sage: #7d8b6b;
+
   --background: #f5f1e8;
   --foreground: #333333;
-  --card: #fffcf7;
+  --card: #faf7f0;
   --card-foreground: #333333;
-  --popover: #fffcf7;
+  --popover: #faf7f0;
   --popover-foreground: #333333;
   --primary: #4a5f43;
   --primary-foreground: #f5f1e8;
-  --secondary: #ebe4d6;
+  --secondary: #ebe6da;
   --secondary-foreground: #333333;
-  --muted: #ebe6dc;
+  --muted: #ebe6da;
   --muted-foreground: #5c6358;
-  --accent: #f3e4c2;
+  --accent: #e5b65b;
   --accent-foreground: #333333;
   --destructive: #b35d44;
-  --border: #ddd4c4;
-  --input: #ddd4c4;
+  --border: #ddd6c8;
+  --input: #ddd6c8;
   --ring: #4a5f43;
   --chart-1: #4a5f43;
   --chart-2: #e5b65b;
-  --chart-3: #b35d44;
-  --chart-4: #7d8b6b;
+  --chart-3: #7d8b6b;
+  --chart-4: #b35d44;
   --chart-5: #333333;
   --radius: 0.7rem;
-  --sidebar: #efe9dc;
+  --sidebar: #f5f1e8;
   --sidebar-foreground: #333333;
   --sidebar-primary: #4a5f43;
   --sidebar-primary-foreground: #f5f1e8;
-  --sidebar-accent: #e5b65b;
+  --sidebar-accent: #ebe6da;
   --sidebar-accent-foreground: #333333;
-  --sidebar-border: #ddd4c4;
+  --sidebar-border: #ddd6c8;
   --sidebar-ring: #4a5f43;
 }
 
@@ -99,5 +112,15 @@
   h3,
   .font-serif {
     font-family: var(--font-heading), ui-serif, Georgia, serif;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
