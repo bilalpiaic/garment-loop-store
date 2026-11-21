@@ -4,30 +4,31 @@ import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "GarmentLoop is a premium winter apparel house based in Lahore.",
+  description:
+    "GarmentLoop is a circular-wardrobe atelier — premium garments designed for longevity and reuse.",
 };
 
 export default function AboutPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The house</p>
-      <h1 className="mt-2 font-serif text-4xl">Winter clothing with a longer life.</h1>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Circular atelier</p>
+      <h1 className="mt-2 font-serif text-4xl">Clothing with a longer life — and a way back.</h1>
       <div className="mt-6 space-y-4 leading-relaxed text-muted-foreground">
         <p>
-          GarmentLoop started as a simple idea: winter clothes that feel as considered as they look.
-          We design in Lahore for people who want warmth without the marketplace noise — no flashing
-          discounts, no mystery fabric, no forced app download.
+          GarmentLoop is a modern atelier for circular fashion. We design winter outerwear and knits
+          that feel as considered as they look — dense wool, honest fill power, and fits meant to
+          travel seasons, not just weeks.
         </p>
         <p>
           The first collection is built around Pakistani winters and travel. Puffers that pack for a
-          flight, wool coats that hold a crease, merino that does not itch after a long day. We
-          source fill, wool, and hardware for durability, then cut local so we can stand behind
-          every size.
+          flight, wool coats that hold a crease, merino that does not itch after a long day. We cut
+          locally so we can stand behind every size, and we are building care and take-back programs
+          so garments stay in the loop.
         </p>
         <p>
           Buying should be as straightforward as the clothes. Cash on delivery is available across
           Pakistan. International customers can pay by transfer or a demo card flow while we finish
-          live gateway keys. If something is wrong, write to us — we would rather fix it than hide
+          live Stripe keys. If something is wrong, write to us — we would rather fix it than hide
           behind a chatbot.
         </p>
       </div>

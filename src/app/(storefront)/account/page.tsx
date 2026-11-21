@@ -25,6 +25,14 @@ export default async function AccountPage() {
         </div>
         <SignOutButton />
       </div>
+      <section className="flex flex-wrap gap-3 text-sm">
+        <Link href="/account/returns" className="underline underline-offset-4">
+          Returns & exchanges
+        </Link>
+        <Link href="/wishlist" className="underline underline-offset-4">
+          Wishlist
+        </Link>
+      </section>
       <section>
         <h2 className="font-serif text-2xl">Orders</h2>
         {orders.length === 0 ? (
