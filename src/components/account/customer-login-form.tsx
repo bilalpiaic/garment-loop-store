@@ -1,96 +1,57 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { parseLoginIdentifier } from "@/lib/login-identifier";
-import { customerPostLoginPath } from "@/lib/auth-redirect";
 
 export function CustomerLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next");
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const next = params.get("next") || "/account";
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [step, setStep] = useState<"credentials" | "code">("credentials");
+  const [devCode, setDevCode] = useState<string>();
+  const [step, setStep] = useState<"email" | "code">("email");
   const [pending, setPending] = useState(false);
-  const [identifierError, setIdentifierError] = useState<string>();
-  const [otpHint, setOtpHint] = useState<string>();
-  const [otpPreview, setOtpPreview] = useState<string>();
 
-  async function submitCredentials(event?: FormEvent) {
-    event?.preventDefault();
-    const parsed = parseLoginIdentifier(identifier);
-    if (!parsed.ok) {
-      setIdentifierError(parsed.error);
-      toast.error(parsed.error);
-      return;
-    }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters.");
-      return;
-    }
-    setIdentifierError(undefined);
+  async function requestCode() {
     setPending(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/otp/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ email }),
       });
-      const data = (await response.json()) as {
-        error?: string;
-        kind?: "admin" | "otp";
-        channel?: "email" | "sms";
-        destinationLabel?: string;
-        delivered?: boolean;
-        otpPreview?: string;
-      };
+      const data = (await response.json()) as { error?: string; devCode?: string };
       if (!response.ok) {
-        toast.error(data.error ?? "Could not sign in.");
+        toast.error(data.error ?? "Could not send a code.");
         return;
       }
-      if (data.kind === "admin") {
-        toast.success("Signed in.");
-        router.push("/admin");
-        router.refresh();
-        return;
-      }
-      const via = data.channel === "sms" ? "SMS" : "email";
-      const destination = data.destinationLabel ?? (parsed.value.kind === "phone" ? parsed.value.phone : parsed.value.email);
-      setOtpHint(
-        data.delivered
-          ? `We sent a ${via} code to ${destination}.`
-          : `Delivery is not configured yet, so the preview code is shown below. Add Resend or Twilio keys to send a real ${via} code.`,
-      );
-      setOtpPreview(data.otpPreview);
-      setCode(data.otpPreview ?? "");
+      setDevCode(data.devCode);
       setStep("code");
-      toast.success(data.otpPreview ? `Preview code ${data.otpPreview}` : `Code sent by ${via}.`);
+      toast.success(data.devCode ? `Dev code: ${data.devCode}` : "Check your email for a sign-in code.");
     } finally {
       setPending(false);
     }
   }
 
-  async function verify(event?: FormEvent) {
-    event?.preventDefault();
+  async function verify() {
     setPending(true);
     try {
       const response = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, code }),
+        body: JSON.stringify({ email, code }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
         toast.error(data.error ?? "That code did not work.");
         return;
       }
-      router.push(customerPostLoginPath(next));
+      router.push(next);
       router.refresh();
     } finally {
       setPending(false);
@@ -98,38 +59,17 @@ export function CustomerLoginForm() {
   }
 
   return (
-    <form noValidate onSubmit={step === "credentials" ? submitCredentials : verify} className="space-y-4">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="identifier">Email or mobile number</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="identifier"
-          type="text"
-          inputMode="email"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          value={identifier}
-          onChange={(event) => {
-            setIdentifier(event.target.value);
-            setIdentifierError(undefined);
-          }}
+          id="email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           className="h-10"
-          autoComplete="username"
-          aria-invalid={Boolean(identifierError)}
+          autoComplete="email"
         />
-        {identifierError ? <p className="text-xs text-destructive">{identifierError}</p> : null}
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="h-10"
-          autoComplete={step === "credentials" ? "current-password" : "off"}
-        />
-        <p className="text-xs text-muted-foreground">At least 8 characters. New accounts are created after the OTP.</p>
       </div>
       {step === "code" ? (
         <div className="space-y-2">
@@ -140,46 +80,30 @@ export function CustomerLoginForm() {
             value={code}
             onChange={(event) => setCode(event.target.value)}
             className="h-10 tracking-[0.3em]"
-            placeholder="6-digit code"
-            autoComplete="one-time-code"
+            placeholder="000000"
           />
-          <p className="text-xs text-muted-foreground">
-            {otpHint ?? "Enter the 6-digit code sent to you."}
-            {otpPreview ? (
-              <>
-                {" "}
-                Preview code: <span className="font-medium text-foreground">{otpPreview}</span>
-              </>
-            ) : null}
-          </p>
+          {devCode ? (
+            <p className="text-xs text-muted-foreground">
+              Development mode — use code <span className="font-medium text-foreground">{devCode}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Enter the 6-digit code we sent to your email.</p>
+          )}
         </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Email receives a Resend OTP. A Pakistani mobile number (03xx or +92) receives SMS via Twilio. Owner,
-          admin, and staff emails skip this step and open the console.
-        </p>
-      )}
+      ) : null}
       <Button
-        type="submit"
+        type="button"
         className="h-11 w-full"
-        disabled={pending || !identifier || !password}
-        onClick={(event) => {
-          event.preventDefault();
-          if (step === "credentials") void submitCredentials();
-          else void verify();
-        }}
+        disabled={pending || !email}
+        onClick={step === "email" ? requestCode : verify}
       >
-        {pending ? "Please wait…" : step === "credentials" ? "Continue" : "Sign in"}
+        {pending ? "Please wait…" : step === "email" ? "Send code" : "Sign in"}
       </Button>
       {step === "code" ? (
-        <button
-          type="button"
-          className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
-          onClick={() => void submitCredentials()}
-        >
+        <button type="button" className="w-full text-sm text-muted-foreground underline-offset-4 hover:underline" onClick={requestCode}>
           Resend code
         </button>
       ) : null}
-    </form>
+    </div>
   );
 }
