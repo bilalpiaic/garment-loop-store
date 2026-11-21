@@ -1,81 +1,63 @@
 # GarmentLoop Store
 
-Premium winter apparel storefront for **GarmentLoop** — jackets, knitwear, trousers, and accessories, with guest checkout and cash on delivery for Pakistan.
+Premium **circular-wardrobe / modern atelier** ecommerce demo for **GarmentLoop**.
 
-Catalog, search, cart, checkout, and order confirmation run on Next.js. Orders and stock persist to **Neon Postgres** when `DATABASE_URL` is set (required on Vercel). Locally, orders fall back to a file store if Neon is not configured.
+**No database required.** Catalog, cart, checkout, admin, returns, reviews, and sample orders run on an in-memory/file demo store. Neon (`DATABASE_URL`) is optional for durable persistence.
 
-Production URL: [https://garment-loop-ecommerce.vercel.app](https://garment-loop-ecommerce.vercel.app)
-
-## Run locally
+## Run locally (zero config)
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
+# or production mode:
+npm run build && npm start
 ```
 
 Open [http://localhost:43123](http://localhost:43123).
 
-```bash
-npm run build
-npm start
-```
+Optional: `cp .env.example .env.local` — every variable is optional.
 
-Production mode (`npm start`) is the reliable way to shop the full checkout flow.
+### Demo walkthrough
 
-Set `DATABASE_URL` in `.env.local` to a Neon connection string, then apply schema and seed inventory:
+| Area | What to try |
+| --- | --- |
+| Storefront | Home → Shop filters → PDP (wishlist/reviews) → Cart → multi-step Checkout (COD) |
+| Account | `/account/login` (OTP shown outside production) → orders → returns |
+| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 |
 
-```bash
-npm run db:migrate
-```
+Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages.
 
-## Deploy (Vercel + Neon)
+## Deploy on Vercel (no DB)
 
-1. Neon is already connected via `DATABASE_URL` (pooled connection string).
-2. Create a Vercel project named **`garment-loop-ecommerce`** from `bilalpiaic/garment-loop-store` so the host is `garment-loop-ecommerce.vercel.app`.
-3. Add environment variables on Vercel:
-   - `DATABASE_URL` — Neon pooled URL
-   - `NEXT_PUBLIC_WHATSAPP_NUMBER` — optional WhatsApp number (digits only, with country code)
-   - `RESEND_API_KEY` and `EMAIL_FROM` — customer email OTP (see [docs/otp-setup.md](docs/otp-setup.md))
-   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` — customer SMS OTP
-   - `BLOB_READ_WRITE_TOKEN` — product image uploads on Vercel (Vercel Blob)
-4. Deploy from this repo. Schema and catalog stock seed on first checkout if they are missing.
+1. Import `bilalpiaic/garment-loop-store` in Vercel (framework: Next.js).
+2. **Do not set `DATABASE_URL`** unless you want Neon — the demo store works on serverless memory/`/tmp`.
+3. Optional env vars (all safe to omit):
 
-```bash
-npx vercel --yes --name garment-loop-ecommerce
-npx vercel env add DATABASE_URL production
-npx vercel --prod --yes
-```
+| Variable | Effect when set |
+| --- | --- |
+| `DATABASE_URL` | Neon persistence |
+| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Live Stripe Checkout |
+| `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
+| `RESEND_API_KEY` or `SMTP_*` | Real transactional email |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
-## What you can do
+4. Deploy. Suggested project name: `garment-loop-ecommerce`.
 
-- Browse the winter collection, categories, and product pages with size/color variants
-- Search from the header and filter the shop by category, color, size, and price
-- Switch display currency between PKR and USD
-- Add to bag, check out as a guest, and place a COD / bank transfer / demo card order
-- Confirm the order on WhatsApp
-- Sign in at `/account/login` with **email or mobile number** and a password. Owner/admin/staff skip OTP. Customers receive a real 6-digit OTP by **email (Resend)** or **SMS (Twilio)** depending on what they typed. See [docs/otp-setup.md](docs/otp-setup.md).
-- Sign in to the admin portal (`/admin`) to manage products, inventory, orders, customers, discounts, and roles. Product add/edit supports **image attachments** (file upload) as well as HTTPS URLs. **Till** (`/admin/till`) covers cash sessions, walk-in sales, stock value, expenses, and financial reports.
+> Demo mode on Vercel: state lives in the warm serverless instance (and best-effort `/tmp`). Cold starts re-seed sample data. For durable production data later, attach Neon.
 
-## Admin (seeded locally)
+## Documentation
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Owner | owner@garmentloop.store | GarmentLoop-Owner-2026 |
-| Admin | admin@garmentloop.store | GarmentLoop-Admin-2026 |
-| Staff | staff@garmentloop.store | GarmentLoop-Staff-2026 |
+See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, admin + storefront specs.
 
-Override the owner with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Customers sign in at `/account/login` with email or mobile number, password (min 8 characters), then a one-time code sent by email or SMS. Staff credentials skip OTP and open the admin console.
+## Remaining Phase-3 / Could items (deferred)
 
-Without Resend/Twilio keys, local development shows a preview code. Production requires the API keys in [docs/otp-setup.md](docs/otp-setup.md).
-
-## Product images
-
-On **add** or **edit product**, attach JPEG/PNG/WebP/GIF/AVIF files (up to 4.5 MB) or paste an HTTPS URL.
-
-- Local `npm run dev` stores files in `public/uploads/`.
-- On Vercel, set `BLOB_READ_WRITE_TOKEN` ([Vercel Blob](https://vercel.com/docs/storage/vercel-blob)) so uploads persist. You can still paste Unsplash or other HTTPS URLs without Blob.
+- Live carrier rate/label APIs
+- Stripe wallets / BNPL
+- Avalara/VAT tax engine
+- Production OTP email for auth
+- Prepaid RMA labels, AI personalization, i18n, loyalty
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zustand · Drizzle ORM · Neon Postgres
+Next.js App Router · TypeScript · Tailwind · shadcn/ui · Zustand · Stripe (optional) · Resend/SMTP (optional) · Drizzle/Neon (optional)
