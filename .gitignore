@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+.data/
+
+# local demo store (also written under /tmp)
 
 # debug
 npm-debug.log*
@@ -37,8 +40,6 @@ yarn-error.log*
 # local agent / upload folders
 /uploads
 /agent-tools
-/public/uploads/*
-!/public/uploads/.gitkeep
 
 # vercel
 .vercel
