@@ -483,4 +483,82 @@ export async function updateOrder(
 }
 
 export async function saveProduct(input: Product, actorId?: string) {
-  return mutate((st
+  return mutate((state) => {
+    const product: Product = {
+      ...input,
+      id: input.id || slugify(input.title) || createId("prd"),
+      slug: input.slug || slugify(input.title),
+      status: input.status ?? "published",
+    };
+    const existing = state.catalog.products.findIndex((item) => item.id === product.id);
+    if (existing >= 0) {
+      state.catalog.products[existing] = product;
+    } else {
+      const slugTaken = state.catalog.products.some(
+        (item) => item.slug === product.slug && item.id !== product.id,
+      );
+      if (slugTaken) throw new PlatformError("That product slug is already in use.");
+      state.catalog.products.unshift(product);
+    }
+    for (const variant of product.variants) {
+      if (!(variant.id in state.stock)) {
+        state.stock[variant.id] = variant.stock;
+        state.inventoryMovements.unshift({
+          id: createId("mov"),
+          variantId: variant.id,
+          change: variant.stock,
+          type: "restock",
+          actorId,
+          reason: "Product saved",
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+    return product;
+  });
+}
+
+export async function deleteProduct(id: string) {
+  return mutate((state) => {
+    const product = state.catalog.products.find((item) => item.id === id);
+    if (!product) throw new PlatformError("Product not found.", 404);
+    product.status = "archived";
+    return product;
+  });
+}
+
+export async function saveCategory(input: Category) {
+  return mutate((state) => {
+    const slug = input.slug || slugify(input.name);
+    const next = { ...input, slug };
+    const index = state.catalog.categories.findIndex((item) => item.slug === slug);
+    if (index >= 0) state.catalog.categories[index] = next;
+    else state.catalog.categories.push(next);
+    return next;
+  });
+}
+
+export async function deleteCategory(slug: string) {
+  return mutate((state) => {
+    const inUse = state.catalog.products.some(
+      (product) => product.category === slug && product.status !== "archived",
+    );
+    if (inUse) throw new PlatformError("Unassign this category from products first.");
+    state.catalog.categories = state.catalog.categories.filter((item) => item.slug !== slug);
+  });
+}
+
+export async function saveCollection(input: Collection) {
+  return mutate((state) => {
+    const slug = input.slug || slugify(input.name);
+    const next = { ...input, slug };
+    const index = state.catalog.collections.findIndex((item) => item.slug === slug);
+    if (index >= 0) state.catalog.collections[index] = next;
+    else state.catalog.collections.push(next);
+    return next;
+  });
+}
+
+export async function deleteCollection(slug: string) {
+  return mutate((state) => {
+    state.cata
