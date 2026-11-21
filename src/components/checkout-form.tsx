@@ -73,7 +73,7 @@ export function CheckoutForm({
       list.push({
         id: "card_demo",
         title: "Card (demo)",
-        detail: "Sandbox card payment \u2014 no real charge. Set STRIPE_SECRET_KEY to enable live Stripe.",
+        detail: "Sandbox card payment — no real charge. Set STRIPE_SECRET_KEY to enable live Stripe.",
       });
     }
     return list;
@@ -296,7 +296,7 @@ export function CheckoutForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Order notes (optional)</Label>
-            <Textarea id="notes" name="notes" rows={2} placeholder="Gate code, preferred courier, gift note\u2026" />
+            <Textarea id="notes" name="notes" rows={2} placeholder="Gate code, preferred courier, gift note…" />
           </div>
         </section>
         <div className={cn("flex gap-3", step !== 1 && "hidden")}>
@@ -332,7 +332,7 @@ export function CheckoutForm({
                     <span>{option.amountPkr === 0 ? "Free" : <Price amountPkr={option.amountPkr} />}</span>
                   </span>
                   <span className="mt-1 block text-sm text-muted-foreground">
-                    {option.description} \u00b7 ETA {option.eta}
+                    {option.description} · ETA {option.eta}
                   </span>
                 </span>
               </label>
@@ -373,3 +373,30 @@ export function CheckoutForm({
                     <span className="text-sm text-muted-foreground">{method.detail}</span>
                   </span>
                 </label>
+              );
+            })}
+          </div>
+        </section>
+        <div className={cn("flex flex-wrap gap-3", step !== 2 && "hidden")}>
+          <Button type="button" variant="outline" className="h-11 px-6" onClick={() => setStep(1)}>
+            Back
+          </Button>
+          <Button type="button" className="h-11 px-6" onClick={() => setStep(3)}>
+            Review order
+          </Button>
+        </div>
+        <section className={cn("space-y-3 rounded-xl border p-4 text-sm", step !== 3 && "hidden")}>
+          <h2 className="font-serif text-2xl">Review</h2>
+          <p className="text-muted-foreground">
+            Confirm shipping ({shipping?.label}) and payment (
+            {paymentMethod.replace("_", " ")}), then place your order. Guest checkout stays available.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" variant="outline" className="h-11 px-6" onClick={() => setStep(2)}>
+              Back
+            </Button>
+          </div>
+        </section>
+      </div>
+      <aside className="h-fit rounded-xl border bg-card p-5 lg:sticky lg:top-24">
+        <h2 className="font-serif text-2xl">Order summary</h2>
