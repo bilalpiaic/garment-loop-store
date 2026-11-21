@@ -42,16 +42,20 @@ function rowToOrder(row: typeof orders.$inferSelect): Order {
     items: row.items,
     subtotalPkr: row.subtotalPkr,
     shippingPkr: row.shippingPkr,
+    taxPkr: row.taxPkr ?? undefined,
     discountPkr: row.discountPkr ?? undefined,
     totalPkr: row.totalPkr,
     paymentMethod: row.paymentMethod as PaymentMethod,
     paymentStatus: row.paymentStatus as PaymentStatus,
     status: row.status as OrderStatus,
     currency: row.currency as "PKR" | "USD",
+    shippingMethodId: row.shippingMethodId ?? undefined,
+    shippingLabel: row.shippingLabel ?? undefined,
     trackingNumber: row.trackingNumber ?? undefined,
     courier: row.courier ?? undefined,
     notes: row.notes ?? undefined,
     discountCode: row.discountCode ?? undefined,
+    stripeSessionId: row.stripeSessionId ?? undefined,
   };
 }
 
@@ -67,7 +71,7 @@ export async function loadNeonState(): Promise<PlatformState> {
   const metaRows = await sql`SELECT data FROM platform_state WHERE id = 'default' LIMIT 1`;
   const raw = (metaRows[0] as { data?: StoredMeta } | undefined)?.data;
   const meta: StoredMeta = {
-    version: 1,
+    version: 2,
     catalog: raw?.catalog ?? base.catalog,
     customers: raw?.customers ?? [],
     addresses: raw?.addresses ?? [],
@@ -76,10 +80,11 @@ export async function loadNeonState(): Promise<PlatformState> {
     otp: raw?.otp ?? [],
     discounts: raw?.discounts ?? [],
     inventoryMovements: raw?.inventoryMovements ?? [],
-    tillSessions: raw?.tillSessions ?? [],
-    tillMovements: raw?.tillMovements ?? [],
-    expenses: raw?.expenses ?? [],
     settings: { ...DEFAULT_SETTINGS, ...raw?.settings },
+    reviews: raw?.reviews?.length ? raw.reviews : base.reviews,
+    returns: raw?.returns ?? [],
+    wishlists: raw?.wishlists ?? {},
+    pages: raw?.pages?.length ? raw.pages : base.pages,
   };
 
   const orderRows = await db.select().from(orders).orderBy(desc(orders.createdAt));
@@ -103,7 +108,7 @@ export async function saveNeonState(state: PlatformState) {
     throw new Error("DATABASE_URL is not set.");
   }
   const meta: StoredMeta = {
-    version: 1,
+    version: 2,
     catalog: state.catalog,
     customers: state.customers,
     addresses: state.addresses,
@@ -112,10 +117,11 @@ export async function saveNeonState(state: PlatformState) {
     otp: state.otp,
     discounts: state.discounts,
     inventoryMovements: state.inventoryMovements,
-    tillSessions: state.tillSessions ?? [],
-    tillMovements: state.tillMovements ?? [],
-    expenses: state.expenses ?? [],
     settings: state.settings,
+    reviews: state.reviews,
+    returns: state.returns,
+    wishlists: state.wishlists,
+    pages: state.pages ?? [],
   };
   const payload = JSON.stringify(meta);
   await sql`
@@ -136,9 +142,10 @@ export async function saveNeonState(state: PlatformState) {
     await sql`
       INSERT INTO orders (
         order_number, created_at, updated_at, customer_id, customer, items,
-        subtotal_pkr, shipping_pkr, discount_pkr, total_pkr,
+        subtotal_pkr, shipping_pkr, tax_pkr, discount_pkr, total_pkr,
         payment_method, payment_status, status, currency,
-        tracking_number, courier, notes, discount_code
+        shipping_method_id, shipping_label,
+        tracking_number, courier, notes, discount_code, stripe_session_id
       ) VALUES (
         ${order.orderNumber},
         ${order.createdAt}::timestamptz,
@@ -148,16 +155,20 @@ export async function saveNeonState(state: PlatformState) {
         ${JSON.stringify(order.items)}::jsonb,
         ${order.subtotalPkr},
         ${order.shippingPkr},
+        ${order.taxPkr ?? 0},
         ${order.discountPkr ?? 0},
         ${order.totalPkr},
         ${order.paymentMethod},
         ${order.paymentStatus},
         ${order.status},
         ${order.currency},
+        ${order.shippingMethodId ?? null},
+        ${order.shippingLabel ?? null},
         ${order.trackingNumber ?? null},
         ${order.courier ?? null},
         ${order.notes ?? null},
-        ${order.discountCode ?? null}
+        ${order.discountCode ?? null},
+        ${order.stripeSessionId ?? null}
       )
       ON CONFLICT (order_number) DO UPDATE SET
         updated_at = EXCLUDED.updated_at,
@@ -166,16 +177,20 @@ export async function saveNeonState(state: PlatformState) {
         items = EXCLUDED.items,
         subtotal_pkr = EXCLUDED.subtotal_pkr,
         shipping_pkr = EXCLUDED.shipping_pkr,
+        tax_pkr = EXCLUDED.tax_pkr,
         discount_pkr = EXCLUDED.discount_pkr,
         total_pkr = EXCLUDED.total_pkr,
         payment_method = EXCLUDED.payment_method,
         payment_status = EXCLUDED.payment_status,
         status = EXCLUDED.status,
         currency = EXCLUDED.currency,
+        shipping_method_id = EXCLUDED.shipping_method_id,
+        shipping_label = EXCLUDED.shipping_label,
         tracking_number = EXCLUDED.tracking_number,
         courier = EXCLUDED.courier,
         notes = EXCLUDED.notes,
-        discount_code = EXCLUDED.discount_code
+        discount_code = EXCLUDED.discount_code,
+        stripe_session_id = EXCLUDED.stripe_session_id
     `;
   }
 }

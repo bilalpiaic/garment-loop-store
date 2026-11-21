@@ -89,6 +89,10 @@ async function applySchema() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier text`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes text`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tax_pkr integer NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_method_id text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_label text`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_session_id text`;
   await sql.query(PLACE_ORDER_FN);
 
   for (const { variant } of allVariants()) {
