@@ -1,1 +1,3 @@
-@file:/tmp/gh-critical/parts/checkout_content.py
+"use client";
+
+export { CheckoutForm } from "@/components/checkout-form-main";
