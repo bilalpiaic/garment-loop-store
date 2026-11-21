@@ -1,4 +1,4 @@
-export type PaymentMethod = "cod" | "bank_transfer" | "card_demo" | "cash";
+export type PaymentMethod = "cod" | "bank_transfer" | "card_demo" | "stripe";
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -58,16 +58,20 @@ export type Order = {
   items: OrderLine[];
   subtotalPkr: number;
   shippingPkr: number;
+  taxPkr?: number;
   discountPkr?: number;
   totalPkr: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   currency: "PKR" | "USD";
+  shippingMethodId?: string;
+  shippingLabel?: string;
   trackingNumber?: string;
   courier?: string;
   notes?: string;
   discountCode?: string;
+  stripeSessionId?: string;
 };
 
 export function whatsappOrderLink(order: Order) {

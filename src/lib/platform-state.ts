@@ -9,10 +9,19 @@ import type {
   SessionRecord,
   StoreSettings,
 } from "@/lib/identity";
+import type { ProductReview, ReturnRequest, WishlistEntry } from "@/lib/commerce-types";
 import type { Order } from "@/lib/order-model";
-import type { Expense, TillMovement, TillSession } from "@/lib/till";
+import { seedContentPages, seedDiscounts } from "@/lib/seed-demo";
 
-export const PLATFORM_VERSION = 1;
+export const PLATFORM_VERSION = 2;
+
+export type ContentPage = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  updatedAt: string;
+};
 
 export type PlatformState = {
   version: number;
@@ -26,11 +35,13 @@ export type PlatformState = {
   otp: OtpChallenge[];
   discounts: Discount[];
   inventoryMovements: InventoryMovement[];
-  tillSessions: TillSession[];
-  tillMovements: TillMovement[];
-  expenses: Expense[];
   settings: StoreSettings;
   orderSeq: number;
+  reviews: ProductReview[];
+  returns: ReturnRequest[];
+  /** customerId → wishlist product ids */
+  wishlists: Record<string, WishlistEntry[]>;
+  pages: ContentPage[];
 };
 
 export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings): PlatformState {
@@ -58,14 +69,53 @@ export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings
     adminUsers: [],
     sessions: [],
     otp: [],
-    discounts: [],
+    discounts: seedDiscounts(),
     inventoryMovements: [],
-    tillSessions: [],
-    tillMovements: [],
-    expenses: [],
     settings: { ...settings },
     orderSeq: 0,
+    reviews: seedReviews(catalog),
+    returns: [],
+    wishlists: {},
+    pages: seedContentPages(),
   };
+}
+
+function seedReviews(catalog: CatalogData): ProductReview[] {
+  const first = catalog.products[0];
+  const second = catalog.products[1];
+  if (!first) return [];
+  const now = new Date().toISOString();
+  const reviews: ProductReview[] = [
+    {
+      id: "rev-seed-1",
+      productId: first.id,
+      productSlug: first.slug,
+      authorName: "Ayesha K.",
+      authorEmail: "ayesha@example.com",
+      rating: 5,
+      title: "Worth the weight",
+      body: "Cut feels intentional and the fill still lofted after a month of city wear. Will keep this in rotation for years.",
+      status: "approved",
+      createdAt: now,
+      moderatedAt: now,
+    },
+  ];
+  if (second) {
+    reviews.push({
+      id: "rev-seed-2",
+      productId: second.id,
+      productSlug: second.slug,
+      authorName: "Omar R.",
+      authorEmail: "omar@example.com",
+      rating: 4,
+      title: "Quiet luxury, honest fabric",
+      body: "Looks editorial without shouting. Size true; sleeves are generous for layering.",
+      status: "approved",
+      createdAt: now,
+      moderatedAt: now,
+    });
+  }
+  return reviews;
 }
 
 export function mergeStockIntoCatalog(state: PlatformState): CatalogData {
