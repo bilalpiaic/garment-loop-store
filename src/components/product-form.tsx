@@ -38,6 +38,8 @@ export function ProductForm({ product }: { product: Product }) {
   const price = variant?.salePricePkr ?? variant?.pricePkr ?? product.variants[0]?.salePricePkr ?? product.variants[0]?.pricePkr ?? 0;
   const compare = variant?.salePricePkr ? variant.pricePkr : undefined;
 
+  const [bagPulse, setBagPulse] = useState(false);
+
   function addToCart(goToCheckout = false) {
     if (!variant) {
       toast.error("Choose a color and size.");
@@ -48,6 +50,8 @@ export function ProductForm({ product }: { product: Product }) {
       return;
     }
     addItem(variant.id, 1);
+    setBagPulse(true);
+    window.setTimeout(() => setBagPulse(false), 450);
     toast.success(`${product.title} added to bag.`);
     if (goToCheckout) {
       router.push("/checkout");
@@ -127,9 +131,10 @@ export function ProductForm({ product }: { product: Product }) {
           type="button"
           data-testid="add-to-bag"
           className={cn(
-            "h-11 flex-1 rounded-lg px-6 text-sm font-medium transition",
+            "btn-lux btn-shimmer h-11 flex-1 rounded-lg px-6 text-sm font-medium",
+            bagPulse && "bag-pulse",
             selected && inStock
-              ? "bg-primary text-primary-foreground hover:bg-primary/80"
+              ? "bg-primary text-primary-foreground hover:bg-[color:var(--olive-jewel)]"
               : "bg-primary/40 text-primary-foreground",
           )}
           onClick={() => addToCart(false)}
@@ -139,7 +144,7 @@ export function ProductForm({ product }: { product: Product }) {
         <button
           type="button"
           data-testid="buy-now"
-          className="h-11 flex-1 rounded-lg border border-border bg-background px-6 text-sm font-medium hover:bg-muted"
+          className="btn-lux h-11 flex-1 rounded-lg border border-champagne/40 bg-background px-6 text-sm font-medium hover:border-olive hover:bg-secondary"
           onClick={() => addToCart(true)}
         >
           Buy now
