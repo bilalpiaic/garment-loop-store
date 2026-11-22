@@ -13,6 +13,8 @@ export type ProductReview = {
   status: ReviewStatus;
   createdAt: string;
   moderatedAt?: string;
+  adminReply?: string;
+  repliedAt?: string;
 };
 
 export type ReturnStatus = "requested" | "approved" | "received" | "restocked" | "rejected" | "refunded";

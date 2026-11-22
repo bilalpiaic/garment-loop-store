@@ -16,6 +16,8 @@ export type Customer = {
   email: string;
   phone?: string;
   fullName?: string;
+  notes?: string;
+  tags?: string[];
   createdAt: string;
   lastLoginAt?: string;
 };
