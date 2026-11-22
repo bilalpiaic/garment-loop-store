@@ -1,4 +1,4 @@
-import { StoreImage } from "@/components/store-image";
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { comparePrice, lowestPrice, type Product } from "@/lib/catalog";
@@ -10,7 +10,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/product/${product.slug}`} className="group block">
       <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
-        <StoreImage
+        <Image
           src={product.images[0]?.src ?? ""}
           alt={product.images[0]?.alt ?? product.title}
           fill
