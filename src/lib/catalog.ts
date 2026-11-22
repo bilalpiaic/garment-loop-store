@@ -309,6 +309,50 @@ export const products: Product[] = [
       {},
     ),
   },
+  {
+    id: "merino-crewneck",
+    slug: "merino-wool-crewneck",
+    title: "Merino Wool Crewneck",
+    subtitle: "Fine-gauge everyday knit",
+    description:
+      "A fine merino crewneck that regulates temperature and resists odor. The knit is close without clinging — the layer you keep on from desk to dinner.",
+    features: [
+      "18.5-micron merino wool",
+      "Ribbed neck, cuffs, and hem",
+      "Naturally odor-resistant",
+      "Works as a base or mid layer",
+    ],
+    specs: [
+      { label: "Fabric", value: "100% merino wool" },
+      { label: "Gauge", value: "Fine 12-gauge" },
+      { label: "Care", value: "Hand wash cold, lay flat" },
+    ],
+    category: "knitwear",
+    collections: ["winter-collection", "essentials"],
+    featured: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1631541909061-71e349d1f203?auto=format&fit=crop&w=1400&q=80",
+        alt: "Cream merino crewneck sweater",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=1400&q=80",
+        alt: "Folded knit sweater",
+      },
+    ],
+    variants: variants(
+      "merino-crewneck",
+      [
+        { color: "Cream", hex: "#efe6d6" },
+        { color: "Charcoal", hex: "#3a3a3a" },
+        { color: "Forest", hex: "#2f4735" },
+      ],
+      ["S", "M", "L", "XL"],
+      8900,
+      { "Cream-M": 9 },
+      6900,
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
