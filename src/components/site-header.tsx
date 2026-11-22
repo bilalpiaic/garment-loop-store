@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Menu, Search, ShoppingBag, User } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -162,6 +162,13 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
             >
               <Search className="size-5" />
             </button>
+            <Link
+              href="/wishlist"
+              aria-label="Wishlist"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+            >
+              <Heart className="size-5" />
+            </Link>
             <Link
               href={customerEmail ? "/account" : "/account/login"}
               aria-label={customerEmail ? "Account" : "Sign in"}
