@@ -44,13 +44,13 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground">
-        <p className="mx-auto max-w-6xl px-4 py-2 text-center text-[11px] tracking-[0.16em] uppercase sm:text-xs">
+      <div className="bg-ink text-cream">
+        <p className="mx-auto max-w-6xl px-4 py-2 text-center text-[11px] tracking-[0.2em] uppercase text-cream/90 sm:text-xs">
           Winter collection now live · Free delivery over PKR 8,000
         </p>
       </div>
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_oklab,var(--cream)_86%,transparent)] backdrop-blur-md">
+        <div className="mx-auto flex h-[4.25rem] max-w-6xl items-center justify-between gap-3 px-4">
           <div className="flex items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
@@ -102,21 +102,21 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
               </SheetContent>
               ) : null}
             </Sheet>
-            <Link href="/" className="font-serif text-xl tracking-tight sm:text-2xl">
+            <Link href="/" className="font-serif text-2xl tracking-tight text-ink transition-colors hover:text-olive sm:text-[1.7rem]">
               GarmentLoop
             </Link>
           </div>
           <nav className="hidden items-center gap-8 text-sm md:flex">
             {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-primary">
+              <Link key={item.href} href={item.href} className="nav-link text-foreground/85 hover:text-ink">
                 {item.label}
               </Link>
             ))}
             <div className="group relative">
-              <button type="button" className="hover:text-primary">
+              <button type="button" className="nav-link text-foreground/85 hover:text-ink">
                 Categories
               </button>
-              <div className="invisible absolute left-0 top-full z-50 min-w-48 rounded-lg border bg-popover p-2 opacity-0 shadow-md transition group-hover:visible group-hover:opacity-100">
+              <div className="invisible absolute left-0 top-full z-50 min-w-48 rounded-lg border border-champagne/25 bg-popover p-2 opacity-0 shadow-[0_18px_40px_-24px_rgba(14,22,18,0.45)] transition duration-300 group-hover:visible group-hover:opacity-100">
                 {categories.map((category) => (
                   <Link
                     key={category.slug}
@@ -184,7 +184,7 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
             >
               <ShoppingBag className="size-5" />
               {hydrated && count > 0 ? (
-                <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-champagne text-[10px] font-semibold text-ink">
                   {count}
                 </span>
               ) : null}
