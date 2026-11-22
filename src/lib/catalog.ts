@@ -353,6 +353,46 @@ export const products: Product[] = [
       6900,
     ),
   },
+  {
+    id: "fleece-hoodie",
+    slug: "thermal-fleece-hoodie",
+    title: "Thermal Fleece Hoodie",
+    subtitle: "Brushed inside, clean outside",
+    description:
+      "A quiet hoodie in dense fleece — no logos, no drawstring clatter. The interior is brushed for warmth; the exterior stays neat enough for weekend travel.",
+    features: [
+      "Double-sided fleece",
+      "Kangaroo pocket and ribbed cuffs",
+      "Unlined hood that sits flat",
+    ],
+    specs: [
+      { label: "Fabric", value: "280 GSM polyester fleece" },
+      { label: "Care", value: "Machine wash cold" },
+    ],
+    category: "knitwear",
+    collections: ["essentials"],
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1400&q=80",
+        alt: "Grey fleece hoodie",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=1400&q=80",
+        alt: "Hoodie on a hanger",
+      },
+    ],
+    variants: variants(
+      "fleece-hoodie",
+      [
+        { color: "Heather Grey", hex: "#b7b7b7" },
+        { color: "Navy", hex: "#1d2a40" },
+        { color: "Black", hex: "#1a1a1a" },
+      ],
+      ["S", "M", "L", "XL"],
+      6900,
+      { "Black-XL": 0 },
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
