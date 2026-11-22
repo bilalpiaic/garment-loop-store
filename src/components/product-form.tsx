@@ -12,6 +12,7 @@ import {
 import { useCartStore } from "@/store/store";
 import { cn } from "@/lib/utils";
 import { Price } from "@/components/price";
+import { WishlistButton } from "@/components/wishlist-button";
 
 export function ProductForm({ product }: { product: Product }) {
   const colors = uniqueColors(product);
@@ -121,7 +122,7 @@ export function ProductForm({ product }: { product: Product }) {
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <button
           type="button"
           data-testid="add-to-bag"
@@ -143,6 +144,7 @@ export function ProductForm({ product }: { product: Product }) {
         >
           Buy now
         </button>
+        <WishlistButton productId={product.id} />
       </div>
       <p className="text-xs text-muted-foreground">
         Cash on delivery available in Pakistan. Questions? Message us on WhatsApp after you order.
