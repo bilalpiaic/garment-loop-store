@@ -1,19 +1,23 @@
 # GarmentLoop — Architecture
 
-## Persistence (zero-DB first)
+## Persistence
 
 | Mode | When | Notes |
 | --- | --- | --- |
-| **Demo** | No `DATABASE_URL` | `src/lib/platform-memory.ts` — global memory + `.data/` or `/tmp` file |
-| **Neon** | `DATABASE_URL` set | Drizzle + `platform_state` JSON; **falls back to demo** if Neon errors |
+| **Neon (production default on Vercel)** | `DATABASE_URL` set | Drizzle schema (`inventory`, `orders`, `platform_state`) + JSON catalog/admin state; **falls back to demo** if Neon errors |
+| **Demo** | `DATABASE_URL` unset | `src/lib/platform-memory.ts` — global memory + `.data/` or `/tmp` file |
 
-`ensureDemoWalkthrough` seeds discounts, content pages, sample orders/customers, and a pending review when empty.
+On Vercel project `garment-loop-store`, pooled `DATABASE_URL` is configured for production / preview / development, so deployed environments use Neon by default. Local runs without `.env.local` stay on the demo store.
+
+`ensureDemoWalkthrough` / `ensureSeed` seed catalog, admin users, discounts, content pages, sample orders/customers, and a pending review when empty (including first Neon load).
+
+Migrate locally: `npm run db:migrate` (requires `DATABASE_URL`).
 
 ## Stack
 
-Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zustand · Zod · optional Stripe / Resend / SMTP / Neon.
+Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zustand · Zod · Neon (Vercel default) · optional Stripe / Resend / SMTP.
 
-## Integrations (all optional)
+## Integrations
 
 | Service | Env | Fallback |
 | --- | --- | --- |
@@ -24,9 +28,10 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 
 ## Vercel
 
-- No long-lived local servers; App Router + serverless routes only.
-- Demo mode re-seeds on cold start — fine for demos; attach Neon for durable production later.
+- App Router + serverless routes only.
+- Production uses Neon via `DATABASE_URL`; Admin → Settings reports “Neon Postgres” when the URL is set.
+- Without `DATABASE_URL`, demo mode re-seeds on cold start — fine for local demos.
 
 ## Key libs
 
-`platform.ts` · `platform-memory.ts` · `seed-demo.ts` · `shipping.ts` · `tax.ts` · `stripe.ts` · `email.ts`
+`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `tax.ts` · `stripe.ts` · `email.ts`
