@@ -42,6 +42,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated) |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated) |
+| `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Live carrier rates (zone fallback otherwise) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
 4. Deploy. Admin → Settings reports **Neon Postgres** when `DATABASE_URL` is present.
@@ -54,7 +55,7 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 
 ## Remaining Phase-3 / Could items (deferred)
 
-- Live carrier rate/label APIs
+- Prepaid RMA / outbound label purchase (EasyPost rates are wired; label buy is stubbed)
 - Stripe wallets / BNPL
 - Avalara/VAT tax engine
 - Production OTP email for auth

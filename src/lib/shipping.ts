@@ -1,7 +1,7 @@
 import type { StoreSettings } from "@/lib/identity";
 import { DEFAULT_SETTINGS } from "@/lib/identity";
 
-/** Config-driven shipping zones. Carrier APIs (EasyPost / UPS / FedEx) are Phase 2. */
+/** Config-driven shipping zones. Live carriers via EasyPost when `EASYPOST_API_KEY` (+ from-address) is set. */
 export type ShippingZoneId = "pk-domestic" | "gcc" | "intl";
 
 export type ShippingRateOption = {
@@ -11,9 +11,35 @@ export type ShippingRateOption = {
   description: string;
   amountPkr: number;
   eta: string;
+  source?: "zone" | "easypost";
+  carrier?: string;
+  service?: string;
+  easypostShipmentId?: string;
+  easypostRateId?: string;
 };
 
 const GCC = new Set(["AE", "SA", "QA", "KW", "BH", "OM"]);
+
+const EASYPOST_PREFIX = "easypost:";
+
+export function encodeEasyPostMethodId(shipmentId: string, rateId: string) {
+  return `${EASYPOST_PREFIX}${shipmentId}:${rateId}`;
+}
+
+export function parseEasyPostMethodId(shippingMethodId: string) {
+  if (!shippingMethodId.startsWith(EASYPOST_PREFIX)) return null;
+  const rest = shippingMethodId.slice(EASYPOST_PREFIX.length);
+  const idx = rest.indexOf(":");
+  if (idx <= 0) return null;
+  const shipmentId = rest.slice(0, idx);
+  const rateId = rest.slice(idx + 1);
+  if (!shipmentId || !rateId) return null;
+  return { shipmentId, rateId };
+}
+
+export function isEasyPostMethodId(shippingMethodId: string) {
+  return Boolean(parseEasyPostMethodId(shippingMethodId));
+}
 
 export function shippingZoneForCountry(countryCode: string): ShippingZoneId {
   if (countryCode === "PK") return "pk-domestic";
@@ -39,6 +65,7 @@ export function listShippingOptions(
           : "Nationwide courier, 2–4 business days",
         amountPkr: free ? 0 : settings.domesticShippingPkr,
         eta: "2–4 business days",
+        source: "zone",
       },
       {
         id: "pk-express",
@@ -47,6 +74,7 @@ export function listShippingOptions(
         description: "Priority dispatch, major cities",
         amountPkr: free ? 450 : settings.domesticShippingPkr + 450,
         eta: "1–2 business days",
+        source: "zone",
       },
     ];
   }
@@ -59,6 +87,7 @@ export function listShippingOptions(
         description: "Tracked air parcel to Gulf countries",
         amountPkr: Math.round(settings.internationalShippingPkr * 0.75),
         eta: "5–8 business days",
+        source: "zone",
       },
     ];
   }
@@ -70,6 +99,7 @@ export function listShippingOptions(
       description: "Tracked dispatch; duties may apply on arrival",
       amountPkr: settings.internationalShippingPkr,
       eta: "7–14 business days",
+      source: "zone",
     },
   ];
 }

@@ -33,6 +33,8 @@ export type CheckoutCustomer = {
   city: string;
   area: string;
   address: string;
+  /** Optional; required when placing an order with an EasyPost live rate. */
+  postalCode?: string;
   notes?: string;
 };
 

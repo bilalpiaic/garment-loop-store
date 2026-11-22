@@ -48,7 +48,17 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated; no-op when unset) |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated; no-op when unset) |
+| `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Live carrier rates at checkout (else zone rates) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
+
+### Enable live EasyPost rates
+
+1. Create an EasyPost account and copy a **test** or **production** API key (do not invent or paste keys into the repo).
+2. Set on Vercel / `.env.local`:
+   - `EASYPOST_API_KEY`
+   - `EASYPOST_FROM_NAME`, `EASYPOST_FROM_STREET1`, `EASYPOST_FROM_CITY`, `EASYPOST_FROM_STATE`, `EASYPOST_FROM_ZIP`, `EASYPOST_FROM_COUNTRY` (usually `PK`), optional `EASYPOST_FROM_PHONE`
+3. Redeploy / restart. Checkout step 2 calls `POST /api/shipping/rates` — live options when the key + from-address are complete; otherwise zone fallback.
+4. Admin order detail has **Create label (stub)** — tracking fields work today; buying outbound / prepaid RMA labels is intentionally stubbed (`501` from `/api/admin/shipping/label`).
 
 4. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres**.
 
@@ -60,7 +70,7 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 
 ## Remaining Phase-3 / Could items (deferred)
 
-- Live carrier rate/label APIs
+- Prepaid RMA / outbound EasyPost label purchase (rates env-gated; buy stubbed)
 - Stripe wallets / BNPL
 - Avalara/VAT tax engine
 - Prepaid RMA labels, AI personalization, i18n, loyalty

@@ -263,7 +263,6 @@ export function publicEmailError(result: EmailResult): string | undefined {
 
   return "Email delivery failed. Try again or contact support.";
 }
-
 export async function sendReturnRequestNotice(ret: ReturnRequest) {
   const content = returnRequestEmail(ret);
   return sendRaw({ to: ret.customerEmail, ...content });

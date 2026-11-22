@@ -19,7 +19,7 @@
 
 ## Explicitly deferred (Could / Phase 2–3)
 
-- Live carrier APIs / prepaid RMA labels
+- EasyPost label purchase + prepaid RMA labels (rates env-gated; buy stubbed)
 - Apple Pay / Google Pay / BNPL
 - Avalara / full VAT
 - AI personalization, i18n, loyalty subscriptions

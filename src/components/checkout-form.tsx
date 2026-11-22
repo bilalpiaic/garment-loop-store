@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { countries, pakistanCities, site } from "@/lib/site";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
-import { listShippingOptions } from "@/lib/shipping";
+import { listShippingOptions, type ShippingRateOption } from "@/lib/shipping";
 import { estimateTaxPkr, taxLabel } from "@/lib/tax";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 import { useCatalog } from "@/components/catalog-provider";
@@ -20,6 +20,29 @@ import { cn } from "@/lib/utils";
 import type { CustomerAddress } from "@/lib/identity";
 
 type PaymentId = "cod" | "bank_transfer" | "card_demo" | "stripe";
+
+type QuoteContext = {
+  fullName: string;
+  phone: string;
+  city: string;
+  area: string;
+  address: string;
+  postalCode: string;
+};
+
+function zoneOptionsFor(country: string, subtotalPkr: number): ShippingRateOption[] {
+  return listShippingOptions(country, subtotalPkr, {
+    storeName: site.name,
+    supportEmail: site.email,
+    supportPhone: site.phone,
+    whatsapp: site.whatsapp,
+    freeShippingThresholdPkr: site.freeShippingThresholdPkr,
+    domesticShippingPkr: site.domesticShippingPkr,
+    internationalShippingPkr: site.internationalShippingPkr,
+    usdRate: site.usdRate,
+    lowStockThreshold: 5,
+  });
+}
 
 export function CheckoutForm({
   defaults,
@@ -44,6 +67,14 @@ export function CheckoutForm({
   const [paymentMethod, setPaymentMethod] = useState<PaymentId>("cod");
   const [shippingMethodId, setShippingMethodId] = useState("pk-standard");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [shippingOptions, setShippingOptions] = useState<ShippingRateOption[]>(() =>
+    zoneOptionsFor(defaults?.address?.country ?? "PK", 0),
+  );
+  const [shippingSource, setShippingSource] = useState<"zone" | "easypost">("zone");
+  const [shippingNote, setShippingNote] = useState<string | undefined>();
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [quote, setQuote] = useState<QuoteContext | null>(null);
+  const ratesRequestId = useRef(0);
   const steps = [
     { id: 1 as const, label: "Contact & address" },
     { id: 2 as const, label: "Shipping & payment" },
@@ -89,32 +120,92 @@ export function CheckoutForm({
     [items, products],
   );
 
-  const shippingOptions = useMemo(
-    () =>
-      listShippingOptions(country, subtotal, {
-        storeName: site.name,
-        supportEmail: site.email,
-        supportPhone: site.phone,
-        whatsapp: site.whatsapp,
-        freeShippingThresholdPkr: site.freeShippingThresholdPkr,
-        domesticShippingPkr: site.domesticShippingPkr,
-        internationalShippingPkr: site.internationalShippingPkr,
-        usdRate: site.usdRate,
-        lowStockThreshold: 5,
-      }),
-    [country, subtotal],
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items],
   );
 
-  useEffect(() => {
-    if (!shippingOptions.some((option) => option.id === shippingMethodId)) {
-      setShippingMethodId(shippingOptions[0]?.id ?? "pk-standard");
-    }
-  }, [shippingOptions, shippingMethodId]);
-
-  const shipping = shippingOptions.find((option) => option.id === shippingMethodId) ?? shippingOptions[0];
-  const shippingAmount = shipping?.amountPkr ?? 0;
+  const selectedShipping =
+    shippingOptions.find((option) => option.id === shippingMethodId) ?? shippingOptions[0];
+  const effectiveShippingMethodId = selectedShipping?.id ?? "pk-standard";
+  const shippingAmount = selectedShipping?.amountPkr ?? 0;
   const tax = estimateTaxPkr(subtotal, country);
   const total = subtotal + shippingAmount + tax;
+
+  function pickShippingId(options: ShippingRateOption[], preferred?: string) {
+    if (preferred && options.some((option) => option.id === preferred)) return preferred;
+    return options[0]?.id ?? "pk-standard";
+  }
+
+  async function refreshRates(nextQuote: QuoteContext, nextCountry = country) {
+    const requestId = ++ratesRequestId.current;
+    const preferredId = shippingMethodId;
+    const fallback = zoneOptionsFor(nextCountry, subtotal);
+    setRatesLoading(true);
+    try {
+      const response = await fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          country: nextCountry,
+          city: nextQuote.city,
+          area: nextQuote.area,
+          address: nextQuote.address,
+          postalCode: nextQuote.postalCode,
+          fullName: nextQuote.fullName,
+          phone: nextQuote.phone,
+          subtotalPkr: subtotal,
+          itemCount: Math.max(1, itemCount),
+        }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        options?: ShippingRateOption[];
+        source?: "zone" | "easypost";
+        note?: string;
+      };
+      if (requestId !== ratesRequestId.current) return;
+      if (!response.ok || !data.options?.length) {
+        setShippingNote(data.error ?? data.note ?? "Using zone shipping rates.");
+        setShippingOptions(fallback);
+        setShippingSource("zone");
+        setShippingMethodId(pickShippingId(fallback, preferredId));
+        return;
+      }
+      setShippingOptions(data.options);
+      setShippingSource(data.source ?? "zone");
+      setShippingNote(data.note);
+      setShippingMethodId(pickShippingId(data.options, preferredId));
+    } catch {
+      if (requestId !== ratesRequestId.current) return;
+      setShippingNote("Could not reach shipping service. Using zone rates.");
+      setShippingOptions(fallback);
+      setShippingSource("zone");
+      setShippingMethodId(pickShippingId(fallback, preferredId));
+    } finally {
+      if (requestId === ratesRequestId.current) setRatesLoading(false);
+    }
+  }
+
+  function readQuoteFromForm(form: HTMLFormElement): QuoteContext {
+    const fd = new FormData(form);
+    return {
+      fullName: String(fd.get("fullName") ?? ""),
+      phone: String(fd.get("phone") ?? ""),
+      city: String(fd.get("city") ?? ""),
+      area: String(fd.get("area") ?? ""),
+      address: String(fd.get("address") ?? ""),
+      postalCode: String(fd.get("postalCode") ?? ""),
+    };
+  }
+
+  useEffect(() => {
+    // Refresh on destination/cart changes while on shipping/review — not when only
+    // advancing step 2 → 3 (that used to wipe the shopper's selected carrier).
+    if (step < 2 || !quote) return;
+    void refreshRates(quote, country);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- quote/cart/country drive refresh; step gate only
+  }, [country, subtotal, itemCount, quote]);
 
   async function onSubmit(formData: FormData) {
     setErrors({});
@@ -126,13 +217,18 @@ export function CheckoutForm({
       city: String(formData.get("city") ?? ""),
       area: String(formData.get("area") ?? ""),
       address: String(formData.get("address") ?? ""),
+      postalCode: String(formData.get("postalCode") ?? quote?.postalCode ?? ""),
       notes: String(formData.get("notes") ?? ""),
       discountCode: String(formData.get("discountCode") ?? ""),
       paymentMethod,
-      shippingMethodId,
+      shippingMethodId: effectiveShippingMethodId,
       currency,
       items,
     };
+    if (ratesLoading) {
+      toast.error("Wait for shipping rates to finish loading.");
+      return;
+    }
     const parsed = checkoutSchema.safeParse(payload);
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -294,13 +390,27 @@ export function CheckoutForm({
             />
             {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
           </div>
+          <Field
+            label="Postal / ZIP (needed for live carrier rates)"
+            name="postalCode"
+            autoComplete="postal-code"
+          />
           <div className="space-y-2">
             <Label htmlFor="notes">Order notes (optional)</Label>
             <Textarea id="notes" name="notes" rows={2} placeholder="Gate code, preferred courier, gift note…" />
           </div>
         </section>
         <div className={cn("flex gap-3", step !== 1 && "hidden")}>
-          <Button type="button" className="h-11 px-6" onClick={() => setStep(2)}>
+          <Button
+            type="button"
+            className="h-11 px-6"
+            onClick={(event) => {
+              const form = event.currentTarget.form;
+              if (!form) return;
+              setQuote(readQuoteFromForm(form));
+              setStep(2);
+            }}
+          >
             Continue to shipping
           </Button>
         </div>
@@ -309,13 +419,16 @@ export function CheckoutForm({
           {errors.shippingMethodId ? (
             <p className="text-xs text-destructive">{errors.shippingMethodId}</p>
           ) : null}
+          {ratesLoading ? (
+            <p className="text-sm text-muted-foreground">Fetching shipping options…</p>
+          ) : null}
           <div className="space-y-2">
             {shippingOptions.map((option) => (
               <label
                 key={option.id}
                 className={cn(
                   "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
-                  shippingMethodId === option.id
+                  effectiveShippingMethodId === option.id
                     ? "border-olive bg-secondary/50"
                     : "border-border hover:border-olive/40",
                 )}
@@ -325,7 +438,7 @@ export function CheckoutForm({
                   name="shippingMethodId"
                   className="mt-1"
                   value={option.id}
-                  checked={shippingMethodId === option.id}
+                  checked={effectiveShippingMethodId === option.id}
                   onChange={() => setShippingMethodId(option.id)}
                 />
                 <span className="flex-1">
@@ -341,7 +454,10 @@ export function CheckoutForm({
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Rates are zone-based (Pakistan, GCC, international). Live carrier APIs are next.
+            {shippingNote ??
+              (shippingSource === "easypost"
+                ? "Live carrier rates via EasyPost."
+                : "Zone rates (Pakistan, GCC, international). Set EASYPOST_API_KEY for live carriers.")}
           </p>
         </section>
         <section className={cn("space-y-4", step !== 2 && step !== 3 && "hidden")}>
@@ -392,7 +508,7 @@ export function CheckoutForm({
         <section className={cn("space-y-3 rounded-xl border p-4 text-sm", step !== 3 && "hidden")}>
           <h2 className="font-serif text-2xl">Review</h2>
           <p className="text-muted-foreground">
-            Confirm shipping ({shipping?.label}) and payment (
+            Confirm shipping ({selectedShipping?.label}) and payment (
             {paymentMethod.replace("_", " ")}), then place your order. Guest checkout stays available.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -435,7 +551,7 @@ export function CheckoutForm({
             <Price amountPkr={subtotal} />
           </div>
           <div className="flex justify-between">
-            <span>{shipping?.label ?? "Shipping"}</span>
+            <span>{selectedShipping?.label ?? "Shipping"}</span>
             <span>{shippingAmount === 0 ? "Free" : <Price amountPkr={shippingAmount} />}</span>
           </div>
           <div className="flex justify-between">
@@ -447,7 +563,11 @@ export function CheckoutForm({
             <span>{formatMoney(total, currency)}</span>
           </div>
         </div>
-        <Button type="submit" className="mt-5 h-11 w-full" disabled={pending || step !== 3}>
+        <Button
+          type="submit"
+          className="mt-5 h-11 w-full"
+          disabled={pending || ratesLoading || step !== 3}
+        >
           {pending
             ? paymentMethod === "stripe"
               ? "Redirecting to Stripe…"

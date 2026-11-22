@@ -20,7 +20,7 @@ export default async function CheckoutPage() {
       <p className="mt-2 max-w-xl text-muted-foreground leading-relaxed">
         {session
           ? "Your account details are filled in. Guest checkout stays available if you sign out."
-          : "Guest checkout — no account required. Choose a shipping zone rate, see tax estimates, and pay with COD, bank transfer, or card."}
+          : "Guest checkout — no account required. Choose a shipping rate (live carriers when EasyPost is configured, otherwise zone rates), see tax estimates, and pay with COD, bank transfer, or card."}
       </p>
       <div className="mt-10">
         <BeginCheckoutTracker />

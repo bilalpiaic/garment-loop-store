@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       city: parsed.data.city,
       area: parsed.data.area,
       address: parsed.data.address,
+      postalCode: parsed.data.postalCode,
       notes: parsed.data.notes,
     },
     paymentMethod: parsed.data.paymentMethod,

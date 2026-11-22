@@ -28,6 +28,7 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 | Customer OTP | Same email stack; `AUTH_SHOW_OTP=1` to return/show code in API (auto outside production) | Mock email logs code preview; production API omits `devCode` unless `AUTH_SHOW_OTP` |
 | GA4 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No scripts / events when unset |
 | Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` | No scripts / events when unset |
+| EasyPost shipping | `EASYPOST_API_KEY` + `EASYPOST_FROM_NAME/STREET1/CITY/STATE/ZIP/COUNTRY` (+ optional `PHONE`) | Zone rates in `shipping.ts` |
 
 ## Storefront analytics
 
@@ -44,6 +45,14 @@ Consent banner (`garmentloop-consent`) gates marketing tags: **Accept analytics*
 
 Page views fire on client navigations after consent when either ID is set. Implementation: `src/lib/analytics/*` + `AnalyticsBootstrap`.
 
+## Shipping rates
+
+- Default: config zone rates (PK standard/express, GCC, intl) via `listShippingOptions`.
+- When EasyPost is fully configured, checkout `POST /api/shipping/rates` creates a shipment quote and returns carrier options (amounts converted to PKR with store `usdRate`).
+- Selected EasyPost method ids look like `easypost:{shipmentId}:{rateId}`; `createOrder` re-fetches that rate server-side (client amounts are not trusted).
+- Incomplete EasyPost config or API errors → zone fallback with an explanatory note.
+- Admin tracking fields remain; `POST /api/admin/shipping/label` is a **stub** (501) for future outbound / prepaid RMA label PDFs.
+
 ## Auth email (customer OTP)
 
 `POST /api/auth/otp/request` stores a hashed 6-digit code (10‑minute TTL) and calls `sendLoginOtpEmail` via Resend or SMTP. Production never returns `devCode` unless `AUTH_SHOW_OTP=1`. Without mail keys, delivery is mock (server console). Failed sends return a safe `emailError` (e.g. Resend test-sender recipient restriction).
@@ -59,4 +68,4 @@ Page views fire on client navigations after consent when either ID is set. Imple
 
 ## Key libs
 
-`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `tax.ts` · `stripe.ts` · `email.ts` · `analytics/`
+`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `easypost.ts` · `tax.ts` · `stripe.ts` · `email.ts` · `analytics/`

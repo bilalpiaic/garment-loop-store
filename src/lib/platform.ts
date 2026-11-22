@@ -36,7 +36,8 @@ import { readDemoState, writeDemoState } from "@/lib/platform-memory";
 import { loadNeonState, neonAvailable, saveNeonState } from "@/lib/platform-neon";
 import { mergeStockIntoCatalog, publicCatalog, type ContentPage, type PlatformState } from "@/lib/platform-state";
 import { can, type Permission, type Role } from "@/lib/roles";
-import { resolveShippingOption } from "@/lib/shipping";
+import { isEasyPostMethodId, resolveShippingOption } from "@/lib/shipping";
+import { retrieveEasyPostRateOption } from "@/lib/easypost";
 import { estimateTaxPkr } from "@/lib/tax";
 import type {
   ProductReview,
@@ -270,6 +271,44 @@ export async function createOrder(input: {
     if (input.paymentMethod === "stripe" && !stripeConfigured()) {
       return { ok: false, error: "Card payments are unavailable. Choose COD, bank transfer, or card demo." };
     }
+
+    // Resolve EasyPost outside mutate so we can await the carrier API safely.
+    // Rate must match this order's destination + parcel (not a cheaper quote for elsewhere).
+    const itemCount = input.items.reduce((sum, item) => sum + item.quantity, 0);
+    const postalCode = input.customer.postalCode?.trim() ?? "";
+    let liveShipping = null;
+    if (isEasyPostMethodId(input.shippingMethodId)) {
+      if (!postalCode) {
+        return {
+          ok: false,
+          error: "Postal / ZIP is required for live carrier rates. Refresh shipping options.",
+        };
+      }
+      liveShipping = await retrieveEasyPostRateOption(
+        input.shippingMethodId,
+        {
+          to: {
+            name: input.customer.fullName,
+            street1: input.customer.address,
+            city: input.customer.city,
+            state: input.customer.area || input.customer.city,
+            zip: postalCode,
+            country: input.customer.country,
+            phone: input.customer.phone,
+          },
+          itemCount: Math.max(1, itemCount),
+        },
+        await getSettings(),
+      );
+      if (!liveShipping) {
+        return {
+          ok: false,
+          error:
+            "That carrier rate does not match this order’s address or bag. Go back and refresh shipping options.",
+        };
+      }
+    }
+
     const order = await mutate((state) => {
       if (input.items.length === 0) {
         throw new PlatformError("Your cart is empty.");
@@ -310,7 +349,9 @@ export async function createOrder(input: {
       }
       const discountPkr = applyDiscount(discount, subtotalPkr);
       const afterDiscount = subtotalPkr - discountPkr;
-      const shipping = shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
+      const shipping =
+        liveShipping ??
+        shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
       const taxPkr = estimateTaxPkr(afterDiscount, input.customer.country);
       const paymentStatus: PaymentStatus =
         input.paymentMethod === "card_demo" ? "paid" : "pending";

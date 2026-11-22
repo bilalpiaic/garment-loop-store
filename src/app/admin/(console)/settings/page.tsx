@@ -2,6 +2,7 @@ import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { getSettings, persistenceInfo } from "@/lib/platform";
 import { SettingsForm } from "@/components/admin/admin-forms";
 import { emailConfigured, emailMode } from "@/lib/email";
+import { easypostConfigured, easypostFromAddress } from "@/lib/easypost";
 import { stripeConfigured, stripeWebhookConfigured } from "@/lib/stripe";
 
 export const metadata = { title: "Settings" };
@@ -44,6 +45,14 @@ export default async function AdminSettingsPage() {
             {stripeWebhookConfigured()
               ? "STRIPE_WEBHOOK_SECRET set — POST /api/stripe/webhook."
               : "No-op until STRIPE_WEBHOOK_SECRET is set (endpoint still returns 200)."}
+          </li>
+          <li>
+            <span className="text-foreground">EasyPost shipping:</span>{" "}
+            {easypostConfigured() && easypostFromAddress()
+              ? "Live carrier rates at checkout (EASYPOST_API_KEY + EASYPOST_FROM_*)."
+              : easypostConfigured()
+                ? "API key set — add EASYPOST_FROM_NAME/STREET1/CITY/STATE/ZIP/COUNTRY for live rates (zone fallback until then)."
+                : "Zone rates only — set EASYPOST_API_KEY + ship-from address for live carriers. Label buy / prepaid RMA is stubbed."}
           </li>
         </ul>
       </section>

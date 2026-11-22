@@ -13,6 +13,7 @@ export const checkoutSchema = z
     city: z.string().trim().min(2, "Enter your city."),
     area: z.string().trim().min(2, "Enter your area or locality."),
     address: z.string().trim().min(8, "Enter a street address."),
+    postalCode: z.string().trim().optional(),
     notes: z.string().optional(),
     paymentMethod: z.enum(["cod", "bank_transfer", "card_demo", "stripe"]),
     shippingMethodId: z.string().min(1, "Choose a shipping option."),

@@ -204,9 +204,34 @@ export function OrderStatusForm({ order }: { order: Order }) {
       <Field label="Internal notes">
         <Textarea name="notes" defaultValue={order.notes} rows={3} />
       </Field>
-      <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Update order"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={pending}>
+          {pending ? "Saving…" : "Update order"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={pending}
+          onClick={async () => {
+            setPending(true);
+            try {
+              const response = await fetch("/api/admin/shipping/label", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderNumber: order.orderNumber }),
+              });
+              const data = (await response.json()) as { message?: string; error?: string; next?: string };
+              toast.message(data.message ?? data.error ?? "Label purchase is not available yet.", {
+                description: data.next,
+              });
+            } finally {
+              setPending(false);
+            }
+          }}
+        >
+          Create label (stub)
+        </Button>
+      </div>
     </form>
   );
 }
