@@ -314,8 +314,10 @@ export function CheckoutForm({
               <label
                 key={option.id}
                 className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-xl border p-4",
-                  shippingMethodId === option.id ? "border-primary" : "border-border",
+                  "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                  shippingMethodId === option.id
+                    ? "border-olive bg-secondary/50"
+                    : "border-border hover:border-olive/40",
                 )}
               >
                 <input
@@ -354,8 +356,10 @@ export function CheckoutForm({
                 <label
                   key={method.id}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-xl border p-4",
-                    paymentMethod === method.id ? "border-primary" : "border-border",
+                    "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                    paymentMethod === method.id
+                      ? "border-olive bg-secondary/50"
+                      : "border-border hover:border-olive/40",
                     disabled && "cursor-not-allowed opacity-50",
                   )}
                 >
@@ -398,7 +402,7 @@ export function CheckoutForm({
           </div>
         </section>
       </div>
-      <aside className="h-fit rounded-xl border bg-card p-5 lg:sticky lg:top-24">
+      <aside className="atelier-panel h-fit rounded-lg p-5 lg:sticky lg:top-24">
         <h2 className="font-serif text-2xl">Order summary</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {items.map((item) => {
