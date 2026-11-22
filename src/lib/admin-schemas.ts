@@ -87,6 +87,38 @@ export const adminUserSchema = z.object({
   active: z.boolean().optional(),
 });
 
+export const customerPatchSchema = z.object({
+  id: z.string().min(1),
+  fullName: z.string().trim().min(2).optional(),
+  phone: z.string().trim().min(6).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+});
+
+export const productBulkSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1),
+  status: z.enum(["draft", "published", "archived"]),
+});
+
+export const orderBulkSchema = z.object({
+  orderNumbers: z.array(z.string().min(1)).min(1),
+  status: z.enum([
+    "pending",
+    "confirmed",
+    "processing",
+    "packed",
+    "shipped",
+    "delivered",
+    "cancelled",
+    "returned",
+  ]),
+});
+
+export const collectionAssignSchema = z.object({
+  slug: z.string().min(1),
+  productIds: z.array(z.string().min(1)),
+});
+
 export const settingsSchema = z.object({
   storeName: z.string().trim().min(2).optional(),
   supportEmail: z.string().trim().email().optional(),
