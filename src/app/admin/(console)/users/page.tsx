@@ -1,9 +1,8 @@
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { listAdminUsers } from "@/lib/platform";
 import { AdminUserForm } from "@/components/admin/admin-forms";
-import { roleLabel } from "@/lib/roles";
+import { AdminUserRow } from "@/components/admin/admin-crud";
 import { formatDateTime } from "@/lib/admin-nav";
-import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Users" };
 
@@ -18,7 +17,7 @@ export default async function AdminUsersPage() {
         <h1 className="mt-1 font-serif text-3xl">Users & roles</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Owner has full access. Admin can manage catalog and orders. Staff can fulfill orders and
-          adjust inventory.
+          adjust inventory. Invite staff below, then change role or deactivate from the table.
         </p>
       </div>
       <AdminUserForm />
@@ -29,27 +28,33 @@ export default async function AdminUsersPage() {
               <th className="px-4 py-3">Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Last login</th>
               <th>Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="border-t">
-                <td className="px-4 py-3 font-medium">{user.name}</td>
-                <td>{user.email}</td>
-                <td>{roleLabel(user.role)}</td>
-                <td>{user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "—"}</td>
-                <td>
-                  <Badge variant={user.active ? "default" : "secondary"}>
-                    {user.active ? "Active" : "Disabled"}
-                  </Badge>
-                </td>
-              </tr>
+              <AdminUserRow
+                key={user.id}
+                user={{
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  role: user.role,
+                  active: user.active,
+                }}
+              />
             ))}
           </tbody>
         </table>
       </div>
+      <ul className="text-xs text-muted-foreground">
+        {users.map((user) => (
+          <li key={`${user.id}-meta`}>
+            {user.email}: last login {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "never"}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
