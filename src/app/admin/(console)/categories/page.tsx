@@ -13,31 +13,27 @@ export default async function AdminCategoriesPage() {
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Catalog</p>
         <h1 className="mt-1 font-serif text-3xl">Categories</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Create or update categories. Products reference a category slug from the product editor.
+        </p>
       </div>
       <TaxonomyForm kind="categories" />
-      <div className="overflow-x-auto rounded-xl border bg-card">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th>Slug</th>
-              <th>Products</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {catalog.categories.map((category) => (
-              <tr key={category.slug} className="border-t">
-                <td className="px-4 py-3 font-medium">{category.name}</td>
-                <td>{category.slug}</td>
-                <td>{catalog.products.filter((product) => product.category === category.slug).length}</td>
-                <td className="px-4 py-3 text-right">
-                  <DeleteTaxonomyButton kind="categories" slug={category.slug} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        {catalog.categories.map((category) => (
+          <section key={category.slug} className="space-y-3 rounded-xl border bg-card p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-serif text-2xl">{category.name}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {category.slug} ·{" "}
+                  {catalog.products.filter((product) => product.category === category.slug).length} products
+                </p>
+              </div>
+              <DeleteTaxonomyButton kind="categories" slug={category.slug} />
+            </div>
+            <TaxonomyForm kind="categories" item={category} />
+          </section>
+        ))}
       </div>
     </div>
   );
