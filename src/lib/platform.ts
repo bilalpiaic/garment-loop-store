@@ -45,7 +45,12 @@ import type {
   WishlistEntry,
 } from "@/lib/commerce-types";
 import { stripeConfigured } from "@/lib/stripe";
-import { sendOrderConfirmation, sendReturnRequestNotice, sendShipmentNotice } from "@/lib/email";
+import {
+  sendLoginOtpEmail,
+  sendOrderConfirmation,
+  sendReturnRequestNotice,
+  sendShipmentNotice,
+} from "@/lib/email";
 import { ensureDemoWalkthrough } from "@/lib/seed-demo";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -794,6 +799,7 @@ export async function requestCustomerOtp(emailRaw: string) {
     throw new PlatformError("Enter a valid email.");
   }
   const code = createOtpCode();
+  const expiresMinutes = Math.round(OTP_TTL_MS / 60_000);
   await mutate((state) => {
     const recent = state.otp.filter(
       (item) => item.email === email && Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
@@ -810,9 +816,26 @@ export async function requestCustomerOtp(emailRaw: string) {
       createdAt: new Date().toISOString(),
     });
   });
-  console.info(`[auth] OTP for ${email}: ${code}`);
+
+  const mail = await sendLoginOtpEmail(email, code, expiresMinutes);
+  if (!mail.ok) {
+    console.error("[auth] OTP email failed", mail.mode, mail.error);
+  }
+
+  // Never return or log the code in production unless AUTH_SHOW_OTP=1.
   const show = process.env.AUTH_SHOW_OTP === "1" || process.env.NODE_ENV !== "production";
-  return { ok: true as const, devCode: show ? code : undefined };
+  if (show) {
+    console.info(`[auth] OTP for ${email}: ${code} (email=${mail.mode}${mail.ok ? "" : ":failed"})`);
+  } else {
+    console.info(`[auth] OTP issued for ${email} (email=${mail.mode}${mail.ok ? "" : ":failed"})`);
+  }
+
+  return {
+    ok: true as const,
+    emailed: mail.ok,
+    emailMode: mail.mode,
+    devCode: show ? code : undefined,
+  };
 }
 
 export async function verifyCustomerOtp(emailRaw: string, code: string) {

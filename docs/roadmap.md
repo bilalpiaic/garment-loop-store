@@ -15,13 +15,13 @@
 | Production QA on Neon (Vercel READY) | Done |
 | **Neon Postgres production default (`DATABASE_URL` on Vercel)** | Done |
 | Theme / colors / UI polish (storefront + admin brand chrome) | Done |
+| **Production customer OTP email (Resend/SMTP)** | Done (code); set mail keys on Vercel for inbox delivery |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
 - Live carrier APIs / prepaid RMA labels
 - Apple Pay / Google Pay / BNPL
 - Avalara / full VAT
-- Production OTP email delivery
 - AI personalization, i18n, loyalty subscriptions
 
 ## Run

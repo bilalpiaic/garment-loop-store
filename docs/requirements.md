@@ -92,7 +92,7 @@ Priorities: **Must** = Phase 1 MVP · **Should** = Phase 2 · **Could** = Phase 
 1. **Stripe wallets / BNPL** (Checkout Session + webhooks shipped; `card_demo` fallback remains).
 2. **Carriers** — EasyPost or UPS/FedEx for live rates + labels; tracking webhooks.
 3. **Tax engine** — Avalara / VAT beyond PK 5% estimate.
-4. **Auth OTP email** in production (order/shipment/return email path exists via Resend/SMTP).
+4. **Auth OTP email keys on Vercel** — `sendLoginOtpEmail` ships with Resend/SMTP; set `RESEND_API_KEY` or `SMTP_*` + `EMAIL_FROM` for inbox delivery (API no longer returns `devCode` in production unless `AUTH_SHOW_OTP`).
 5. **Prepaid RMA labels** for customer returns (portal + admin queue shipped).
 
 See [roadmap.md](./roadmap.md) for phasing.

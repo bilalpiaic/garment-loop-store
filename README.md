@@ -42,7 +42,9 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `DATABASE_URL` | Neon persistence (set on Vercel; optional locally) |
 | `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Live Stripe Checkout |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
-| `RESEND_API_KEY` or `SMTP_*` | Real transactional email |
+| `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`) | Real transactional email (orders, returns, **customer login OTP**) |
+| `EMAIL_FROM` | From address (must be allowed by Resend/SMTP) |
+| `AUTH_SHOW_OTP` | Return OTP in API / UI (default on outside production; keep off in prod) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
@@ -59,8 +61,9 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 - Live carrier rate/label APIs
 - Stripe wallets / BNPL
 - Avalara/VAT tax engine
-- Production OTP email for auth
 - Prepaid RMA labels, AI personalization, i18n, loyalty
+
+> Customer OTP email is implemented; set Resend/SMTP on Vercel for production inbox delivery.
 
 ## Stack
 
