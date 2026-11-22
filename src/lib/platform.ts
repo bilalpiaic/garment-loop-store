@@ -705,3 +705,78 @@ export async function saveDiscount(input: Omit<Discount, "id" | "usedCount"> & {
     return discount;
   });
 }
+
+export async function deleteDiscount(id: string) {
+  return mutate((state) => {
+    state.discounts = state.discounts.filter((item) => item.id !== id);
+  });
+}
+
+export async function requestCustomerOtp(emailRaw: string) {
+  const email = emailRaw.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new PlatformError("Enter a valid email.");
+  }
+  const code = createOtpCode();
+  await mutate((state) => {
+    const recent = state.otp.filter(
+      (item) => item.email === email && Date.now() - new Date(item.createdAt).getTime() < 60 * 60 * 1000,
+    );
+    if (recent.length >= 5) {
+      throw new PlatformError("Too many login attempts. Try again in an hour.", 429);
+    }
+    state.otp = state.otp.filter((item) => item.email !== email);
+    state.otp.push({
+      email,
+      codeHash: sha256(`${email}:${code}`),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString(),
+      attempts: 0,
+      createdAt: new Date().toISOString(),
+    });
+  });
+  console.info(`[auth] OTP for ${email}: ${code}`);
+  const show = process.env.AUTH_SHOW_OTP === "1" || process.env.NODE_ENV !== "production";
+  return { ok: true as const, devCode: show ? code : undefined };
+}
+
+export async function verifyCustomerOtp(emailRaw: string, code: string) {
+  const email = emailRaw.trim().toLowerCase();
+  const sessionId = await mutate((state) => {
+    const challenge = state.otp.find((item) => item.email === email);
+    if (!challenge) throw new PlatformError("Request a new code first.");
+    if (new Date(challenge.expiresAt).getTime() < Date.now()) {
+      throw new PlatformError("That code has expired.");
+    }
+    challenge.attempts += 1;
+    if (challenge.attempts > 5) {
+      throw new PlatformError("Too many attempts. Request a new code.");
+    }
+    if (challenge.codeHash !== sha256(`${email}:${code.trim()}`)) {
+      throw new PlatformError("That code is incorrect.");
+    }
+    state.otp = state.otp.filter((item) => item.email !== email);
+    let customer = state.customers.find((item) => item.email === email);
+    if (!customer) {
+      customer = {
+        id: createId("cus"),
+        email,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+      state.customers.unshift(customer);
+    } else {
+      customer.lastLoginAt = new Date().toISOString();
+    }
+    const sessionId = createToken();
+    state.sessions.push({
+      id: sessionId,
+      kind: "customer",
+      userId: customer.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + CUSTOMER_SESSION_MS).toISOString(),
+    });
+    return sessionId;
+  });
+  await setSessionCookie(CUSTOMER_COOKIE, sessionId, CUSTOMER_SESSION_MS);
+  return { ok: true as const };
+}
