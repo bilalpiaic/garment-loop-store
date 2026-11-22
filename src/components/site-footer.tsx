@@ -43,6 +43,9 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
             <li>
               <Link href="/account/login">Customer login</Link>
             </li>
+            <li>
+              <Link href="/admin/login">Staff / Admin sign in</Link>
+            </li>
           </ul>
         </div>
         <div>

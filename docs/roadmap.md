@@ -9,7 +9,8 @@
 | Docs + brand tokens | Done (#9) |
 | Commerce depth (filters, wishlist, reviews, zone shipping, Stripe session) | Done (#10) |
 | Returns portal + webhooks + email | Done (#11) |
-| **Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout** | Done (#12 / GitHub `main`) |
+| **Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout** | Done (#12 / GitHub main) |
+| Admin vs customer login discoverability | Done |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
@@ -29,3 +30,6 @@ http://localhost:43123 — no env required.
 
 **Production:** https://garment-loop-store.vercel.app  
 **GitHub:** https://github.com/bilalpiaic/garment-loop-store (`main`)
+
+
+See [progress-vs-requirements.md](./progress-vs-requirements.md) for % complete vs original specs.

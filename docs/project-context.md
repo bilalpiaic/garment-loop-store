@@ -21,7 +21,7 @@ Soft Cream `#F5F1E8`, Warm Ochre `#E5B65B`, Deep Olive `#4A5F43`, Charcoal `#333
 - Local: `npm run dev` → http://localhost:43123
 - Production: https://garment-loop-store.vercel.app (Vercel project `garment-loop-store`, team bilalpiaics-projects)
 - No required `DATABASE_URL`
-- Stacked PRs on Origin: #9 docs → #10 commerce → #11 returns/email → #12 vercel-ready demo
+- Stacked PRs: #9 docs → #10 commerce → #11 returns/email → **vercel-ready demo** branch
 
 ## Decisions
 
@@ -34,4 +34,9 @@ Soft Cream `#F5F1E8`, Warm Ochre `#E5B65B`, Deep Olive `#4A5F43`, Charcoal `#333
 
 ## Related docs
 
-requirements · architecture · design-system · roadmap · admin-spec · storefront-spec
+requirements · architecture · design-system · roadmap · admin-spec · storefront-spec · **progress-vs-requirements**
+
+## Auth surfaces
+
+- Shoppers: `/account/login` (email OTP)
+- Staff/Owner: `/admin/login` (email + password)
