@@ -4,16 +4,16 @@ import type { Category } from "@/lib/catalog";
 
 export function SiteFooter({ categories }: { categories: Category[] }) {
   return (
-    <footer className="mt-auto border-t bg-secondary/50">
+    <footer className="mt-auto border-t border-border/80 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--secondary)_55%,transparent),color-mix(in_oklab,var(--sage)_10%,var(--secondary)))]">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-3">
-          <p className="font-serif text-2xl">GarmentLoop</p>
+          <p className="font-serif text-2xl text-ink">GarmentLoop</p>
           <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
             {site.tagline} Designed in Lahore. Built for winters at home and abroad.
           </p>
         </div>
         <div>
-          <p className="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">Shop</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-sage">Shop</p>
           <ul className="space-y-2 text-sm">
             <li>
               <Link href="/shop">All products</Link>
@@ -26,7 +26,7 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
           </ul>
         </div>
         <div>
-          <p className="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">House</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-sage">House</p>
           <ul className="space-y-2 text-sm">
             <li>
               <Link href="/about">About</Link>
@@ -49,7 +49,7 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
           </ul>
         </div>
         <div>
-          <p className="mb-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">Policies</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-sage">Policies</p>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link className="text-foreground" href="/policies/shipping">
