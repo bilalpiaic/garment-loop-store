@@ -393,6 +393,47 @@ export const products: Product[] = [
       { "Black-XL": 0 },
     ),
   },
+  {
+    id: "sherpa-shirt-jacket",
+    slug: "sherpa-lined-shirt-jacket",
+    title: "Sherpa Lined Shirt Jacket",
+    subtitle: "Twil outer, sherpa inner",
+    description:
+      "A shirt-jacket with a cotton twill face and a sherpa lining. Snap through as a shirt on mild days, or close it as a jacket when the evening cools.",
+    features: [
+      "Cotton twill outer",
+      "Sherpa lining through body and collar",
+      "Chest pockets with flaps",
+    ],
+    specs: [
+      { label: "Outer", value: "Cotton twill" },
+      { label: "Lining", value: "Polyester sherpa" },
+      { label: "Care", value: "Machine wash cold, hang dry" },
+    ],
+    category: "jackets",
+    collections: ["new-arrivals"],
+    isNew: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=1400&q=80",
+        alt: "Shirt jacket",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1542060748-10c28b62716f?auto=format&fit=crop&w=1400&q=80",
+        alt: "Casual jacket on a rack",
+      },
+    ],
+    variants: variants(
+      "sherpa-shirt-jacket",
+      [
+        { color: "Olive", hex: "#6b6a4a" },
+        { color: "Brown", hex: "#6a4b35" },
+      ],
+      ["S", "M", "L"],
+      10900,
+      {},
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
