@@ -514,6 +514,129 @@ export const products: Product[] = [
       { "Navy-30": 2 },
     ),
   },
+  {
+    id: "cashmere-scarf",
+    slug: "cashmere-blend-scarf",
+    title: "Cashmere Blend Scarf",
+    subtitle: "Oversized, brushed finish",
+    description:
+      "A generous scarf in a cashmere-wool blend. Long enough to double wrap, light enough to wear indoors. The finish is brushed for a quiet halo of warmth.",
+    features: [
+      "Cashmere-wool blend",
+      "200 × 70 cm",
+      "Fringed ends, reversible weave",
+    ],
+    specs: [
+      { label: "Fabric", value: "30% cashmere, 70% merino" },
+      { label: "Size", value: "200 × 70 cm" },
+      { label: "Care", value: "Hand wash cold" },
+    ],
+    category: "accessories",
+    collections: ["winter-collection", "essentials"],
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=1400&q=80",
+        alt: "Wool scarf",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&w=1400&q=80",
+        alt: "Soft knit accessory",
+      },
+    ],
+    variants: variants(
+      "cashmere-scarf",
+      [
+        { color: "Camel", hex: "#c2a06a" },
+        { color: "Burgundy", hex: "#6e2c3a" },
+        { color: "Grey", hex: "#9a9a9a" },
+      ],
+      ["One Size"],
+      3900,
+      {},
+    ),
+  },
+  {
+    id: "ribbed-beanie",
+    slug: "ribbed-knit-beanie",
+    title: "Ribbed Knit Beanie",
+    subtitle: "Merino rib, no cuff bulk",
+    description:
+      "A close merino beanie with a deep rib that holds its shape. Wear it folded once; it will not slouch into your eyes on a windy platform.",
+    features: [
+      "Merino wool rib",
+      "Double-layer brim",
+      "Fits most adults",
+    ],
+    specs: [
+      { label: "Fabric", value: "100% merino wool" },
+      { label: "Care", value: "Hand wash cold" },
+    ],
+    category: "accessories",
+    collections: ["essentials", "new-arrivals"],
+    isNew: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=1400&q=80",
+        alt: "Knit beanie",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?auto=format&fit=crop&w=1400&q=80",
+        alt: "Winter beanie lifestyle",
+      },
+    ],
+    variants: variants(
+      "ribbed-beanie",
+      [
+        { color: "Black", hex: "#1b1b1b" },
+        { color: "Cream", hex: "#efe7d8" },
+        { color: "Forest", hex: "#314a38" },
+      ],
+      ["One Size"],
+      1900,
+      {},
+      1500,
+    ),
+  },
+  {
+    id: "leather-gloves",
+    slug: "leather-winter-gloves",
+    title: "Leather Winter Gloves",
+    subtitle: "Lambskin with wool lining",
+    description:
+      "Slim lambskin gloves lined in wool. Touch-screen compatible at the index finger and thumb, with a snap wrist so they stay put on a motorcycle or bicycle.",
+    features: [
+      "Lambskin outer",
+      "Wool lining",
+      "Touch-screen fingertips",
+    ],
+    specs: [
+      { label: "Outer", value: "Lambskin leather" },
+      { label: "Lining", value: "Wool knit" },
+      { label: "Care", value: "Leather conditioner, air dry" },
+    ],
+    category: "accessories",
+    collections: ["winter-collection"],
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=1400&q=80",
+        alt: "Leather gloves",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?auto=format&fit=crop&w=1400&q=80",
+        alt: "Winter gloves close up",
+      },
+    ],
+    variants: variants(
+      "leather-gloves",
+      [
+        { color: "Black", hex: "#1a1a1a" },
+        { color: "Brown", hex: "#5a3d2b" },
+      ],
+      ["S", "M", "L"],
+      2900,
+      { "Brown-S": 3 },
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
