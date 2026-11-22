@@ -28,11 +28,11 @@ export function AdminShell({
   }
 
   return (
-    <div className="flex min-h-full bg-[#f4f1ec]">
-      <aside className="hidden w-60 shrink-0 flex-col bg-[oklch(0.28_0.04_210)] text-white md:flex">
+    <div className="flex min-h-full bg-[color:var(--background)]">
+      <aside className="hidden w-60 shrink-0 flex-col bg-ink text-cream md:flex">
         <div className="px-5 py-6">
-          <p className="font-serif text-2xl">GarmentLoop</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/60">Admin</p>
+          <p className="font-serif text-2xl tracking-tight">GarmentLoop</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-champagne/80">Back office</p>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-3 pb-6">
           {items.map((item) => {
@@ -42,8 +42,10 @@ export function AdminShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm",
-                  active ? "bg-white/15" : "text-white/75 hover:bg-white/10 hover:text-white",
+                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  active
+                    ? "bg-cream/12 text-cream ring-1 ring-champagne/25"
+                    : "text-cream/70 hover:bg-cream/8 hover:text-cream",
                 )}
               >
                 {item.label}
@@ -51,16 +53,21 @@ export function AdminShell({
             );
           })}
         </nav>
-        <div className="border-t border-white/10 px-5 py-4 text-xs">
+        <div className="border-t border-cream/10 px-5 py-4 text-xs">
           <p className="font-medium">{user.name}</p>
-          <p className="text-white/60">{roleLabel(user.role)}</p>
-          <button type="button" className="mt-3 text-white/80 underline-offset-4 hover:underline" onClick={signOut} disabled={pending}>
+          <p className="text-champagne/70">{roleLabel(user.role)}</p>
+          <button
+            type="button"
+            className="mt-3 text-cream/80 underline-offset-4 hover:underline"
+            onClick={signOut}
+            disabled={pending}
+          >
             {pending ? "Signing out…" : "Sign out"}
           </button>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b bg-background px-4 py-3 md:px-8">
+        <header className="flex items-center justify-between border-b border-border/80 bg-[color-mix(in_oklab,var(--cream)_90%,transparent)] px-4 py-3 backdrop-blur-sm md:px-8">
           <div className="flex flex-wrap gap-2 md:hidden">
             {items.slice(0, 5).map((item) => (
               <Link key={item.href} href={item.href} className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -69,13 +76,13 @@ export function AdminShell({
             ))}
           </div>
           <div className="ml-auto flex items-center gap-3 text-sm">
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
+            <Link href="/" className="text-muted-foreground hover:text-olive">
               View store
             </Link>
             <Button
               size="sm"
               variant="outline"
-              className="hidden md:inline-flex"
+              className="hidden border-olive/30 text-olive hover:bg-olive hover:text-cream md:inline-flex"
               nativeButton={false}
               render={<Link href="/admin/products/new" />}
             >
