@@ -30,6 +30,7 @@ export function CustomerLoginForm() {
         devCode?: string;
         emailed?: boolean;
         emailMode?: string;
+        emailError?: string;
       };
       if (!response.ok) {
         toast.error(data.error ?? "Could not send a code.");
@@ -41,11 +42,14 @@ export function CustomerLoginForm() {
         toast.success(`Dev code: ${data.devCode}`);
       } else if (data.emailed) {
         toast.success("Check your email for a sign-in code.");
-      } else {
+      } else if (data.emailMode === "mock") {
         toast.message(
-          data.emailMode === "mock"
-            ? "Code generated. Email is in mock mode — set RESEND_API_KEY or SMTP on the server."
-            : "Code generated, but email delivery failed. Try again or contact support.",
+          "Code generated. Email is in mock mode — set RESEND_API_KEY or SMTP on the server.",
+        );
+      } else {
+        toast.error(
+          data.emailError ??
+            "Code generated, but email delivery failed. Try again or contact support.",
         );
       }
     } finally {

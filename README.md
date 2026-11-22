@@ -43,7 +43,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Live Stripe Checkout |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`) | Real transactional email (orders, returns, **customer login OTP**) |
-| `EMAIL_FROM` | From address (must be allowed by Resend/SMTP) |
+| `EMAIL_FROM` | From address. Resend test sender `onboarding@resend.dev` can only deliver to the Resend account owner email. After verifying a domain at resend.com/domains, use e.g. `GarmentLoop <orders@garmentloop.store>` (or `noreply@your-verified-domain`). |
 | `AUTH_SHOW_OTP` | Return OTP in API / UI (default on outside production; keep off in prod) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
