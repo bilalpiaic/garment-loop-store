@@ -1,1 +1,2 @@
-LOAD_FROM_FILE:/tmp/gh-critical/plat-prog/micro-926.ts
+export * from "@/lib/platform-internals";
+export * from "@/lib/platform-rest";
