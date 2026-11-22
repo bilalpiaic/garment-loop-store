@@ -1,74 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useWishlistStore } from "@/store/store";
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export function WishlistButton({
   productId,
   className,
+  variant = "outline",
 }: {
   productId: string;
   className?: string;
+  variant?: "outline" | "ghost";
 }) {
-  const [active, setActive] = useState(false);
-  const [ready, setReady] = useState(false);
+  const hydrated = useHydrated();
+  const has = useWishlistStore((state) => state.has(productId));
+  const toggle = useWishlistStore((state) => state.toggle);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const response = await fetch("/api/wishlist");
-        const data = (await response.json()) as { productIds?: string[] };
-        if (!cancelled) {
-          setActive((data.productIds ?? []).includes(productId));
-          setReady(true);
-        }
-      } catch {
-        if (!cancelled) setReady(true);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [productId]);
-
-  async function toggle() {
-    const next = !active;
-    setActive(next);
+  async function onToggle() {
+    const nextHas = !has;
+    toggle(productId);
+    const productIds = useWishlistStore.getState().productIds;
+    toast.success(nextHas ? "Saved to wishlist" : "Removed from wishlist");
     try {
-      const response = await fetch("/api/wishlist", {
+      await fetch("/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, action: next ? "add" : "remove" }),
+        body: JSON.stringify({ productIds }),
       });
-      if (!response.ok) {
-        setActive(!next);
-        toast.error("Could not update wishlist.");
-        return;
-      }
-      toast.success(next ? "Saved to wishlist" : "Removed from wishlist");
     } catch {
-      setActive(!next);
-      toast.error("Network error.");
+      /* guest local persist is enough */
     }
   }
 
   return (
     <Button
       type="button"
-      variant="outline"
+      variant={variant}
       size="icon"
       className={cn("size-10", className)}
-      onClick={toggle}
-      disabled={!ready}
-      aria-label={active ? "Remove from wishlist" : "Add to wishlist"}
-      aria-pressed={active}
+      aria-label={has ? "Remove from wishlist" : "Add to wishlist"}
+      aria-pressed={hydrated ? has : false}
+      onClick={onToggle}
     >
-      <Heart className={cn("size-4", active ? "fill-current text-primary" : "")} />
+      <Heart className={cn("size-4", hydrated && has && "fill-current text-destructive")} />
     </Button>
   );
 }
