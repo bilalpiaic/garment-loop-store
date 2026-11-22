@@ -40,3 +40,7 @@ requirements · architecture · design-system · roadmap · admin-spec · storef
 
 - Shoppers: `/account/login` (email OTP)
 - Staff/Owner: `/admin/login` (email + password)
+
+## Admin
+
+Owner/admin CRUD across products, taxonomy, inventory, orders, customers (notes/tags), discounts, reviews, returns, content, users (owner), settings — demo persistence, no required DB.
