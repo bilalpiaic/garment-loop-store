@@ -29,6 +29,9 @@ export default async function AccountPage() {
         <Link href="/account/returns" className="underline underline-offset-4">
           Returns & exchanges
         </Link>
+        <Link href="/account/circular" className="underline underline-offset-4">
+          Circular wardrobe
+        </Link>
         <Link href="/wishlist" className="underline underline-offset-4">
           Wishlist
         </Link>

@@ -43,11 +43,23 @@ import { isEasyPostMethodId, resolveShippingOption } from "@/lib/shipping";
 import { retrieveEasyPostRateOption } from "@/lib/easypost";
 import { quoteTax } from "@/lib/tax";
 import type {
+  CircularPlanId,
+  CircularSubscription,
+  CircularSubscriptionStatus,
   ProductReview,
+  RepairRequest,
+  RepairStatus,
   ReturnReasonCode,
   ReturnRequest,
+  TakeBackCondition,
+  TakeBackRequest,
+  TakeBackStatus,
   WishlistEntry,
 } from "@/lib/commerce-types";
+import {
+  circularSubscriptionsMockForced,
+  getCircularPlan,
+} from "@/lib/circular";
 import { stripeConfigured } from "@/lib/stripe";
 import {
   publicEmailError,
@@ -196,6 +208,18 @@ async function ensureSeed(state: PlatformState) {
   }
   if (!state.mfaChallenges) {
     state.mfaChallenges = [];
+    changed = true;
+  }
+  if (!state.takeBacks) {
+    state.takeBacks = [];
+    changed = true;
+  }
+  if (!state.repairs) {
+    state.repairs = [];
+    changed = true;
+  }
+  if (!state.circularSubscriptions) {
+    state.circularSubscriptions = [];
     changed = true;
   }
   pruneExpired(state);
@@ -1903,4 +1927,315 @@ export async function updateReturnRequest(
     }
     return request;
   });
+}
+
+/* ─── Circular wardrobe: take-back / repair / subscriptions ─── */
+
+function emailMatches(a: string, b: string) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+export async function listTakeBacks() {
+  return readPlatform((state) =>
+    [...(state.takeBacks ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function listTakeBacksForCustomer(customerId: string, email: string) {
+  const normalized = email.trim().toLowerCase();
+  return readPlatform((state) =>
+    [...(state.takeBacks ?? [])]
+      .filter(
+        (item) =>
+          item.customerId === customerId || item.customerEmail.toLowerCase() === normalized,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function getTakeBackById(id: string, email?: string) {
+  return readPlatform((state) => {
+    const item = (state.takeBacks ?? []).find((entry) => entry.id === id);
+    if (!item) return null;
+    if (email && !emailMatches(item.customerEmail, email)) return null;
+    return item;
+  });
+}
+
+export async function createTakeBackRequest(input: {
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  phone?: string;
+  items: { description: string; condition: TakeBackCondition; quantity: number }[];
+  preferredPickupDate?: string;
+  address?: string;
+  city?: string;
+  notes?: string;
+}) {
+  if (!input.items.length) throw new PlatformError("Add at least one garment.");
+  return mutate((state) => {
+    state.takeBacks = state.takeBacks ?? [];
+    const now = new Date().toISOString();
+    const request: TakeBackRequest = {
+      id: createId("tb"),
+      customerEmail: input.customerEmail.trim().toLowerCase(),
+      customerName: input.customerName.trim(),
+      customerId: input.customerId,
+      phone: input.phone?.trim() || undefined,
+      items: input.items.map((item) => ({
+        description: item.description.trim(),
+        condition: item.condition,
+        quantity: item.quantity,
+      })),
+      preferredPickupDate: input.preferredPickupDate || undefined,
+      address: input.address?.trim() || undefined,
+      city: input.city?.trim() || undefined,
+      notes: input.notes?.trim() || undefined,
+      status: "requested",
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.takeBacks.unshift(request);
+    return request;
+  });
+}
+
+export async function updateTakeBackRequest(
+  id: string,
+  patch: {
+    status?: TakeBackStatus;
+    creditEstimatePkr?: number;
+    adminNote?: string;
+    preferredPickupDate?: string;
+  },
+) {
+  return mutate((state) => {
+    const request = (state.takeBacks ?? []).find((item) => item.id === id);
+    if (!request) throw new PlatformError("Take-back not found.", 404);
+    const now = new Date().toISOString();
+    if (patch.status) request.status = patch.status;
+    if (typeof patch.creditEstimatePkr === "number") {
+      request.creditEstimatePkr = patch.creditEstimatePkr;
+    }
+    if (patch.adminNote !== undefined) request.adminNote = patch.adminNote;
+    if (patch.preferredPickupDate !== undefined) {
+      request.preferredPickupDate = patch.preferredPickupDate || undefined;
+    }
+    request.updatedAt = now;
+    return request;
+  });
+}
+
+export async function listRepairs() {
+  return readPlatform((state) =>
+    [...(state.repairs ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function listRepairsForCustomer(customerId: string, email: string) {
+  const normalized = email.trim().toLowerCase();
+  return readPlatform((state) =>
+    [...(state.repairs ?? [])]
+      .filter(
+        (item) =>
+          item.customerId === customerId || item.customerEmail.toLowerCase() === normalized,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function getRepairById(id: string, email?: string) {
+  return readPlatform((state) => {
+    const item = (state.repairs ?? []).find((entry) => entry.id === id);
+    if (!item) return null;
+    if (email && !emailMatches(item.customerEmail, email)) return null;
+    return item;
+  });
+}
+
+export async function createRepairRequest(input: {
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  phone?: string;
+  garmentDescription: string;
+  issue: string;
+  preferredDate?: string;
+}) {
+  return mutate((state) => {
+    state.repairs = state.repairs ?? [];
+    const now = new Date().toISOString();
+    const request: RepairRequest = {
+      id: createId("rp"),
+      customerEmail: input.customerEmail.trim().toLowerCase(),
+      customerName: input.customerName.trim(),
+      customerId: input.customerId,
+      phone: input.phone?.trim() || undefined,
+      garmentDescription: input.garmentDescription.trim(),
+      issue: input.issue.trim(),
+      preferredDate: input.preferredDate || undefined,
+      status: "requested",
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.repairs.unshift(request);
+    return request;
+  });
+}
+
+export async function updateRepairRequest(
+  id: string,
+  patch: {
+    status?: RepairStatus;
+    quotePkr?: number;
+    appointmentAt?: string;
+    adminNote?: string;
+  },
+) {
+  return mutate((state) => {
+    const request = (state.repairs ?? []).find((item) => item.id === id);
+    if (!request) throw new PlatformError("Repair request not found.", 404);
+    const now = new Date().toISOString();
+    if (patch.status) request.status = patch.status;
+    if (typeof patch.quotePkr === "number") request.quotePkr = patch.quotePkr;
+    if (patch.appointmentAt !== undefined) {
+      request.appointmentAt = patch.appointmentAt || undefined;
+    }
+    if (patch.adminNote !== undefined) request.adminNote = patch.adminNote;
+    request.updatedAt = now;
+    return request;
+  });
+}
+
+export async function listCircularSubscriptions() {
+  return readPlatform((state) =>
+    [...(state.circularSubscriptions ?? [])].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    ),
+  );
+}
+
+export async function listCircularSubscriptionsForCustomer(customerId: string, email: string) {
+  const normalized = email.trim().toLowerCase();
+  return readPlatform((state) =>
+    [...(state.circularSubscriptions ?? [])]
+      .filter(
+        (item) =>
+          item.customerId === customerId || item.customerEmail.toLowerCase() === normalized,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function getCircularSubscription(id: string) {
+  return readPlatform(
+    (state) => (state.circularSubscriptions ?? []).find((item) => item.id === id) ?? null,
+  );
+}
+
+export function shouldUseMockCircularSubscription() {
+  return circularSubscriptionsMockForced() || !stripeConfigured();
+}
+
+export async function createCircularSubscription(input: {
+  planId: CircularPlanId;
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  /** When true (or Stripe unset / CIRCULAR_SUBSCRIPTIONS_MOCK), activate immediately. */
+  mock?: boolean;
+}) {
+  const plan = getCircularPlan(input.planId);
+  if (!plan) throw new PlatformError("Unknown circular plan.");
+  const mock = input.mock ?? shouldUseMockCircularSubscription();
+  return mutate((state) => {
+    state.circularSubscriptions = state.circularSubscriptions ?? [];
+    const email = input.customerEmail.trim().toLowerCase();
+    const existingActive = state.circularSubscriptions.find(
+      (item) =>
+        item.planId === plan.id &&
+        item.customerEmail === email &&
+        (item.status === "active" || item.status === "pending"),
+    );
+    if (existingActive) {
+      throw new PlatformError(
+        existingActive.status === "active"
+          ? "You already have an active subscription for this plan."
+          : "A signup for this plan is already in progress.",
+      );
+    }
+    const now = new Date().toISOString();
+    const subscription: CircularSubscription = {
+      id: createId("sub"),
+      planId: plan.id,
+      planName: plan.name,
+      customerEmail: email,
+      customerName: input.customerName.trim(),
+      customerId: input.customerId,
+      status: mock ? "active" : "pending",
+      billingInterval: plan.billingInterval,
+      pricePkr: plan.pricePkr,
+      mock,
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.circularSubscriptions.unshift(subscription);
+    return subscription;
+  });
+}
+
+export async function activateCircularSubscription(
+  id: string,
+  extras?: {
+    stripeSessionId?: string;
+    stripeSubscriptionId?: string;
+    stripeCustomerId?: string;
+  },
+) {
+  return mutate((state) => {
+    const subscription = (state.circularSubscriptions ?? []).find((item) => item.id === id);
+    if (!subscription) throw new PlatformError("Subscription not found.", 404);
+    const now = new Date().toISOString();
+    subscription.status = "active";
+    subscription.updatedAt = now;
+    if (extras?.stripeSessionId) subscription.stripeSessionId = extras.stripeSessionId;
+    if (extras?.stripeSubscriptionId) {
+      subscription.stripeSubscriptionId = extras.stripeSubscriptionId;
+    }
+    if (extras?.stripeCustomerId) subscription.stripeCustomerId = extras.stripeCustomerId;
+    subscription.mock = false;
+    return subscription;
+  });
+}
+
+export async function updateCircularSubscription(
+  id: string,
+  patch: {
+    status?: CircularSubscriptionStatus;
+    stripeSessionId?: string;
+    stripeSubscriptionId?: string;
+    stripeCustomerId?: string;
+  },
+) {
+  return mutate((state) => {
+    const subscription = (state.circularSubscriptions ?? []).find((item) => item.id === id);
+    if (!subscription) throw new PlatformError("Subscription not found.", 404);
+    const now = new Date().toISOString();
+    if (patch.status) {
+      subscription.status = patch.status;
+      if (patch.status === "cancelled") subscription.cancelledAt = now;
+    }
+    if (patch.stripeSessionId) subscription.stripeSessionId = patch.stripeSessionId;
+    if (patch.stripeSubscriptionId) {
+      subscription.stripeSubscriptionId = patch.stripeSubscriptionId;
+    }
+    if (patch.stripeCustomerId) subscription.stripeCustomerId = patch.stripeCustomerId;
+    subscription.updatedAt = now;
+    return subscription;
+  });
+}
+
+export async function attachStripeSessionToSubscription(id: string, sessionId: string) {
+  return updateCircularSubscription(id, { stripeSessionId: sessionId, status: "pending" });
 }

@@ -11,11 +11,18 @@ import type {
   SessionRecord,
   StoreSettings,
 } from "@/lib/identity";
-import type { ProductReview, ReturnRequest, WishlistEntry } from "@/lib/commerce-types";
+import type {
+  CircularSubscription,
+  ProductReview,
+  RepairRequest,
+  ReturnRequest,
+  TakeBackRequest,
+  WishlistEntry,
+} from "@/lib/commerce-types";
 import type { Order } from "@/lib/order-model";
 import { seedContentPages, seedDiscounts } from "@/lib/seed-demo";
 
-export const PLATFORM_VERSION = 2;
+export const PLATFORM_VERSION = 3;
 
 export type ContentPage = {
   slug: string;
@@ -41,6 +48,9 @@ export type PlatformState = {
   orderSeq: number;
   reviews: ProductReview[];
   returns: ReturnRequest[];
+  takeBacks: TakeBackRequest[];
+  repairs: RepairRequest[];
+  circularSubscriptions: CircularSubscription[];
   /** customerId → wishlist product ids */
   wishlists: Record<string, WishlistEntry[]>;
   pages: ContentPage[];
@@ -79,6 +89,9 @@ export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings
     orderSeq: 0,
     reviews: seedReviews(catalog),
     returns: [],
+    takeBacks: [],
+    repairs: [],
+    circularSubscriptions: [],
     wishlists: {},
     pages: seedContentPages(),
     auditLogs: [],

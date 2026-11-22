@@ -8,6 +8,7 @@ export const ADMIN_NAV: {
   { href: "/admin", label: "Dashboard", permission: "dashboard.view" },
   { href: "/admin/orders", label: "Orders", permission: "orders.view" },
   { href: "/admin/returns", label: "Returns", permission: "orders.manage" },
+  { href: "/admin/circular", label: "Circular", permission: "orders.manage" },
   { href: "/admin/products", label: "Products", permission: "products.manage" },
   { href: "/admin/reviews", label: "Reviews", permission: "products.manage" },
   { href: "/admin/inventory", label: "Inventory", permission: "inventory.manage" },

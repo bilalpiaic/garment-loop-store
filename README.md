@@ -26,8 +26,9 @@ Optional: `cp .env.example .env.local` — every variable is optional. Set `DATA
 | Area | What to try |
 | --- | --- |
 | Storefront | Home → Shop filters → PDP (wishlist/reviews) → Cart → multi-step Checkout (COD) |
-| Account | `/account/login` (OTP shown outside production) → orders → returns |
-| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 · CSV import, Security (MFA), Audit log · Settings shows Neon vs demo |
+| Account | `/account/login` (OTP shown outside production) → orders → returns → `/account/circular` |
+| Circular | `/circular` take-back · repair · subscribe (mock without Stripe) |
+| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 · CSV import, Security (MFA), Audit log, Circular queue · Settings shows Neon vs demo |
 
 Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages.
 
@@ -40,8 +41,10 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | Variable | Effect when set |
 | --- | --- |
 | `DATABASE_URL` | Neon persistence (set on Vercel; optional locally) |
-| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Element (cards, wallets, BNPL) |
+| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Element (cards, wallets, BNPL) + circular subscription Checkout |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
+| `CIRCULAR_SUBSCRIPTIONS_MOCK` | Force mock circular memberships even when Stripe is keyed |
+| `STRIPE_PRICE_*_MONTHLY` | Optional Stripe Price IDs for Care / Repair+ / Recycle Loop |
 | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`) | Real transactional email (orders, returns, **customer login OTP**) |
 | `EMAIL_FROM` | From address. Resend test sender `onboarding@resend.dev` can only deliver to the Resend account owner email. After verifying a domain at resend.com/domains, use e.g. `GarmentLoop <orders@garmentloop.store>` (or `noreply@your-verified-domain`). |
 | `AUTH_SHOW_OTP` | Return OTP in API / UI (default on outside production; keep off in prod) |
@@ -91,9 +94,10 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 - Prepaid RMA / outbound EasyPost label purchase (rates env-gated; buy stubbed)
 - ~~Stripe wallets / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
 - Avalara/VAT tax engine
-- Prepaid RMA labels, AI personalization, i18n, loyalty
+- Prepaid RMA labels, AI personalization, i18n, loyalty points beyond circular memberships
 
-> Customer OTP email is implemented; set Resend/SMTP on Vercel for production inbox delivery.
+> Customer OTP email is implemented; set Resend/SMTP on Vercel for production inbox delivery.  
+> Circular take-back / repair / subscriptions MVP is live at `/circular` (mock billing without Stripe).
 
 ## Stack
 

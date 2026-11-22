@@ -5,7 +5,21 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const catalog = await getPublishedCatalog();
-  const staticPaths = ["", "/shop", "/about", "/faq", "/contact", "/search", "/cart", "/checkout"];
+  const staticPaths = [
+    "",
+    "/shop",
+    "/about",
+    "/faq",
+    "/contact",
+    "/search",
+    "/cart",
+    "/checkout",
+    "/circular",
+    "/circular/take-back",
+    "/circular/repair",
+    "/circular/subscribe",
+    "/sustainability",
+  ];
   const productPaths = catalog.products.map((product) => `/product/${product.slug}`);
   const categoryPaths = catalog.categories.map((category) => `/category/${category.slug}`);
   const collectionPaths = catalog.collections.map((collection) => `/collection/${collection.slug}`);

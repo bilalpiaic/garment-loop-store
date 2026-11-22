@@ -71,7 +71,7 @@ export async function loadNeonState(): Promise<PlatformState> {
   const metaRows = await sql`SELECT data FROM platform_state WHERE id = 'default' LIMIT 1`;
   const raw = (metaRows[0] as { data?: StoredMeta } | undefined)?.data;
   const meta: StoredMeta = {
-    version: 2,
+    version: 3,
     catalog: raw?.catalog ?? base.catalog,
     customers: raw?.customers ?? [],
     addresses: raw?.addresses ?? [],
@@ -83,6 +83,9 @@ export async function loadNeonState(): Promise<PlatformState> {
     settings: { ...DEFAULT_SETTINGS, ...raw?.settings },
     reviews: raw?.reviews?.length ? raw.reviews : base.reviews,
     returns: raw?.returns ?? [],
+    takeBacks: raw?.takeBacks ?? [],
+    repairs: raw?.repairs ?? [],
+    circularSubscriptions: raw?.circularSubscriptions ?? [],
     wishlists: raw?.wishlists ?? {},
     pages: raw?.pages?.length ? raw.pages : base.pages,
     auditLogs: raw?.auditLogs ?? [],
@@ -110,7 +113,7 @@ export async function saveNeonState(state: PlatformState) {
     throw new Error("DATABASE_URL is not set.");
   }
   const meta: StoredMeta = {
-    version: 2,
+    version: 3,
     catalog: state.catalog,
     customers: state.customers,
     addresses: state.addresses,
@@ -122,6 +125,9 @@ export async function saveNeonState(state: PlatformState) {
     settings: state.settings,
     reviews: state.reviews,
     returns: state.returns,
+    takeBacks: state.takeBacks ?? [],
+    repairs: state.repairs ?? [],
+    circularSubscriptions: state.circularSubscriptions ?? [],
     wishlists: state.wishlists,
     pages: state.pages ?? [],
     auditLogs: state.auditLogs ?? [],

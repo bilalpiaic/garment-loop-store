@@ -37,7 +37,7 @@ export function seedContentPages(): ContentPage[] {
       slug: "sustainability",
       title: "Sustainability",
       excerpt: "Circular wardrobe principles for garments that stay in the loop.",
-      body: `GarmentLoop designs for longevity first: denser cloth, repairable construction, and honest materials.\n\nWe are building take-back and care programs so pieces can be refreshed, resold, or responsibly recycled rather than discarded after a single season.\n\nEvery collection is cut in smaller runs so we buy less fabric waste and can stand behind fit.`,
+      body: `GarmentLoop designs for longevity first: denser cloth, repairable construction, and honest materials.\n\nTake-back, atelier repair bookings, and recycling subscriptions are live in the circular hub (/circular): request pickup, track status, and join Care / Repair+ / Recycle Loop memberships (Stripe when keyed; mock signup otherwise).\n\nEvery collection is cut in smaller runs so we buy less fabric waste and can stand behind fit.`,
       updatedAt: new Date().toISOString(),
     },
     {

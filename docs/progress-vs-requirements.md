@@ -37,7 +37,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Avalara / full VAT | Should | Done | Local PK/GCC/intl + optional Avalara/TaxJar |
 | Photo UGC / Q&A | Should–Could | Not started | |
 | GA4 ecommerce events | Must hooks | Done | Consent-gated GA4 + Meta Pixel; env IDs optional |
-| Circular take-back / repair subscriptions | Brand Could | Not started | Messaging only |
+| Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues; Stripe or mock |
 | i18n / hreflang | Could | Not started | EN + PKR/USD display |
 | Personalization | Could | Not started | |
 
@@ -88,7 +88,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | --- | --- | --- |
 | **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
 | **Should (Phase 2)** | **~55%** | EasyPost + wallets + tax + CSV/MFA/audit; label buy + autocomplete still open |
-| **Could / Phase 3 wish list** | **~14%** | Wallets/BNPL + tax path shipped; circular/loyalty/i18n/personalization still open |
+| **Could / Phase 3 wish list** | **~30%** | Circular MVP + wallets/tax shipped; loyalty points, i18n, personalization open |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
 
 ## Honest top gaps
@@ -98,8 +98,8 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 3. ~~Stripe wallets / BNPL / express pay~~ (done when Stripe keys + Dashboard methods enabled)  
 4. ~~Tax engine beyond PK estimate~~ (local regions + optional Avalara/TaxJar)  
 5. ~~CSV product import, MFA, audit log UI~~ (done — Products CSV import; Security TOTP; Audit log; `ADMIN_MFA_REQUIRED`)  
-6. Circular take-back / repair / recycling subscriptions (productized)  
-7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)
+6. ~~Circular take-back / repair / recycling subscriptions~~ (MVP done — `/circular`, admin Circular)  
+7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)  
 
 ## Login UX
 

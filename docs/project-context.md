@@ -45,4 +45,4 @@ requirements · architecture · design-system · roadmap · admin-spec · storef
 
 ## Admin
 
-Owner/admin CRUD across products, taxonomy, inventory, orders, customers (notes/tags), discounts, reviews, returns, content, users (owner), settings — durable on Neon in production; demo store locally without DB.
+Owner/admin CRUD across products, taxonomy, inventory, orders, customers (notes/tags), discounts, reviews, returns, circular (take-back / repair / subscriptions), content, users (owner), settings — durable on Neon in production; demo store locally without DB.

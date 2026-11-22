@@ -233,3 +233,82 @@ export function orderNumberFromStripeObject(
   }
   return undefined;
 }
+
+export function circularSubscriptionIdFromStripeSession(
+  session: Stripe.Checkout.Session,
+): string | undefined {
+  return session.metadata?.circularSubscriptionId ?? undefined;
+}
+
+/** Create a Stripe Checkout Session for a circular wardrobe subscription. */
+export async function createCircularSubscriptionCheckoutSession(input: {
+  subscriptionId: string;
+  planName: string;
+  planDescription: string;
+  customerEmail: string;
+  pricePkr: number;
+  billingInterval: "month" | "year";
+  stripePriceId?: string;
+  origin: string;
+}) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return { ok: false as const, error: "Stripe is not configured." };
+  }
+
+  const unitAmount = Math.max(50, Math.round((input.pricePkr / site.usdRate) * 100));
+  const lineItem = input.stripePriceId
+    ? { price: input.stripePriceId, quantity: 1 }
+    : {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: unitAmount,
+          recurring: { interval: input.billingInterval },
+          product_data: {
+            name: `${site.name} ${input.planName}`,
+            description: input.planDescription,
+          },
+        },
+      };
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer_email: input.customerEmail,
+    client_reference_id: input.subscriptionId,
+    metadata: {
+      circularSubscriptionId: input.subscriptionId,
+    },
+    line_items: [lineItem],
+    success_url: `${input.origin}/circular/subscribe/success?session_id={CHECKOUT_SESSION_ID}&sub=${input.subscriptionId}`,
+    cancel_url: `${input.origin}/circular/subscribe?cancelled=1&sub=${input.subscriptionId}`,
+  });
+
+  if (!session.url) {
+    return { ok: false as const, error: "Stripe did not return a checkout URL." };
+  }
+  return { ok: true as const, url: session.url, sessionId: session.id };
+}
+
+export async function verifyCircularSubscriptionCheckoutSession(sessionId: string) {
+  const stripe = getStripe();
+  if (!stripe) return { ok: false as const, error: "Stripe is not configured." };
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const complete = session.status === "complete";
+  const subscriptionId =
+    session.metadata?.circularSubscriptionId ?? session.client_reference_id ?? undefined;
+  const stripeSubscriptionId =
+    typeof session.subscription === "string"
+      ? session.subscription
+      : session.subscription?.id;
+  const stripeCustomerId =
+    typeof session.customer === "string" ? session.customer : session.customer?.id;
+  return {
+    ok: true as const,
+    complete,
+    subscriptionId: subscriptionId ?? undefined,
+    sessionId: session.id,
+    stripeSubscriptionId,
+    stripeCustomerId,
+  };
+}

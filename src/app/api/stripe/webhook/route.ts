@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { markOrderPaid } from "@/lib/platform";
+import { activateCircularSubscription, markOrderPaid } from "@/lib/platform";
 import {
+  circularSubscriptionIdFromStripeSession,
   constructStripeWebhookEvent,
   orderNumberFromStripeObject,
   stripeConfigured,
@@ -44,7 +45,22 @@ export async function POST(request: Request) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      if (session.payment_status === "paid" || session.status === "complete") {
+      if (session.mode === "subscription" || session.metadata?.circularSubscriptionId) {
+        const subscriptionId = circularSubscriptionIdFromStripeSession(session);
+        if (subscriptionId && session.status === "complete") {
+          const stripeSubscriptionId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription?.id;
+          const stripeCustomerId =
+            typeof session.customer === "string" ? session.customer : session.customer?.id;
+          await activateCircularSubscription(subscriptionId, {
+            stripeSessionId: session.id,
+            stripeSubscriptionId,
+            stripeCustomerId,
+          });
+        }
+      } else if (session.payment_status === "paid" || session.status === "complete") {
         const orderNumber = orderNumberFromStripeObject(session);
         if (orderNumber) {
           await markOrderPaid(orderNumber, session.id);

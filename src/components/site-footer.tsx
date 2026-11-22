@@ -35,6 +35,9 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
               <Link href="/sustainability">Sustainability</Link>
             </li>
             <li>
+              <Link href="/circular">Circular programs</Link>
+            </li>
+            <li>
               <Link href="/faq">FAQ</Link>
             </li>
             <li>

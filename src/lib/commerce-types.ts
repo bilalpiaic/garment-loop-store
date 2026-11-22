@@ -52,3 +52,94 @@ export type WishlistEntry = {
   productId: string;
   addedAt: string;
 };
+
+/** Circular wardrobe — take-back / repair / recycling subscriptions (Phase 3) */
+
+export type TakeBackStatus =
+  | "requested"
+  | "scheduled"
+  | "received"
+  | "credited"
+  | "rejected"
+  | "completed";
+
+export type TakeBackCondition = "good" | "fair" | "worn" | "damaged";
+
+export type TakeBackItem = {
+  description: string;
+  condition: TakeBackCondition;
+  quantity: number;
+};
+
+export type TakeBackRequest = {
+  id: string;
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  phone?: string;
+  items: TakeBackItem[];
+  preferredPickupDate?: string;
+  address?: string;
+  city?: string;
+  notes?: string;
+  status: TakeBackStatus;
+  creditEstimatePkr?: number;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RepairStatus =
+  | "requested"
+  | "quoted"
+  | "scheduled"
+  | "in_progress"
+  | "ready"
+  | "completed"
+  | "cancelled";
+
+export type RepairRequest = {
+  id: string;
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  phone?: string;
+  garmentDescription: string;
+  issue: string;
+  preferredDate?: string;
+  status: RepairStatus;
+  quotePkr?: number;
+  appointmentAt?: string;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CircularPlanId = "care" | "repair_plus" | "recycle_loop";
+
+export type CircularSubscriptionStatus =
+  | "pending"
+  | "active"
+  | "paused"
+  | "cancelled"
+  | "past_due";
+
+export type CircularSubscription = {
+  id: string;
+  planId: CircularPlanId;
+  planName: string;
+  customerEmail: string;
+  customerName: string;
+  customerId?: string;
+  status: CircularSubscriptionStatus;
+  billingInterval: "month" | "year";
+  pricePkr: number;
+  stripeSubscriptionId?: string;
+  stripeSessionId?: string;
+  stripeCustomerId?: string;
+  /** True when activated without live Stripe Billing (demo / env mock). */
+  mock: boolean;
+  createdAt: string;
+  updatedAt: string;
+  cancelledAt?: string;
+};

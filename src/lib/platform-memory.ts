@@ -40,7 +40,7 @@ function hydrate(parsed: Partial<PlatformState>): PlatformState {
   return {
     ...base,
     ...parsed,
-    version: 2,
+    version: 3,
     catalog: parsed.catalog ?? base.catalog,
     stock: parsed.stock ?? base.stock,
     orders: parsed.orders ?? [],
@@ -55,6 +55,9 @@ function hydrate(parsed: Partial<PlatformState>): PlatformState {
     orderSeq: parsed.orderSeq ?? parsed.orders?.length ?? 0,
     reviews: parsed.reviews?.length ? parsed.reviews : base.reviews,
     returns: parsed.returns ?? [],
+    takeBacks: parsed.takeBacks ?? [],
+    repairs: parsed.repairs ?? [],
+    circularSubscriptions: parsed.circularSubscriptions ?? [],
     wishlists: parsed.wishlists ?? {},
     pages: parsed.pages?.length ? parsed.pages : base.pages ?? [],
     auditLogs: parsed.auditLogs ?? [],

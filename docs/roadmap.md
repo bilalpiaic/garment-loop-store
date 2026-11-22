@@ -16,13 +16,14 @@
 | **Neon Postgres production default (`DATABASE_URL` on Vercel)** | Done |
 | Theme / colors / UI polish (storefront + admin brand chrome) | Done |
 | **Production customer OTP email (Resend/SMTP)** | Done (code); set mail keys on Vercel for inbox delivery |
+| Circular take-back / repair / recycling subscriptions (MVP) | Done |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
 - EasyPost label purchase + prepaid RMA labels (rates env-gated; buy stubbed)
 - ~~Apple Pay / Google Pay / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
 - ~~Avalara / full VAT~~ (local + Avalara/TaxJar path; set keys for live quotes)
-- AI personalization, i18n, loyalty subscriptions
+- AI personalization, i18n, loyalty points beyond circular memberships
 
 ## Run
 

@@ -71,7 +71,9 @@ export default async function HomePage() {
             </p>
             <p>
               <span className="block font-medium text-foreground">Circular by design</span>
-              Longevity, care, and take-back on the roadmap
+              <Link href="/circular" className="underline-offset-4 hover:underline">
+                Take-back, repair, and recycling subscriptions
+              </Link>
             </p>
           </div>
         </section>

@@ -22,7 +22,7 @@ export default function AboutPage() {
         <p>
           The first collection is built around Pakistani winters and travel. Puffers that pack for a
           flight, wool coats that hold a crease, merino that does not itch after a long day. We cut
-          locally so we can stand behind every size, and we are building care and take-back programs
+          locally so we can stand behind every size, with live care, take-back, and repair programs
           so garments stay in the loop.
         </p>
         <p>

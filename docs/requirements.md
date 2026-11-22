@@ -34,7 +34,7 @@ Priorities: **Must** = Phase 1 MVP · **Should** = Phase 2 · **Could** = Phase 
 | Shipping | **Config zone rates** (PK standard/express, GCC, intl) + free threshold | Live carrier rates/labels | Multi-warehouse routing |
 | Wishlist | Guest local + account sync | Shared lists | — |
 | Reviews | Submit + approved display | Photo UGC, Q&A | Incentives |
-| Account | Email OTP login; order history; profile shell | Addresses CRUD | Loyalty, repair/recycling subscriptions |
+| Account | Email OTP login; order history; profile shell | Addresses CRUD | **Circular take-back / repair / recycling subscriptions** (MVP); loyalty points later |
 | Content | About, FAQ, Contact, **Sustainability**, **Policies**, consent banner | Richer CMS | Blog / multilingual |
 | SEO / a11y | Clean URLs, meta, Product JSON-LD, sitemap, WCAG AA basics | BreadcrumbList, OpenGraph polish | hreflang |
 | Analytics | Hook points for GA4 ecommerce events | GTM, Meta Pixel + consent | Full BI |
