@@ -96,23 +96,42 @@ export function DeleteTaxonomyButton({ kind, slug }: { kind: "categories" | "col
 export function InventoryAdjust({ variantId }: { variantId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  async function apply(change: number) {
+  const [qty, setQty] = useState(1);
+  const [reason, setReason] = useState("Manual adjustment");
+  async function apply(sign: 1 | -1) {
+    const change = Math.abs(qty || 1) * sign;
     setPending(true);
     try {
       const response = await fetch("/api/admin/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId, change, reason: "Manual adjustment" }),
+        body: JSON.stringify({ variantId, change, reason: reason.trim() || "Manual adjustment" }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) toast.error(data.error ?? "Could not adjust stock.");
-      else router.refresh();
+      else {
+        toast.success(`Stock ${change > 0 ? "increased" : "decreased"} by ${Math.abs(change)}.`);
+        router.refresh();
+      }
     } finally {
       setPending(false);
     }
   }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
+      <Input
+        type="number"
+        min={1}
+        value={qty}
+        onChange={(event) => setQty(Math.max(1, Number(event.target.value) || 1))}
+        className="h-8 w-16"
+      />
+      <Input
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        className="h-8 w-36"
+        placeholder="Reason"
+      />
       <Button size="xs" variant="outline" disabled={pending} onClick={() => apply(-1)}>
         −
       </Button>
