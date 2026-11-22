@@ -49,6 +49,8 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated; no-op when unset) |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated; no-op when unset) |
 | `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Live carrier rates at checkout (else zone rates) |
+| `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` | Live Avalara tax quotes (else local PK/GCC/intl) |
+| `TAXJAR_API_KEY` | TaxJar quotes when Avalara unset |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
 ### Enable live EasyPost rates
@@ -60,7 +62,14 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 3. Redeploy / restart. Checkout step 2 calls `POST /api/shipping/rates` — live options when the key + from-address are complete; otherwise zone fallback.
 4. Admin order detail has **Create label (stub)** — tracking fields work today; buying outbound / prepaid RMA labels is intentionally stubbed (`501` from `/api/admin/shipping/label`).
 
-4. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres**.
+### Enable live tax quotes
+
+1. **Local (default):** Pakistan ≈5% sales tax, GCC ≈5% VAT, international = duties at destination (shown as line items in checkout).
+2. **Avalara:** set `AVALARA_ACCOUNT_ID`, `AVALARA_LICENSE_KEY`, optional `AVALARA_COMPANY_CODE` (default `DEFAULT`), `AVALARA_ENV=sandbox|production`.
+3. **TaxJar:** if Avalara is unset, set `TAXJAR_API_KEY` (+ optional `TAXJAR_FROM_*` / `TAXJAR_ENV=sandbox`).
+4. Redeploy. Checkout calls `POST /api/tax/quote`; order create uses the same resolver. Never invent or commit API keys.
+
+5. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres**.
 
 > Without `DATABASE_URL` (typical local): state lives in memory / `.data` / best-effort `/tmp`. Cold starts re-seed sample data.
 

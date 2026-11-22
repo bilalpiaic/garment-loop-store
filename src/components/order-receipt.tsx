@@ -76,11 +76,16 @@ export function OrderReceipt({
           <div className="flex justify-between">
             <span>{taxLabel(order.customer.country)}</span>
             <span>
-              {!order.taxPkr
-                ? "—"
-                : formatMoney(order.taxPkr, order.currency)}
+              {!order.taxPkr ? "—" : formatMoney(order.taxPkr, order.currency)}
             </span>
           </div>
+          {!order.taxPkr &&
+          order.customer.country !== "PK" &&
+          !["AE", "SA", "QA", "KW", "BH", "OM"].includes(order.customer.country) ? (
+            <p className="text-xs text-muted-foreground">
+              Import duties or VAT may apply on arrival for international deliveries.
+            </p>
+          ) : null}
           {order.discountPkr ? (
             <div className="flex justify-between text-muted-foreground">
               <span>Discount{order.discountCode ? ` (${order.discountCode})` : ""}</span>

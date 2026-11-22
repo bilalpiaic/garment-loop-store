@@ -21,7 +21,7 @@
 
 - EasyPost label purchase + prepaid RMA labels (rates env-gated; buy stubbed)
 - ~~Apple Pay / Google Pay / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
-- Avalara / full VAT
+- ~~Avalara / full VAT~~ (local + Avalara/TaxJar path; set keys for live quotes)
 - AI personalization, i18n, loyalty subscriptions
 
 ## Run

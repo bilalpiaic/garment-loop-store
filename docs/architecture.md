@@ -29,6 +29,7 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 | GA4 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No scripts / events when unset |
 | Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` | No scripts / events when unset |
 | EasyPost shipping | `EASYPOST_API_KEY` + `EASYPOST_FROM_NAME/STREET1/CITY/STATE/ZIP/COUNTRY` (+ optional `PHONE`) | Zone rates in `shipping.ts` |
+| Tax | `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` or `TAXJAR_API_KEY` | Local PK / GCC / intl estimates |
 
 ## Storefront analytics
 
@@ -63,6 +64,14 @@ When both Stripe keys are set, checkout creates a **PaymentIntent** with `automa
 - Hosted Checkout Session remains a server-side fallback if PaymentIntent creation fails
 - No invented keys — unavailable methods simply do not render
 
+## Tax engine
+
+- **Local rules:** PK ≈5% sales tax; GCC (AE/SA/QA/KW/BH/OM) ≈5% VAT; intl = PKR 0 at checkout with “duties at destination” note.
+- **Avalara** (when account + license set): AvaTax `SalesOrder` estimate; amounts converted via store `usdRate`.
+- **TaxJar** (when Avalara unset and `TAXJAR_API_KEY` set): `/v2/taxes` estimate with optional ship-from envs.
+- Checkout summary shows tax **label + line items**; `POST /api/tax/quote` and `createOrder` share `quoteTax()`.
+- No invented keys — missing provider env keeps local estimates.
+
 ## Auth email (customer OTP)
 
 `POST /api/auth/otp/request` stores a hashed 6-digit code (10‑minute TTL) and calls `sendLoginOtpEmail` via Resend or SMTP. Production never returns `devCode` unless `AUTH_SHOW_OTP=1`. Without mail keys, delivery is mock (server console). Failed sends return a safe `emailError` (e.g. Resend test-sender recipient restriction).
@@ -78,4 +87,4 @@ When both Stripe keys are set, checkout creates a **PaymentIntent** with `automa
 
 ## Key libs
 
-`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `easypost.ts` · `tax.ts` · `stripe.ts` · `email.ts` · `analytics/`
+`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `easypost.ts` · `tax.ts` · `tax-avalara.ts` · `tax-taxjar.ts` · `stripe.ts` · `email.ts` · `analytics/`

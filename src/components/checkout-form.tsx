@@ -12,7 +12,7 @@ import { checkoutSchema } from "@/lib/checkout-schema";
 import { getVariant } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
 import { listShippingOptions, type ShippingRateOption } from "@/lib/shipping";
-import { estimateTaxPkr, taxLabel } from "@/lib/tax";
+import { estimateTaxLocal, type TaxQuote } from "@/lib/tax";
 import { useCartStore, usePreferenceStore } from "@/store/store";
 import { useCatalog } from "@/components/catalog-provider";
 import { Price } from "@/components/price";
@@ -75,6 +75,9 @@ export function CheckoutForm({
   const [ratesLoading, setRatesLoading] = useState(false);
   const [quote, setQuote] = useState<QuoteContext | null>(null);
   const ratesRequestId = useRef(0);
+  const [taxQuote, setTaxQuote] = useState<TaxQuote>(() =>
+    estimateTaxLocal(0, defaults?.address?.country ?? "PK"),
+  );
   const steps = [
     { id: 1 as const, label: "Contact & address" },
     { id: 2 as const, label: "Shipping & payment" },
@@ -131,7 +134,7 @@ export function CheckoutForm({
     shippingOptions.find((option) => option.id === shippingMethodId) ?? shippingOptions[0];
   const effectiveShippingMethodId = selectedShipping?.id ?? "pk-standard";
   const shippingAmount = selectedShipping?.amountPkr ?? 0;
-  const tax = estimateTaxPkr(subtotal, country);
+  const tax = taxQuote.amountPkr;
   const total = subtotal + shippingAmount + tax;
 
   function pickShippingId(options: ShippingRateOption[], preferred?: string) {
@@ -208,6 +211,40 @@ export function CheckoutForm({
     void refreshRates(quote, country);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- quote/cart/country drive refresh; step gate only
   }, [country, subtotal, itemCount, quote]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const local = estimateTaxLocal(subtotal, country);
+    setTaxQuote(local);
+    const handle = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch("/api/tax/quote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              country,
+              taxablePkr: subtotal,
+              shippingPkr: shippingAmount,
+              city: quote?.city,
+              area: quote?.area,
+              address: quote?.address,
+              postalCode: quote?.postalCode,
+            }),
+          });
+          const data = (await response.json()) as { quote?: TaxQuote };
+          if (!cancelled && data.quote) setTaxQuote(data.quote);
+        } catch {
+          /* keep local estimate */
+        }
+      })();
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [country, subtotal, shippingAmount, quote]);
+
 
   async function onSubmit(formData: FormData) {
     setErrors({});
@@ -578,9 +615,25 @@ export function CheckoutForm({
             <span>{shippingAmount === 0 ? "Free" : <Price amountPkr={shippingAmount} />}</span>
           </div>
           <div className="flex justify-between">
-            <span>{taxLabel(country)}</span>
+            <span>{taxQuote.label}</span>
             <span>{tax === 0 ? "—" : <Price amountPkr={tax} />}</span>
           </div>
+          {taxQuote.lines.length > 0 ? (
+            <ul className="space-y-0.5 pl-1 text-xs text-muted-foreground">
+              {taxQuote.lines.map((line) => (
+                <li key={`${line.description}-${line.amountPkr}`} className="flex justify-between gap-3">
+                  <span>
+                    {line.description}
+                    {line.ratePercent > 0 ? ` (${line.ratePercent}%)` : ""}
+                  </span>
+                  <span>
+                    {line.amountPkr === 0 ? "—" : <Price amountPkr={line.amountPkr} />}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {taxQuote.note ? <p className="text-xs text-muted-foreground">{taxQuote.note}</p> : null}
           <div className="flex justify-between pt-2 text-base font-medium">
             <span>Total</span>
             <span>{formatMoney(total, currency)}</span>

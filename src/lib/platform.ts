@@ -38,7 +38,7 @@ import { mergeStockIntoCatalog, publicCatalog, type ContentPage, type PlatformSt
 import { can, type Permission, type Role } from "@/lib/roles";
 import { isEasyPostMethodId, resolveShippingOption } from "@/lib/shipping";
 import { retrieveEasyPostRateOption } from "@/lib/easypost";
-import { estimateTaxPkr } from "@/lib/tax";
+import { quoteTax } from "@/lib/tax";
 import type {
   ProductReview,
   ReturnReasonCode,
@@ -309,6 +309,42 @@ export async function createOrder(input: {
       }
     }
 
+    // Preview taxable amount + shipping so we can await Avalara/TaxJar before committing stock.
+    const preview = await readPlatform((state) => {
+      if (input.items.length === 0) throw new PlatformError("Your cart is empty.");
+      let subtotalPkr = 0;
+      for (const item of input.items) {
+        const match = getVariant(item.variantId, state.catalog.products);
+        if (!match) throw new PlatformError("One of the items is no longer available.");
+        const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
+        subtotalPkr += unit * item.quantity;
+      }
+      const code = input.discountCode?.trim().toUpperCase();
+      const discount = code
+        ? state.discounts.find((item) => item.code.toUpperCase() === code)
+        : undefined;
+      if (code && !discount) throw new PlatformError("That discount code is not valid.");
+      const discountPkr = applyDiscount(discount, subtotalPkr);
+      const afterDiscount = subtotalPkr - discountPkr;
+      const shipping =
+        liveShipping ??
+        shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
+      return { afterDiscount, shippingAmount: shipping.amountPkr };
+    });
+
+    const taxQuote = await quoteTax({
+      taxablePkr: preview.afterDiscount,
+      shippingPkr: preview.shippingAmount,
+      address: {
+        country: input.customer.country,
+        city: input.customer.city,
+        area: input.customer.area,
+        address: input.customer.address,
+        postalCode: input.customer.postalCode,
+      },
+      customerCode: input.customer.email,
+    });
+
     const order = await mutate((state) => {
       if (input.items.length === 0) {
         throw new PlatformError("Your cart is empty.");
@@ -352,7 +388,7 @@ export async function createOrder(input: {
       const shipping =
         liveShipping ??
         shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
-      const taxPkr = estimateTaxPkr(afterDiscount, input.customer.country);
+      const taxPkr = taxQuote.amountPkr;
       const paymentStatus: PaymentStatus =
         input.paymentMethod === "card_demo" ? "paid" : "pending";
       const status: OrderStatus =

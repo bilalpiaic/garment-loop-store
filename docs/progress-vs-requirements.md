@@ -26,7 +26,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Reviews display + submit | Must | Done | Submit → pending moderation |
 | Cart persistent | Must | Done | Zustand + localStorage |
 | Guest multi-step checkout | Must | Done | COD order GL-0006 on Neon |
-| Zone shipping + tax line | Must | Done | Config rates; PK tax estimate |
+| Zone shipping + tax line | Must | Done | Config rates; regional tax line + optional Avalara/TaxJar |
 | Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed |
 | Account OTP + orders + returns portal | Must | Done | Prod OTP hides `devCode`; RMA via admin |
 | Static pages + policies + consent | Must | Done | Content editor |
@@ -34,7 +34,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Address autocomplete | Should | Not started | |
 | Express pay / BNPL / wallets | Should–Could | Done | Payment Element + Express Checkout when Stripe keyed |
 | Live carrier rates | Should | Partial | EasyPost rates when keyed; label buy / prepaid RMA stubbed |
-| Avalara / full VAT | Should | Partial | Simple PK estimate only |
+| Avalara / full VAT | Should | Done | Local PK/GCC/intl + optional Avalara/TaxJar |
 | Photo UGC / Q&A | Should–Could | Not started | |
 | GA4 ecommerce events | Must hooks | Done | Consent-gated GA4 + Meta Pixel; env IDs optional |
 | Circular take-back / repair subscriptions | Brand Could | Not started | Messaging only |
@@ -87,8 +87,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
 | **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
-| **Should (Phase 2)** | **~38%** | EasyPost rates + Stripe wallets/BNPL; label buy, autocomplete, CSV, MFA, Avalara still open |
-| **Could / Phase 3 wish list** | **~14%** | Wallets/BNPL path shipped; circular/loyalty/i18n/personalization still open |
+| **Should (Phase 2)** | **~45%** | EasyPost rates + Stripe wallets + tax engine; label buy, autocomplete, CSV, MFA still open |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
 
 ## Honest top gaps
@@ -96,7 +95,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 1. Set Resend/SMTP on Vercel so production OTP reaches inboxes (code already sends via email stack)  
 2. Prepaid RMA / outbound label purchase (EasyPost rates done; buy-label stubbed)  
 3. ~~Stripe wallets / BNPL / express pay~~ (done when Stripe keys + Dashboard methods enabled)  
-4. Tax engine beyond PK estimate  
+4. ~~Tax engine beyond PK estimate~~ (local regions + optional Avalara/TaxJar)  
 5. CSV product import, MFA, audit log UI  
 6. Circular take-back / repair / recycling subscriptions (productized)  
 7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)

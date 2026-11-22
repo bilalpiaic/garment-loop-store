@@ -3,6 +3,7 @@ import { getSettings, persistenceInfo } from "@/lib/platform";
 import { SettingsForm } from "@/components/admin/admin-forms";
 import { emailConfigured, emailMode } from "@/lib/email";
 import { easypostConfigured, easypostFromAddress } from "@/lib/easypost";
+import { taxProviderConfigured, taxProviderName } from "@/lib/tax";
 import { stripeConfigured, stripeWebhookConfigured } from "@/lib/stripe";
 
 export const metadata = { title: "Settings" };
@@ -53,6 +54,12 @@ export default async function AdminSettingsPage() {
               : easypostConfigured()
                 ? "API key set — add EASYPOST_FROM_NAME/STREET1/CITY/STATE/ZIP/COUNTRY for live rates (zone fallback until then)."
                 : "Zone rates only — set EASYPOST_API_KEY + ship-from address for live carriers. Label buy / prepaid RMA is stubbed."}
+          </li>
+          <li>
+            <span className="text-foreground">Tax engine:</span>{" "}
+            {taxProviderConfigured()
+              ? `Remote quotes via ${taxProviderName()} (with local PK/GCC/intl fallback).`
+              : "Local region rules (PK 5% sales tax, GCC 5% VAT est., intl duties at destination). Set AVALARA_* or TAXJAR_API_KEY for live quotes."}
           </li>
         </ul>
       </section>

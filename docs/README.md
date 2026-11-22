@@ -43,6 +43,8 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated) |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated) |
 | `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Live carrier rates (zone fallback otherwise) |
+| `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` | Avalara tax quotes |
+| `TAXJAR_API_KEY` | TaxJar quotes (if Avalara unset) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
 4. Deploy. Admin → Settings reports **Neon Postgres** when `DATABASE_URL` is present.
@@ -57,7 +59,7 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 
 - Prepaid RMA / outbound label purchase (EasyPost rates are wired; label buy is stubbed)
 - ~~Stripe wallets / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
-- Avalara/VAT tax engine
+- ~~Avalara/TaxJar tax path~~ (local PK/GCC/intl + optional remote quotes)
 - Production OTP email for auth
 - Prepaid RMA labels, AI personalization, i18n, loyalty
 
