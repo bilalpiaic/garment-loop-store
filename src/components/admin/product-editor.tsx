@@ -346,9 +346,37 @@ export function ProductEditor({
           </table>
         </div>
       </div>
-      <Button type="button" className="h-11 px-6" disabled={pending} onClick={save}>
-        {pending ? "Saving…" : "Save product"}
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" className="h-11 px-6" disabled={pending} onClick={save}>
+          {pending ? "Saving…" : "Save product"}
+        </Button>
+        {product ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            disabled={pending}
+            onClick={async () => {
+              setPending(true);
+              try {
+                const response = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
+                const data = (await response.json()) as { error?: string };
+                if (!response.ok) {
+                  toast.error(data.error ?? "Could not archive.");
+                  return;
+                }
+                toast.success("Product archived.");
+                router.push("/admin/products");
+                router.refresh();
+              } finally {
+                setPending(false);
+              }
+            }}
+          >
+            Archive product
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
