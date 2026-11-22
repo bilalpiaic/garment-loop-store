@@ -22,7 +22,7 @@ Soft Cream `#F5F1E8`, Warm Ochre `#E5B65B`, Deep Olive `#4A5F43`, Charcoal `#333
 - Origin: `bilalpiaic/garment-loop-store`
 - Local: `npm run dev` → http://localhost:43123
 - Production: https://garment-loop-store.vercel.app (Vercel project `garment-loop-store`, team bilalpiaics-projects)
-- Neon project: `garmentloop` (`billowing-dust-18918846`) — no secrets in docs
+- Neon project: **GarmentLoop** (`weathered-river-12462418`, `aws-us-east-2`) — no secrets in docs
 - Stacked PRs historically: #9 docs → #10 commerce → #11 returns/email → vercel-ready demo → Neon production default
 
 ## Decisions
