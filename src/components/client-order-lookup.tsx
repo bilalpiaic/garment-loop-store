@@ -13,7 +13,13 @@ function readOrder(orderNumber: string): Order | null {
   }
 }
 
-export function ClientOrderLookup({ orderNumber }: { orderNumber: string }) {
+export function ClientOrderLookup({
+  orderNumber,
+  recordPurchase = false,
+}: {
+  orderNumber: string;
+  recordPurchase?: boolean;
+}) {
   const order = useSyncExternalStore(
     () => () => undefined,
     () => readOrder(orderNumber),
@@ -31,5 +37,5 @@ export function ClientOrderLookup({ orderNumber }: { orderNumber: string }) {
       </div>
     );
   }
-  return <OrderReceipt order={order} />;
+  return <OrderReceipt order={order} recordPurchase={recordPurchase} />;
 }

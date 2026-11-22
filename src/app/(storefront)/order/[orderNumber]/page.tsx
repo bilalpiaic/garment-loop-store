@@ -36,7 +36,7 @@ export default async function OrderPage({
   }
 
   if (order) {
-    return <OrderReceipt order={order} emailNote={emailNote} />;
+    return <OrderReceipt order={order} emailNote={emailNote} recordPurchase />;
   }
-  return <ClientOrderLookup orderNumber={orderNumber} />;
+  return <ClientOrderLookup orderNumber={orderNumber} recordPurchase />;
 }

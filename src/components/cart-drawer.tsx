@@ -18,6 +18,7 @@ import { useCartStore } from "@/store/store";
 import { Price } from "@/components/price";
 import { site } from "@/lib/site";
 import { shippingCostPkr } from "@/lib/money";
+import { trackRemoveFromCart, variantToItem } from "@/lib/analytics";
 
 export function CartDrawer({
   open,
@@ -53,6 +54,26 @@ export function CartLines({
   const setQuantity = useCartStore((state) => state.setQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const { products } = useCatalog();
+
+  function onRemove(variantId: string, quantity: number) {
+    const match = getVariant(variantId, products);
+    if (match) {
+      trackRemoveFromCart(variantToItem(match.product, match.variant, quantity));
+    }
+    removeItem(variantId);
+  }
+
+  function onDecrease(variantId: string, quantity: number) {
+    if (quantity <= 1) {
+      onRemove(variantId, quantity);
+      return;
+    }
+    const match = getVariant(variantId, products);
+    if (match) {
+      trackRemoveFromCart(variantToItem(match.product, match.variant, 1));
+    }
+    setQuantity(variantId, quantity - 1);
+  }
 
   if (items.length === 0) {
     return (
@@ -110,7 +131,7 @@ export function CartLines({
                     type="button"
                     className="p-1.5"
                     aria-label="Decrease quantity"
-                    onClick={() => setQuantity(item.variantId, item.quantity - 1)}
+                    onClick={() => onDecrease(item.variantId, item.quantity)}
                   >
                     <Minus className="size-3.5" />
                   </button>
@@ -128,7 +149,7 @@ export function CartLines({
                   type="button"
                   className="text-muted-foreground hover:text-foreground"
                   aria-label="Remove"
-                  onClick={() => removeItem(item.variantId)}
+                  onClick={() => onRemove(item.variantId, item.quantity)}
                 >
                   <Trash2 className="size-4" />
                 </button>

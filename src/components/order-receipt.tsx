@@ -3,17 +3,22 @@ import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 import { taxLabel } from "@/lib/tax";
 import { whatsappOrderLink, type Order } from "@/lib/order-model";
+import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
 
 export function OrderReceipt({
   order,
   emailNote,
+  recordPurchase = false,
 }: {
   order: Order;
   emailNote?: string;
+  /** Only true on post-checkout confirmation — never on account order history. */
+  recordPurchase?: boolean;
 }) {
   const wa = whatsappOrderLink(order);
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
+      {recordPurchase ? <PurchaseTracker order={order} /> : null}
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
         {order.paymentStatus === "paid" || order.status === "confirmed" ? "Confirmed" : "Received"}
       </p>

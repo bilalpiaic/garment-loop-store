@@ -39,6 +39,7 @@ export function ReturnsQueue({ returns }: { returns: ReturnRequest[] }) {
   }
 
   async function act(id: string, action: "approve" | "reject" | "restock" | "refund") {
+    const target = returns.find((item) => item.id === id);
     const response = await fetch("/api/returns", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -48,6 +49,11 @@ export function ReturnsQueue({ returns }: { returns: ReturnRequest[] }) {
     if (!response.ok) {
       toast.error(data.error ?? "Could not update return.");
       return;
+    }
+    if (action === "refund" && target) {
+      // Full-transaction refund (no items array) so GA4 matches purchase item_ids.
+      const { trackRefund } = await import("@/lib/analytics");
+      void trackRefund(target.orderNumber);
     }
     toast.success(`Return ${action}d`);
     router.refresh();

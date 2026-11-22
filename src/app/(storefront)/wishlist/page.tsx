@@ -38,7 +38,7 @@ export default function WishlistPage() {
             </Button>
           </div>
         ) : (
-          <ProductGrid products={saved} />
+          <ProductGrid products={saved} listId="wishlist" listName="Wishlist" />
         )}
       </div>
     </div>

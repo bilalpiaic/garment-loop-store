@@ -36,7 +36,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Live carrier rates | Should | Not started | |
 | Avalara / full VAT | Should | Partial | Simple PK estimate only |
 | Photo UGC / Q&A | Should–Could | Not started | |
-| GA4 ecommerce events | Must hooks | Partial | Consent stub; no GA4 wired |
+| GA4 ecommerce events | Must hooks | Done | Consent-gated GA4 + Meta Pixel; env IDs optional |
 | Circular take-back / repair subscriptions | Brand Could | Not started | Messaging only |
 | i18n / hreflang | Could | Not started | EN + PKR/USD display |
 | Personalization | Could | Not started | |
@@ -86,7 +86,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
-| **MVP Must items** | **~94%** | Neon prod + OTP email code shipped; residual Must-adjacent: GA4 wiring + Vercel mail keys for inbox OTP |
+| **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
 | **Should (Phase 2)** | **~28%** | Neon + webhooks/email paths lift slightly; carriers, autocomplete, CSV, MFA, Avalara still open |
 | **Could / Phase 3 wish list** | **~10%** | Circular messaging only; no loyalty, i18n, personalization, BNPL |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
@@ -99,7 +99,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 4. Tax engine beyond PK estimate  
 5. CSV product import, MFA, audit log UI  
 6. Circular take-back / repair / recycling subscriptions (productized)  
-7. GA4 + marketing pixels beyond consent stub  
+7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)
 
 ## Login UX
 

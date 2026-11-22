@@ -26,6 +26,23 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 | Stripe webhooks | `STRIPE_WEBHOOK_SECRET` | No-op 200 |
 | Email | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`, `SMTP_PORT`, `SMTP_SECURE`) and optional `EMAIL_FROM` | Console mock |
 | Customer OTP | Same email stack; `AUTH_SHOW_OTP=1` to return/show code in API (auto outside production) | Mock email logs code preview; production API omits `devCode` unless `AUTH_SHOW_OTP` |
+| GA4 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No scripts / events when unset |
+| Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` | No scripts / events when unset |
+
+## Storefront analytics
+
+Consent banner (`garmentloop-consent`) gates marketing tags: **Accept analytics** loads GA4 + Meta; **Essential only** keeps them off. Both IDs are optional public env vars — never invent measurement IDs.
+
+| Surface | GA4 | Meta |
+| --- | --- | --- |
+| Product grids | `view_item_list`, `select_item` | — |
+| PDP | `view_item` | `ViewContent` |
+| Add / remove bag | `add_to_cart`, `remove_from_cart` | `AddToCart` |
+| Checkout | `begin_checkout` | `InitiateCheckout` |
+| Order confirm | `purchase` | `Purchase` |
+| Admin mark refunded | `refund` (staff, consent bypass) | — |
+
+Page views fire on client navigations after consent when either ID is set. Implementation: `src/lib/analytics/*` + `AnalyticsBootstrap`.
 
 ## Auth email (customer OTP)
 
@@ -42,4 +59,4 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 
 ## Key libs
 
-`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `tax.ts` · `stripe.ts` · `email.ts`
+`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `tax.ts` · `stripe.ts` · `email.ts` · `analytics/`

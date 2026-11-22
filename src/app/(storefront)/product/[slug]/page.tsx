@@ -11,6 +11,7 @@ import { ProductGallery } from "@/components/product-gallery";
 import { ProductForm } from "@/components/product-form";
 import { ProductGrid } from "@/components/product-card";
 import { ProductReviews } from "@/components/product-reviews";
+import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
 import { getProductBySlug, relatedProducts } from "@/lib/catalog";
 import { getPublishedCatalog, listApprovedReviews } from "@/lib/platform";
 import { site } from "@/lib/site";
@@ -76,6 +77,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <ViewItemTracker key={product.id} product={product} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <nav className="mb-6 text-xs text-muted-foreground">
         <Link href="/shop">Shop</Link>
@@ -139,7 +141,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {related.length > 0 ? (
         <section className="mt-16">
           <h2 className="mb-6 font-serif text-3xl">You may also like</h2>
-          <ProductGrid products={related} />
+          <ProductGrid products={related} listId="related" listName="You may also like" />
         </section>
       ) : null}
     </div>

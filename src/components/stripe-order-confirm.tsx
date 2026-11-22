@@ -52,7 +52,7 @@ export function StripeOrderConfirm({
   }, [orderNumber, sessionId]);
 
   if (order && (order.paymentStatus === "paid" || !sessionId)) {
-    return <OrderReceipt order={order} />;
+    return <OrderReceipt order={order} recordPurchase />;
   }
 
   if (error) {
@@ -60,7 +60,13 @@ export function StripeOrderConfirm({
       <div className="mx-auto max-w-2xl px-4 py-16">
         <h1 className="font-serif text-3xl">Payment confirmation</h1>
         <p className="mt-3 text-muted-foreground">{error}</p>
-        {order ? <div className="mt-8"><OrderReceipt order={order} /></div> : <ClientOrderLookup orderNumber={orderNumber} />}
+        {order ? (
+          <div className="mt-8">
+            <OrderReceipt order={order} recordPurchase />
+          </div>
+        ) : (
+          <ClientOrderLookup orderNumber={orderNumber} recordPurchase />
+        )}
       </div>
     );
   }

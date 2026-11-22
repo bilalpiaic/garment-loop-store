@@ -29,7 +29,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <h1 className="mt-2 font-serif text-4xl">{category.name}</h1>
       <p className="mt-2 max-w-xl text-muted-foreground">{category.description}</p>
       <div className="mt-10">
-        <ProductGrid products={products} />
+        <ProductGrid
+          products={products}
+          listId={`category-${slug}`}
+          listName={category.name}
+        />
       </div>
     </div>
   );

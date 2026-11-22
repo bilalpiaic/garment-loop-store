@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CheckoutForm } from "@/components/checkout-form";
+import { BeginCheckoutTracker } from "@/components/analytics/begin-checkout-tracker";
 import { getCustomerSession } from "@/lib/platform";
 import { stripeConfigured } from "@/lib/stripe";
 
@@ -22,6 +23,7 @@ export default async function CheckoutPage() {
           : "Guest checkout — no account required. Choose a shipping zone rate, see tax estimates, and pay with COD, bank transfer, or card."}
       </p>
       <div className="mt-10">
+        <BeginCheckoutTracker />
         <CheckoutForm
           stripeEnabled={stripeEnabled}
           defaults={

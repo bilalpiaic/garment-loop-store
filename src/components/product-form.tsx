@@ -13,6 +13,7 @@ import { useCartStore } from "@/store/store";
 import { cn } from "@/lib/utils";
 import { Price } from "@/components/price";
 import { WishlistButton } from "@/components/wishlist-button";
+import { trackAddToCart, variantToItem } from "@/lib/analytics";
 
 export function ProductForm({ product }: { product: Product }) {
   const colors = uniqueColors(product);
@@ -50,6 +51,7 @@ export function ProductForm({ product }: { product: Product }) {
       return;
     }
     addItem(variant.id, 1);
+    trackAddToCart(variantToItem(product, variant, 1));
     setBagPulse(true);
     window.setTimeout(() => setBagPulse(false), 450);
     toast.success(`${product.title} added to bag.`);
