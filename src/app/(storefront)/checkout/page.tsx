@@ -14,9 +14,9 @@ export default async function CheckoutPage() {
   const stripeEnabled = stripeConfigured();
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Checkout</p>
-      <h1 className="mt-2 font-serif text-4xl">Place your order</h1>
-      <p className="mt-2 max-w-xl text-muted-foreground">
+      <p className="text-xs uppercase tracking-[0.22em] text-sage">Checkout</p>
+      <h1 className="mt-2 font-serif text-4xl text-balance">Place your order</h1>
+      <p className="mt-2 max-w-xl text-muted-foreground leading-relaxed">
         {session
           ? "Your account details are filled in. Guest checkout stays available if you sign out."
           : "Guest checkout — no account required. Choose a shipping zone rate, see tax estimates, and pay with COD, bank transfer, or card."}
