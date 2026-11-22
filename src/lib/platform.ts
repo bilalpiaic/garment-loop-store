@@ -1,1 +1,3 @@
-LOAD_FROM_FILE:/tmp/grow1-content.ts
+export * from "./platform-internals";
+export * from "./platform-rest";
+export * from "./platform-crud-ext";
