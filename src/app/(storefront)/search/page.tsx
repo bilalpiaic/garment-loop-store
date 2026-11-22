@@ -28,7 +28,9 @@ export default async function SearchPage({
           : "Use the search icon in the header, or add ?q=puffer to this URL."}
       </p>
       <div className="mt-10">
-        {q ? <ProductGrid products={results} /> : null}
+        {q ? (
+          <ProductGrid products={results} listId="search" listName={q ? `Search: ${q}` : "Search"} />
+        ) : null}
       </div>
     </div>
   );

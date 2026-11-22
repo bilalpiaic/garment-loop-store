@@ -91,7 +91,7 @@ export default async function HomePage() {
           </Link>
         </Reveal>
         <Reveal delayMs={80}>
-          <ProductGrid products={featured} />
+          <ProductGrid products={featured} listId="home-featured" listName="Featured" />
         </Reveal>
       </section>
 
@@ -163,7 +163,7 @@ export default async function HomePage() {
           <h2 className="mt-2 font-serif text-3xl text-balance">Reach for these all season</h2>
         </Reveal>
         <Reveal delayMs={80}>
-          <ProductGrid products={essentials} />
+          <ProductGrid products={essentials} listId="home-essentials" listName="Essentials" />
         </Reveal>
       </section>
     </div>

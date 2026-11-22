@@ -46,6 +46,8 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `EMAIL_FROM` | From address (must be allowed by Resend/SMTP) |
 | `AUTH_SHOW_OTP` | Return OTP in API / UI (default on outside production; keep off in prod) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated; no-op when unset) |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated; no-op when unset) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
 4. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres**.

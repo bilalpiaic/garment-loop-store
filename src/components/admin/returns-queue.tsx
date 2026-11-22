@@ -39,6 +39,7 @@ export function ReturnsQueue({ returns }: { returns: ReturnRequest[] }) {
   }
 
   async function act(id: string, action: "approve" | "reject" | "restock" | "refund") {
+    const target = returns.find((item) => item.id === id);
     const response = await fetch("/api/returns", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -48,6 +49,17 @@ export function ReturnsQueue({ returns }: { returns: ReturnRequest[] }) {
     if (!response.ok) {
       toast.error(data.error ?? "Could not update return.");
       return;
+    }
+    if (action === "refund" && target) {
+      const { trackRefund } = await import("@/lib/analytics");
+      void trackRefund(
+        target.orderNumber,
+        target.items.map((line) => ({
+          item_id: line.variantId,
+          item_name: line.productTitle,
+          quantity: line.quantity,
+        })),
+      );
     }
     toast.success(`Return ${action}d`);
     router.refresh();

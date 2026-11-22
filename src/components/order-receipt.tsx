@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 import { taxLabel } from "@/lib/tax";
 import { whatsappOrderLink, type Order } from "@/lib/order-model";
+import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
 
 export function OrderReceipt({
   order,
@@ -14,6 +15,7 @@ export function OrderReceipt({
   const wa = whatsappOrderLink(order);
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
+      <PurchaseTracker order={order} />
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
         {order.paymentStatus === "paid" || order.status === "confirmed" ? "Confirmed" : "Received"}
       </p>

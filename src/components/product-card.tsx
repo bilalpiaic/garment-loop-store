@@ -1,17 +1,34 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { comparePrice, lowestPrice, type Product } from "@/lib/catalog";
 import { Price } from "@/components/price";
 import { ProductQuickView } from "@/components/product-quick-view";
+import { ViewItemListTracker } from "@/components/analytics/view-item-list-tracker";
+import { productToItem, trackSelectItem } from "@/lib/analytics";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  listId,
+  listName,
+}: {
+  product: Product;
+  listId?: string;
+  listName?: string;
+}) {
   const price = lowestPrice(product);
   const compare = comparePrice(product);
+
+  function onSelect() {
+    trackSelectItem(productToItem(product), listId, listName);
+  }
+
   return (
     <div className="group block">
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-secondary/80">
-        <Link href={`/product/${product.slug}`} className="absolute inset-0">
+        <Link href={`/product/${product.slug}`} className="absolute inset-0" onClick={onSelect}>
           <Image
             src={product.images[0]?.src ?? ""}
             alt={product.images[0]?.alt ?? product.title}
@@ -33,7 +50,11 @@ export function ProductCard({ product }: { product: Product }) {
           <ProductQuickView product={product} />
         </div>
       </div>
-      <Link href={`/product/${product.slug}`} className="mt-3.5 block space-y-1">
+      <Link
+        href={`/product/${product.slug}`}
+        className="mt-3.5 block space-y-1"
+        onClick={onSelect}
+      >
         <h3 className="font-serif text-base tracking-tight transition-colors duration-300 group-hover:text-olive">
           {product.title}
         </h3>
@@ -46,7 +67,15 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export function ProductGrid({ products }: { products: Product[] }) {
+export function ProductGrid({
+  products,
+  listId = "catalog",
+  listName = "Catalog",
+}: {
+  products: Product[];
+  listId?: string;
+  listName?: string;
+}) {
   if (products.length === 0) {
     return (
       <div className="rounded-xl border border-dashed px-6 py-16 text-center">
@@ -61,10 +90,18 @@ export function ProductGrid({ products }: { products: Product[] }) {
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
+    <>
+      <ViewItemListTracker products={products} listId={listId} listName={listName} />
+      <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            listId={listId}
+            listName={listName}
+          />
+        ))}
+      </div>
+    </>
   );
 }

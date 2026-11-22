@@ -40,6 +40,8 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `RESEND_API_KEY` or `SMTP_*` | Real transactional email |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 ecommerce (consent-gated) |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel (consent-gated) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
 4. Deploy. Admin → Settings reports **Neon Postgres** when `DATABASE_URL` is present.

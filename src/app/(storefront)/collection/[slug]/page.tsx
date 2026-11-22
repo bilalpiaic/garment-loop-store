@@ -50,7 +50,11 @@ export default async function CollectionPage({
         <Suspense>
           <ShopFilters basePath={`/collection/${slug}`} hideCategory />
         </Suspense>
-        <ProductGrid products={products} />
+        <ProductGrid
+          products={products}
+          listId={`collection-${slug}`}
+          listName={collection.name}
+        />
       </div>
     </div>
   );

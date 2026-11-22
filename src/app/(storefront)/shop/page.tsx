@@ -51,7 +51,7 @@ export default async function ShopPage({
         <p className="mb-6 text-sm text-muted-foreground">
           {products.length} piece{products.length === 1 ? "" : "s"}
         </p>
-        <ProductGrid products={products} />
+        <ProductGrid products={products} listId="shop" listName="Shop" />
       </div>
     </div>
   );
