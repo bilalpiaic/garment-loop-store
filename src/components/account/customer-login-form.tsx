@@ -104,6 +104,13 @@ export function CustomerLoginForm() {
           Resend code
         </button>
       ) : null}
+      <p className="pt-2 text-center text-xs text-muted-foreground">
+        Staff or owner? Use{" "}
+        <a href="/admin/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+          email + password at /admin/login
+        </a>
+        .
+      </p>
     </div>
   );
 }

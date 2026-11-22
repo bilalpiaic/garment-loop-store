@@ -37,15 +37,31 @@ export function AdminLoginForm() {
   return (
     <form action={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="username" className="h-10" required />
+        <Label htmlFor="admin-email">Work email</Label>
+        <Input
+          id="admin-email"
+          name="email"
+          type="email"
+          autoComplete="username"
+          placeholder="owner@garmentloop.store"
+          className="h-10"
+          required
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" autoComplete="current-password" className="h-10" required />
+        <Label htmlFor="admin-password">Password</Label>
+        <Input
+          id="admin-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Your admin password"
+          className="h-10"
+          required
+        />
       </div>
       <Button type="submit" className="h-11 w-full" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Signing in…" : "Sign in with password"}
       </Button>
     </form>
   );
