@@ -1,6 +1,6 @@
 "use client";
 
-import { StoreImage } from "@/components/store-image";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -81,7 +81,7 @@ export function CartLines({
               onClick={onNavigate}
               className="relative size-24 shrink-0 overflow-hidden rounded-md bg-muted"
             >
-              <StoreImage
+              <Image
                 src={product.images[0]?.src ?? ""}
                 alt={product.title}
                 fill
@@ -172,7 +172,7 @@ export function CartSummary({
           <Price amountPkr={totals.subtotal} />
         </div>
         <div className="flex justify-between text-muted-foreground">
-          <span>Delivery in Pakistan</span>
+          <span>Est. standard delivery (PK)</span>
           <span>
             {totals.shipping === 0 ? "Free" : <Price amountPkr={totals.shipping} />}
           </span>
@@ -180,9 +180,13 @@ export function CartSummary({
         {totals.subtotal < site.freeShippingThresholdPkr ? (
           <p className="pt-1 text-xs text-muted-foreground">
             Add <Price amountPkr={site.freeShippingThresholdPkr - totals.subtotal} /> more for free
-            Pakistani delivery.
+            standard Pakistani delivery. Express and tax are chosen at checkout.
           </p>
-        ) : null}
+        ) : (
+          <p className="pt-1 text-xs text-muted-foreground">
+            Tax and express options are confirmed at checkout.
+          </p>
+        )}
       </div>
       <Button className="h-11 w-full" render={<Link href={checkoutHref} onClick={onNavigate} />}>
         Checkout
