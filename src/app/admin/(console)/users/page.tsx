@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Access</p>
-        <h1 className="mt.1 font-serif text-3xl">Users & roles</h1>
+        <h1 className="mt-1 font-serif text-3xl">Users & roles</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Owner has full access. Admin can manage catalog and orders. Staff can fulfill orders and
           adjust inventory. Invite staff below, then change role or deactivate from the table.
