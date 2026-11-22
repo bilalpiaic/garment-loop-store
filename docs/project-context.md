@@ -26,7 +26,7 @@ Soft Cream `#F5F1E8`, Warm Ochre `#E5B65B`, Deep Olive `#4A5F43`, Charcoal `#333
 ## Decisions
 
 | Topic | Decision |
-| --- | --- |
+| --- | --- | --- |
 | Persistence | Demo store by default; Neon only when URL set (with fallback if Neon fails) |
 | Payments | Stripe Checkout when keys set; else COD / bank / card_demo |
 | Email | Resend or SMTP when set; else console mock |
@@ -40,3 +40,7 @@ requirements · architecture · design-system · roadmap · admin-spec · storef
 
 - Shoppers: `/account/login` (email OTP)
 - Staff/Owner: `/admin/login` (email + password)
+
+## Admin
+
+Owner/admin CRUD across products, taxonomy, inventory, orders, customers (notes/tags), discounts, reviews, returns, content, users (owner), settings — demo persistence, no required DB.

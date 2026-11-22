@@ -46,6 +46,7 @@ Audit date: 2026-11-22. Sources: `internal/source-garmentloop-requirements.md`, 
 | Module | Source emphasis | Status | Notes |
 | --- | --- | --- | --- |
 | Password login + RBAC (Owner/Admin/Staff) | Must | Done | Discoverability fixed 2026-11-22 |
+| Owner-level module CRUD (forms + bulk) | Must | Done | Products/orders/content/users/etc. hardened 2026-11-22 |
 | Dashboard KPIs + low stock | Must | Done | |
 | Orders lifecycle | Must | Done | Status transitions, notes |
 | Products CRUD + variants | Must | Done | |
@@ -83,7 +84,7 @@ Audit date: 2026-11-22. Sources: `internal/source-garmentloop-requirements.md`, 
 
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
-| **MVP Must items** | **~88%** | Nearly all Must storefront + admin modules demoable; remaining Must-adjacent gaps are GA4 wiring and production OTP email delivery |
+| **MVP Must items** | **~92%** | Must storefront + owner CRUD admin demoable; remaining Must-adjacent gaps are GA4 wiring, production OTP email, CSV/carriers |
 | **Should (Phase 2)** | **~25%** | Webhooks/email paths exist; carriers, autocomplete, CSV, MFA, Avalara not started |
 | **Could / Phase 3 wish list** | **~10%** | Circular messaging only; no loyalty, i18n, personalization, BNPL |
 | **Blended “full original docs”** | **~55–60%** | Heavy Must coverage lifts average; long Phase 2–3 tail remains |
