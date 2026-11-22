@@ -1,6 +1,6 @@
 "use client";
 
-import { StoreImage } from "@/components/store-image";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
@@ -58,7 +58,7 @@ export function SearchDialog({
                     className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted"
                   >
                     <span className="relative size-12 overflow-hidden rounded-md bg-muted">
-                      <StoreImage
+                      <Image
                         src={product.images[0]?.src ?? ""}
                         alt=""
                         fill
