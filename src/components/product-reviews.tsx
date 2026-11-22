@@ -81,6 +81,11 @@ export function ProductReviews({
                 <p className="text-xs text-muted-foreground">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{review.body}</p>
+              {review.adminReply ? (
+                <p className="mt-3 rounded-lg bg-secondary/40 px-3 py-2 text-sm">
+                  <span className="font-medium">GarmentLoop:</span> {review.adminReply}
+                </p>
+              ) : null}
               <p className="mt-3 text-xs text-muted-foreground">
                 {review.authorName} · {new Date(review.createdAt).toLocaleDateString()}
               </p>
