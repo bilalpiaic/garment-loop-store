@@ -45,7 +45,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const avg =
     reviews.length === 0
       ? undefined
-      : reviews.reduce((sum, review) => sum + review.rating, of) / reviews.length;
+      : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
   const jsonLd = {
     "@context": "https://schema.org",
