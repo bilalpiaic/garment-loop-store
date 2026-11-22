@@ -46,6 +46,7 @@ import type {
 } from "@/lib/commerce-types";
 import { stripeConfigured } from "@/lib/stripe";
 import {
+  publicEmailError,
   sendLoginOtpEmail,
   sendOrderConfirmation,
   sendReturnRequestNotice,
@@ -835,6 +836,7 @@ export async function requestCustomerOtp(emailRaw: string) {
     // Mock always returns ok — only treat Resend/SMTP as a real inbox delivery.
     emailed: mail.ok && mail.mode !== "mock",
     emailMode: mail.mode,
+    emailError: publicEmailError(mail),
     devCode: show ? code : undefined,
   };
 }

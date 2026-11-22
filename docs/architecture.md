@@ -29,7 +29,9 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 
 ## Auth email (customer OTP)
 
-`POST /api/auth/otp/request` stores a hashed 6-digit code (10‑minute TTL) and calls `sendLoginOtpEmail` via Resend or SMTP. Production never returns `devCode` unless `AUTH_SHOW_OTP=1`. Without mail keys, delivery is mock (server console) — shoppers will not receive an inbox message until `RESEND_API_KEY` or `SMTP_*` is set on Vercel.
+`POST /api/auth/otp/request` stores a hashed 6-digit code (10‑minute TTL) and calls `sendLoginOtpEmail` via Resend or SMTP. Production never returns `devCode` unless `AUTH_SHOW_OTP=1`. Without mail keys, delivery is mock (server console). Failed sends return a safe `emailError` (e.g. Resend test-sender recipient restriction).
+
+**Resend test vs production from-address:** `EMAIL_FROM=GarmentLoop <onboarding@resend.dev>` may only send to the Resend account owner. To email any shopper, verify a domain at [resend.com/domains](https://resend.com/domains) and set `EMAIL_FROM` to an address on that domain, e.g. `GarmentLoop <orders@garmentloop.store>` or `GarmentLoop <noreply@garmentloop.store>`.
 
 ## Vercel
 

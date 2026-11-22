@@ -45,10 +45,19 @@ async function sendRaw(input: { to: string; subject: string; html: string; text:
           text: input.text,
         }),
       });
-      const data = (await response.json()) as { id?: string; message?: string };
+      const data = (await response.json()) as {
+        id?: string;
+        message?: string;
+        name?: string;
+        statusCode?: number;
+      };
       if (!response.ok) {
         console.error("[email:resend]", data);
-        return { ok: false, mode, error: data.message ?? "Resend failed" };
+        return {
+          ok: false,
+          mode,
+          error: data.message ?? `Resend failed (${response.status})`,
+        };
       }
       return { ok: true, mode, id: data.id };
     } catch (error) {
@@ -220,6 +229,39 @@ export function loginOtpEmail(input: { code: string; expiresMinutes: number }) {
 export async function sendLoginOtpEmail(to: string, code: string, expiresMinutes = 10) {
   const content = loginOtpEmail({ code, expiresMinutes });
   return sendRaw({ to, ...content });
+}
+
+/**
+ * Map provider errors to a short, safe client message (no secrets).
+ * Detects Resend's onboarding/test-sender recipient restriction.
+ */
+export function publicEmailError(result: EmailResult): string | undefined {
+  if (result.ok || !result.error) return undefined;
+  const raw = result.error.trim();
+  if (!raw) return "Email delivery failed. Try again or contact support.";
+
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("only send testing emails to your own email") ||
+    (lower.includes("verify a domain") && lower.includes("from"))
+  ) {
+    return (
+      "Sign-in codes can only be emailed to the Resend account owner while EMAIL_FROM uses " +
+      "onboarding@resend.dev. Request a code with that account email, or verify your domain at " +
+      "resend.com/domains and set EMAIL_FROM to an address on that domain " +
+      "(for example GarmentLoop <orders@garmentloop.store>)."
+    );
+  }
+
+  // Pass through short provider messages that don't look like secrets.
+  if (
+    raw.length <= 220 &&
+    !/re_[A-Za-z0-9]|api[_-]?key|Bearer\s|npg_|sk_live|sk_test/i.test(raw)
+  ) {
+    return raw;
+  }
+
+  return "Email delivery failed. Try again or contact support.";
 }
 
 export async function sendReturnRequestNotice(ret: ReturnRequest) {
