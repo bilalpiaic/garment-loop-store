@@ -3,6 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CatalogProvider } from "@/components/catalog-provider";
 import { ConsentBanner } from "@/components/consent-banner";
 import { NewsletterInvite } from "@/components/newsletter-invite";
+import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
 import { getCustomerSession, getPublishedCatalog } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <SiteFooter categories={catalog.categories} />
       <ConsentBanner />
       <NewsletterInvite />
+      <StorefrontAnalytics />
     </CatalogProvider>
   );
 }

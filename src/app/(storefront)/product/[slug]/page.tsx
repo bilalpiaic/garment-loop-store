@@ -77,7 +77,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <ViewItemTracker product={product} />
+      <ViewItemTracker key={product.id} product={product} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <nav className="mb-6 text-xs text-muted-foreground">
         <Link href="/shop">Shop</Link>

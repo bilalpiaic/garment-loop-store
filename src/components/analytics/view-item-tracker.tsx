@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { Product } from "@/lib/catalog";
 import { productToItem, trackViewItem } from "@/lib/analytics";
+import { useTrackWhenReady } from "@/hooks/use-track-when-ready";
 
 export function ViewItemTracker({ product }: { product: Product }) {
-  const seen = useRef(false);
+  const sentForIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (seen.current) return;
-    seen.current = true;
+  useTrackWhenReady(() => {
+    if (sentForIdRef.current === product.id) return;
     trackViewItem(productToItem(product));
-  }, [product]);
+    sentForIdRef.current = product.id;
+  }, [product.id, product]);
 
   return null;
 }

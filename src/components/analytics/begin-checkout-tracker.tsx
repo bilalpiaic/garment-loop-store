@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { getVariant } from "@/lib/catalog";
 import { useCatalog } from "@/components/catalog-provider";
 import { useCartStore } from "@/store/store";
 import { trackBeginCheckout, variantToItem } from "@/lib/analytics";
+import { useTrackWhenReady } from "@/hooks/use-track-when-ready";
 
 export function BeginCheckoutTracker() {
   const items = useCartStore((state) => state.items);
   const { products } = useCatalog();
-  const fired = useRef(false);
+  const cartKey = items.map((item) => `${item.variantId}:${item.quantity}`).join(",");
 
-  useEffect(() => {
-    if (fired.current || items.length === 0) return;
+  useTrackWhenReady(() => {
     const analyticsItems = [];
     let value = 0;
     for (const item of items) {
@@ -23,9 +22,8 @@ export function BeginCheckoutTracker() {
       value += (line.price ?? 0) * item.quantity;
     }
     if (analyticsItems.length === 0) return;
-    fired.current = true;
     trackBeginCheckout(analyticsItems, value);
-  }, [items, products]);
+  }, [cartKey, products]);
 
   return null;
 }

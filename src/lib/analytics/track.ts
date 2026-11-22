@@ -124,9 +124,10 @@ export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
 export function trackPurchase(order: Order) {
   const items = orderToItems(order);
   const value = order.totalPkr;
+  // Order money fields are always PKR amounts regardless of display preference.
   pushGa("purchase", {
     transaction_id: order.orderNumber,
-    currency: order.currency,
+    currency: "PKR",
     value,
     shipping: order.shippingPkr,
     tax: order.taxPkr ?? 0,
@@ -137,7 +138,7 @@ export function trackPurchase(order: Order) {
     content_type: "product",
     num_items: items.reduce((sum, item) => sum + (item.quantity ?? 1), 0),
     value,
-    currency: order.currency,
+    currency: "PKR",
   });
 }
 

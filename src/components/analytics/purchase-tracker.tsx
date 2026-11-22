@@ -1,25 +1,34 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { Order } from "@/lib/order-model";
 import { trackPurchase } from "@/lib/analytics";
+import { useTrackWhenReady } from "@/hooks/use-track-when-ready";
 
 const KEY_PREFIX = "garmentloop-purchase-tracked:";
 
-export function PurchaseTracker({ order }: { order: Order }) {
-  const fired = useRef(false);
+function alreadyTracked(orderNumber: string) {
+  try {
+    return Boolean(localStorage.getItem(`${KEY_PREFIX}${orderNumber}`));
+  } catch {
+    return false;
+  }
+}
 
-  useEffect(() => {
-    if (fired.current) return;
-    try {
-      if (sessionStorage.getItem(`${KEY_PREFIX}${order.orderNumber}`)) return;
-      sessionStorage.setItem(`${KEY_PREFIX}${order.orderNumber}`, "1");
-    } catch {
-      /* ignore */
-    }
-    fired.current = true;
+function markTracked(orderNumber: string) {
+  try {
+    localStorage.setItem(`${KEY_PREFIX}${orderNumber}`, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Fires purchase once per order after consent — only mount on confirmation flows. */
+export function PurchaseTracker({ order }: { order: Order }) {
+  useTrackWhenReady(() => {
+    if (alreadyTracked(order.orderNumber)) return;
     trackPurchase(order);
-  }, [order]);
+    markTracked(order.orderNumber);
+  }, [order.orderNumber]);
 
   return null;
 }

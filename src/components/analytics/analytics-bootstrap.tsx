@@ -7,20 +7,10 @@ import {
   gaMeasurementId,
   metaPixelId,
   readConsent,
+  subscribeConsent,
   trackPageView,
   type ConsentValue,
 } from "@/lib/analytics";
-
-function subscribeConsent(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const handler = () => onStoreChange();
-  window.addEventListener("garmentloop:consent", handler);
-  window.addEventListener("storage", handler);
-  return () => {
-    window.removeEventListener("garmentloop:consent", handler);
-    window.removeEventListener("storage", handler);
-  };
-}
 
 function getConsentSnapshot(): ConsentValue | null {
   return readConsent();

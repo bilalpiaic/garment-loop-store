@@ -51,15 +51,9 @@ export function ReturnsQueue({ returns }: { returns: ReturnRequest[] }) {
       return;
     }
     if (action === "refund" && target) {
+      // Full-transaction refund (no items array) so GA4 matches purchase item_ids.
       const { trackRefund } = await import("@/lib/analytics");
-      void trackRefund(
-        target.orderNumber,
-        target.items.map((line) => ({
-          item_id: line.variantId,
-          item_name: line.productTitle,
-          quantity: line.quantity,
-        })),
-      );
+      void trackRefund(target.orderNumber);
     }
     toast.success(`Return ${action}d`);
     router.refresh();

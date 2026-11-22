@@ -25,3 +25,4 @@ export {
   trackViewItem,
   trackViewItemList,
 } from "@/lib/analytics/track";
+export { isTrackingReady, subscribeConsent } from "@/lib/analytics/ready";
