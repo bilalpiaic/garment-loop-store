@@ -19,7 +19,7 @@ const serif = Newsreader({
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:43123"),
   title: {
-    default: `${site.name} — Premium winter apparel`,
+    default: `${site.name} — Circular wardrobe atelier`,
     template: `%s · ${site.name}`,
   },
   description: site.description,

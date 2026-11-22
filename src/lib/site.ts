@@ -1,8 +1,8 @@
 export const site = {
   name: "GarmentLoop",
-  tagline: "Premium winter apparel, engineered for comfort.",
+  tagline: "A circular wardrobe atelier — garments made to last and return.",
   description:
-    "GarmentLoop is a premium winter apparel house. Shop jackets, knitwear, and essentials designed for warmth, durability, and everyday style — with cash on delivery across Pakistan.",
+    "GarmentLoop is a modern atelier for circular fashion. Shop jackets, knitwear, and essentials designed for longevity, reuse, and everyday warmth — with guest checkout and cash on delivery across Pakistan.",
   url: "https://garmentloop.store",
   email: "hello@garmentloop.store",
   phone: "+92 300 1234567",
