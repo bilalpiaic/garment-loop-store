@@ -17,12 +17,12 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    await requireAdmin("settings.manage");
+    const session = await requireAdmin("settings.manage");
     const parsed = settingsSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const settings = await updateSettings(parsed.data);
+    const settings = await updateSettings(parsed.data, session.user.id);
     return NextResponse.json({ settings });
   } catch (error) {
     return errorResponse(error);

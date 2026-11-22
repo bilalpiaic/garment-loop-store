@@ -22,7 +22,11 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const user = await saveAdminUser({ ...parsed.data, actorRole: session.user.role });
+    const user = await saveAdminUser({
+      ...parsed.data,
+      actorRole: session.user.role,
+      actorId: session.user.id,
+    });
     return NextResponse.json({ user });
   } catch (error) {
     return errorResponse(error);

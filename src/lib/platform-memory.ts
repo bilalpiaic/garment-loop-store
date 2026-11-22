@@ -57,6 +57,8 @@ function hydrate(parsed: Partial<PlatformState>): PlatformState {
     returns: parsed.returns ?? [],
     wishlists: parsed.wishlists ?? {},
     pages: parsed.pages?.length ? parsed.pages : base.pages ?? [],
+    auditLogs: parsed.auditLogs ?? [],
+    mfaChallenges: parsed.mfaChallenges ?? [],
   };
 }
 

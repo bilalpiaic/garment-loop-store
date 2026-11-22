@@ -10,11 +10,14 @@ import {
   type Collection,
   type Product,
 } from "@/lib/catalog";
+import { appendAudit, type AuditEntry } from "@/lib/audit";
+import { buildProductsFromCsv, parseProductCsv, productsToCsv } from "@/lib/csv-products";
 import { hashPassword, sha256, verifyPassword } from "@/lib/password";
 import { createId, createOtpCode, createToken } from "@/lib/ids";
 import { slugify } from "@/lib/slug";
 import {
   ADMIN_COOKIE,
+  ADMIN_MFA_COOKIE,
   CUSTOMER_COOKIE,
   DEFAULT_SETTINGS,
   type AdminUser,
@@ -54,10 +57,17 @@ import {
   sendShipmentNotice,
 } from "@/lib/email";
 import { ensureDemoWalkthrough } from "@/lib/seed-demo";
+import {
+  adminMfaRequiredByPolicy,
+  buildOtpAuthUri,
+  generateTotpSecret,
+  verifyTotpCode,
+} from "@/lib/totp";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const CUSTOMER_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const ADMIN_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
+const MFA_CHALLENGE_MS = 10 * 60 * 1000;
 
 export class PlatformError extends Error {
   constructor(
@@ -180,6 +190,14 @@ async function ensureSeed(state: PlatformState) {
     state.pages = [];
     changed = true;
   }
+  if (!state.auditLogs) {
+    state.auditLogs = [];
+    changed = true;
+  }
+  if (!state.mfaChallenges) {
+    state.mfaChallenges = [];
+    changed = true;
+  }
   pruneExpired(state);
   return changed;
 }
@@ -214,6 +232,42 @@ function pruneExpired(state: PlatformState) {
   const now = Date.now();
   state.sessions = state.sessions.filter((session) => new Date(session.expiresAt).getTime() > now);
   state.otp = state.otp.filter((item) => new Date(item.expiresAt).getTime() > now);
+  state.mfaChallenges = (state.mfaChallenges ?? []).filter(
+    (item) => new Date(item.expiresAt).getTime() > now,
+  );
+}
+
+type AuditActor = { id: string; email: string; role?: Role };
+
+function auditActor(state: PlatformState, actorId?: string): AuditActor | undefined {
+  if (!actorId) return undefined;
+  const user = state.adminUsers.find((item) => item.id === actorId);
+  if (!user) return { id: actorId, email: "unknown" };
+  return { id: user.id, email: user.email, role: user.role };
+}
+
+function writeAudit(
+  state: PlatformState,
+  actor: AuditActor | undefined,
+  entry: {
+    action: string;
+    entity: string;
+    entityId?: string;
+    summary: string;
+    meta?: Record<string, unknown>;
+  },
+) {
+  if (!actor) return;
+  appendAudit(state, {
+    actorId: actor.id,
+    actorEmail: actor.email,
+    actorRole: actor.role,
+    action: entry.action,
+    entity: entry.entity,
+    entityId: entry.entityId,
+    summary: entry.summary,
+    meta: entry.meta,
+  });
 }
 
 function shippingFor(
@@ -240,9 +294,16 @@ export const getSettings = cache(async (): Promise<StoreSettings> => {
   return readPlatform((state) => ({ ...DEFAULT_SETTINGS, ...state.settings }));
 });
 
-export async function updateSettings(patch: Partial<StoreSettings>) {
+export async function updateSettings(patch: Partial<StoreSettings>, actorId?: string) {
   return mutate((state) => {
     state.settings = { ...state.settings, ...patch };
+    writeAudit(state, auditActor(state, actorId), {
+      action: "settings.update",
+      entity: "settings",
+      entityId: "store",
+      summary: "Updated store settings",
+      meta: { keys: Object.keys(patch) },
+    });
     return state.settings;
   });
 }
@@ -530,6 +591,7 @@ export async function updateOrder(
     courier?: string;
     notes?: string;
   },
+  actorId?: string,
 ) {
   const result = await mutate((state) => {
     const order = state.orders.find((item) => item.orderNumber === orderNumber.toUpperCase());
@@ -541,6 +603,13 @@ export async function updateOrder(
     if (patch.courier !== undefined) order.courier = patch.courier;
     if (patch.notes !== undefined) order.notes = patch.notes;
     order.updatedAt = new Date().toISOString();
+    writeAudit(state, auditActor(state, actorId), {
+      action: "order.update",
+      entity: "order",
+      entityId: order.orderNumber,
+      summary: `Updated order ${order.orderNumber}`,
+      meta: { ...patch, previousStatus: previous },
+    });
 
     const restoring = patch.status === "cancelled" && previous !== "cancelled";
     if (restoring) {
@@ -574,7 +643,8 @@ export async function saveProduct(input: Product, actorId?: string) {
       status: input.status ?? "published",
     };
     const existing = state.catalog.products.findIndex((item) => item.id === product.id);
-    if (existing >= 0) {
+    const isUpdate = existing >= 0;
+    if (isUpdate) {
       state.catalog.products[existing] = product;
     } else {
       const slugTaken = state.catalog.products.some(
@@ -613,20 +683,33 @@ export async function saveProduct(input: Product, actorId?: string) {
         });
       }
     }
+    writeAudit(state, auditActor(state, actorId), {
+      action: isUpdate ? "product.update" : "product.create",
+      entity: "product",
+      entityId: product.id,
+      summary: `${isUpdate ? "Updated" : "Created"} product ${product.title}`,
+      meta: { slug: product.slug, status: product.status },
+    });
     return product;
   });
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(id: string, actorId?: string) {
   return mutate((state) => {
     const product = state.catalog.products.find((item) => item.id === id);
     if (!product) throw new PlatformError("Product not found.", 404);
     product.status = "archived";
+    writeAudit(state, auditActor(state, actorId), {
+      action: "product.archive",
+      entity: "product",
+      entityId: product.id,
+      summary: `Archived product ${product.title}`,
+    });
     return product;
   });
 }
 
-export async function bulkSetProductStatus(ids: string[], status: Product["status"]) {
+export async function bulkSetProductStatus(ids: string[], status: Product["status"], actorId?: string) {
   return mutate((state) => {
     let updated = 0;
     for (const id of ids) {
@@ -636,6 +719,12 @@ export async function bulkSetProductStatus(ids: string[], status: Product["statu
       updated += 1;
     }
     if (updated === 0) throw new PlatformError("No matching products.", 404);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "product.bulk_status",
+      entity: "product",
+      summary: `Set ${updated} product(s) to ${status}`,
+      meta: { ids, status },
+    });
     return { updated, status };
   });
 }
@@ -741,6 +830,13 @@ export async function adjustInventory(input: {
     const next = current + input.change;
     if (next < 0) throw new PlatformError("Stock cannot go below zero.");
     state.stock[input.variantId] = next;
+    writeAudit(state, auditActor(state, input.actorId), {
+      action: "inventory.adjust",
+      entity: "inventory",
+      entityId: input.variantId,
+      summary: `Adjusted stock for ${input.variantId} by ${input.change}`,
+      meta: { change: input.change, reason: input.reason, next },
+    });
     match.variant.stock = next;
     const product = state.catalog.products.find((item) => item.id === match.product.id);
     if (product) {
@@ -962,11 +1058,50 @@ export async function verifyCustomerOtp(emailRaw: string, code: string) {
 
 export async function loginAdmin(emailRaw: string, password: string) {
   const email = emailRaw.trim().toLowerCase();
-  const sessionId = await mutate(async (state) => {
+  const result = await mutate(async (state) => {
     const user = state.adminUsers.find((item) => item.email === email);
     if (!user || !user.active) throw new PlatformError("Invalid email or password.", 401);
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) throw new PlatformError("Invalid email or password.", 401);
+
+    const policyRequires =
+      adminMfaRequiredByPolicy() && (user.role === "owner" || user.role === "admin");
+    const enrolled = Boolean(user.mfaEnabled && user.mfaSecret);
+
+    if (enrolled) {
+      const challengeId = createToken();
+      state.mfaChallenges = state.mfaChallenges ?? [];
+      state.mfaChallenges.push({
+        id: challengeId,
+        userId: user.id,
+        purpose: "verify",
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + MFA_CHALLENGE_MS).toISOString(),
+      });
+      return { kind: "mfa" as const, challengeId };
+    }
+
+    if (policyRequires && !enrolled) {
+      const challengeId = createToken();
+      const pendingSecret = generateTotpSecret();
+      state.mfaChallenges = state.mfaChallenges ?? [];
+      state.mfaChallenges.push({
+        id: challengeId,
+        userId: user.id,
+        purpose: "setup",
+        pendingSecret,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + MFA_CHALLENGE_MS).toISOString(),
+      });
+      return {
+        kind: "setup" as const,
+        challengeId,
+        secret: pendingSecret,
+        otpauthUrl: buildOtpAuthUri({ secret: pendingSecret, email: user.email }),
+        email: user.email,
+      };
+    }
+
     user.lastLoginAt = new Date().toISOString();
     const sessionId = createToken();
     state.sessions.push({
@@ -976,10 +1111,311 @@ export async function loginAdmin(emailRaw: string, password: string) {
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
     });
+    writeAudit(state, { id: user.id, email: user.email, role: user.role }, {
+      action: "admin.login",
+      entity: "admin",
+      entityId: user.id,
+      summary: `Admin login ${user.email}`,
+    });
+    return { kind: "ok" as const, sessionId };
+  });
+
+  if (result.kind === "mfa") {
+    await setSessionCookie(ADMIN_MFA_COOKIE, result.challengeId, MFA_CHALLENGE_MS);
+    return { ok: false as const, mfaRequired: true as const, challengeId: result.challengeId };
+  }
+  if (result.kind === "setup") {
+    await setSessionCookie(ADMIN_MFA_COOKIE, result.challengeId, MFA_CHALLENGE_MS);
+    return {
+      ok: false as const,
+      mfaSetupRequired: true as const,
+      challengeId: result.challengeId,
+      secret: result.secret,
+      otpauthUrl: result.otpauthUrl,
+      email: result.email,
+    };
+  }
+  await setSessionCookie(ADMIN_COOKIE, result.sessionId, ADMIN_SESSION_MS);
+  const jar = await cookies();
+  jar.delete(ADMIN_MFA_COOKIE);
+  return { ok: true as const };
+}
+
+export async function verifyAdminMfa(code: string, challengeIdRaw?: string) {
+  const jar = await cookies();
+  const challengeId = challengeIdRaw || jar.get(ADMIN_MFA_COOKIE)?.value;
+  if (!challengeId) throw new PlatformError("MFA challenge expired. Sign in again.", 401);
+
+  const sessionId = await mutate((state) => {
+    const challenge = (state.mfaChallenges ?? []).find((item) => item.id === challengeId);
+    if (!challenge || new Date(challenge.expiresAt).getTime() < Date.now()) {
+      throw new PlatformError("MFA challenge expired. Sign in again.", 401);
+    }
+    if (challenge.purpose !== "verify") {
+      throw new PlatformError("Complete MFA enrollment first.", 400);
+    }
+    const user = state.adminUsers.find((item) => item.id === challenge.userId && item.active);
+    if (!user?.mfaSecret || !user.mfaEnabled) {
+      throw new PlatformError("MFA is not enabled for this account.", 400);
+    }
+    if (!verifyTotpCode(user.mfaSecret, code)) {
+      throw new PlatformError("Invalid authenticator code.", 401);
+    }
+    state.mfaChallenges = (state.mfaChallenges ?? []).filter((item) => item.id !== challengeId);
+    user.lastLoginAt = new Date().toISOString();
+    const sessionId = createToken();
+    state.sessions.push({
+      id: sessionId,
+      kind: "admin",
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
+    });
+    writeAudit(state, { id: user.id, email: user.email, role: user.role }, {
+      action: "admin.login_mfa",
+      entity: "admin",
+      entityId: user.id,
+      summary: `Admin MFA login ${user.email}`,
+    });
     return sessionId;
   });
+
   await setSessionCookie(ADMIN_COOKIE, sessionId, ADMIN_SESSION_MS);
+  jar.delete(ADMIN_MFA_COOKIE);
   return { ok: true as const };
+}
+
+export async function completeAdminMfaSetup(code: string, challengeIdRaw?: string) {
+  const jar = await cookies();
+  const challengeId = challengeIdRaw || jar.get(ADMIN_MFA_COOKIE)?.value;
+  if (!challengeId) throw new PlatformError("MFA setup expired. Sign in again.", 401);
+
+  const sessionId = await mutate((state) => {
+    const challenge = (state.mfaChallenges ?? []).find((item) => item.id === challengeId);
+    if (!challenge || new Date(challenge.expiresAt).getTime() < Date.now()) {
+      throw new PlatformError("MFA setup expired. Sign in again.", 401);
+    }
+    if (challenge.purpose !== "setup" || !challenge.pendingSecret) {
+      throw new PlatformError("No MFA setup in progress.", 400);
+    }
+    const user = state.adminUsers.find((item) => item.id === challenge.userId && item.active);
+    if (!user) throw new PlatformError("Account not found.", 404);
+    if (!verifyTotpCode(challenge.pendingSecret, code)) {
+      throw new PlatformError("Invalid authenticator code.", 401);
+    }
+    user.mfaSecret = challenge.pendingSecret;
+    user.mfaEnabled = true;
+    user.mfaEnabledAt = new Date().toISOString();
+    user.lastLoginAt = new Date().toISOString();
+    state.mfaChallenges = (state.mfaChallenges ?? []).filter((item) => item.id !== challengeId);
+    const sessionId = createToken();
+    state.sessions.push({
+      id: sessionId,
+      kind: "admin",
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + ADMIN_SESSION_MS).toISOString(),
+    });
+    writeAudit(state, { id: user.id, email: user.email, role: user.role }, {
+      action: "mfa.enroll",
+      entity: "admin",
+      entityId: user.id,
+      summary: `Enrolled MFA for ${user.email} at login`,
+    });
+    return sessionId;
+  });
+
+  await setSessionCookie(ADMIN_COOKIE, sessionId, ADMIN_SESSION_MS);
+  jar.delete(ADMIN_MFA_COOKIE);
+  return { ok: true as const };
+}
+
+export async function beginMfaEnrollment(actorId: string) {
+  return mutate((state) => {
+    const user = state.adminUsers.find((item) => item.id === actorId && item.active);
+    if (!user) throw new PlatformError("Account not found.", 404);
+    if (user.mfaEnabled) throw new PlatformError("MFA is already enabled.");
+    const secret = generateTotpSecret();
+    const challengeId = createToken();
+    state.mfaChallenges = state.mfaChallenges ?? [];
+    state.mfaChallenges.push({
+      id: challengeId,
+      userId: user.id,
+      purpose: "setup",
+      pendingSecret: secret,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + MFA_CHALLENGE_MS).toISOString(),
+    });
+    return {
+      challengeId,
+      secret,
+      otpauthUrl: buildOtpAuthUri({ secret, email: user.email }),
+    };
+  });
+}
+
+export async function confirmMfaEnrollment(actorId: string, challengeId: string, code: string) {
+  return mutate((state) => {
+    const user = state.adminUsers.find((item) => item.id === actorId && item.active);
+    if (!user) throw new PlatformError("Account not found.", 404);
+    const challenge = (state.mfaChallenges ?? []).find(
+      (item) => item.id === challengeId && item.userId === actorId && item.purpose === "setup",
+    );
+    if (!challenge?.pendingSecret || new Date(challenge.expiresAt).getTime() < Date.now()) {
+      throw new PlatformError("Enrollment expired. Start again.");
+    }
+    if (!verifyTotpCode(challenge.pendingSecret, code)) {
+      throw new PlatformError("Invalid authenticator code.", 401);
+    }
+    user.mfaSecret = challenge.pendingSecret;
+    user.mfaEnabled = true;
+    user.mfaEnabledAt = new Date().toISOString();
+    state.mfaChallenges = (state.mfaChallenges ?? []).filter((item) => item.id !== challengeId);
+    writeAudit(state, { id: user.id, email: user.email, role: user.role }, {
+      action: "mfa.enroll",
+      entity: "admin",
+      entityId: user.id,
+      summary: `Enrolled MFA for ${user.email}`,
+    });
+    return { ok: true as const, mfaEnabled: true as const };
+  });
+}
+
+export async function disableMfa(actorId: string, code: string) {
+  return mutate((state) => {
+    const user = state.adminUsers.find((item) => item.id === actorId && item.active);
+    if (!user) throw new PlatformError("Account not found.", 404);
+    if (!user.mfaEnabled || !user.mfaSecret) {
+      throw new PlatformError("MFA is not enabled.");
+    }
+    if (adminMfaRequiredByPolicy() && (user.role === "owner" || user.role === "admin")) {
+      throw new PlatformError("ADMIN_MFA_REQUIRED is on — owner/admin cannot disable MFA.");
+    }
+    if (!verifyTotpCode(user.mfaSecret, code)) {
+      throw new PlatformError("Invalid authenticator code.", 401);
+    }
+    user.mfaEnabled = false;
+    user.mfaSecret = undefined;
+    user.mfaEnabledAt = undefined;
+    writeAudit(state, { id: user.id, email: user.email, role: user.role }, {
+      action: "mfa.disable",
+      entity: "admin",
+      entityId: user.id,
+      summary: `Disabled MFA for ${user.email}`,
+    });
+    return { ok: true as const, mfaEnabled: false as const };
+  });
+}
+
+export async function getMfaStatus(actorId: string) {
+  return readPlatform((state) => {
+    const user = state.adminUsers.find((item) => item.id === actorId);
+    if (!user) throw new PlatformError("Account not found.", 404);
+    return {
+      mfaEnabled: Boolean(user.mfaEnabled),
+      mfaEnabledAt: user.mfaEnabledAt,
+      policyRequired:
+        adminMfaRequiredByPolicy() && (user.role === "owner" || user.role === "admin"),
+      role: user.role,
+    };
+  });
+}
+
+export async function previewProductCsv(csvText: string) {
+  return readPlatform((state) => {
+    const catalog = mergeStockIntoCatalog(state);
+    return parseProductCsv(csvText, catalog.products);
+  });
+}
+
+export async function importProductCsv(csvText: string, actorId: string) {
+  return mutate((state) => {
+    const catalog = mergeStockIntoCatalog(state);
+    const parsed = parseProductCsv(csvText, catalog.products);
+    if (parsed.errors.length) {
+      throw new PlatformError(
+        `CSV has ${parsed.errors.length} validation error(s). Fix them before importing.`,
+      );
+    }
+    const built = buildProductsFromCsv(parsed.rows, catalog.products);
+    const now = new Date().toISOString();
+    for (const product of built.products) {
+      const existingIndex = state.catalog.products.findIndex((item) => item.id === product.id);
+      if (existingIndex >= 0) state.catalog.products[existingIndex] = product;
+      else state.catalog.products.unshift(product);
+      for (const variant of product.variants) {
+        const previous = state.stock[variant.id];
+        state.stock[variant.id] = variant.stock;
+        if (previous === undefined || previous !== variant.stock) {
+          state.inventoryMovements.unshift({
+            id: createId("mov"),
+            variantId: variant.id,
+            change: previous === undefined ? variant.stock : variant.stock - previous,
+            type: "restock",
+            actorId,
+            reason: "CSV import",
+            createdAt: now,
+          });
+        }
+      }
+    }
+    writeAudit(state, auditActor(state, actorId), {
+      action: "product.csv_import",
+      entity: "product",
+      summary: `CSV import: ${built.created} created, ${built.updated} updated`,
+      meta: { created: built.created, updated: built.updated, skus: parsed.rows.map((row) => row.sku) },
+    });
+    return {
+      created: built.created,
+      updated: built.updated,
+      products: built.products.map((product) => ({
+        id: product.id,
+        slug: product.slug,
+        title: product.title,
+        variants: product.variants.length,
+      })),
+    };
+  });
+}
+
+export async function exportProductCsv() {
+  return readPlatform((state) => productsToCsv(mergeStockIntoCatalog(state).products));
+}
+
+export async function listAuditLogs(filters?: {
+  action?: string;
+  actorEmail?: string;
+  entity?: string;
+  q?: string;
+  limit?: number;
+}) {
+  return readPlatform((state) => {
+    const limit = Math.min(Math.max(filters?.limit ?? 100, 1), 500);
+    let rows = [...(state.auditLogs ?? [])];
+    if (filters?.action) {
+      const needle = filters.action.toLowerCase();
+      rows = rows.filter((row) => row.action.toLowerCase().includes(needle));
+    }
+    if (filters?.actorEmail) {
+      const needle = filters.actorEmail.toLowerCase();
+      rows = rows.filter((row) => row.actorEmail.toLowerCase().includes(needle));
+    }
+    if (filters?.entity) {
+      const needle = filters.entity.toLowerCase();
+      rows = rows.filter((row) => row.entity.toLowerCase().includes(needle));
+    }
+    if (filters?.q) {
+      const needle = filters.q.toLowerCase();
+      rows = rows.filter(
+        (row) =>
+          row.summary.toLowerCase().includes(needle) ||
+          row.action.toLowerCase().includes(needle) ||
+          row.actorEmail.toLowerCase().includes(needle) ||
+          (row.entityId ?? "").toLowerCase().includes(needle),
+      );
+    }
+    return rows.slice(0, limit) as AuditEntry[];
+  });
 }
 
 export async function logout(kind: "customer" | "admin") {
@@ -992,6 +1428,7 @@ export async function logout(kind: "customer" | "admin") {
     });
   }
   jar.delete(name);
+  if (kind === "admin") jar.delete(ADMIN_MFA_COOKIE);
 }
 
 async function setSessionCookie(name: string, value: string, maxAgeMs: number) {
@@ -1055,6 +1492,7 @@ export async function listAdminUsers() {
       active: user.active,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
+      mfaEnabled: Boolean(user.mfaEnabled),
     })),
   );
 }
@@ -1067,6 +1505,7 @@ export async function saveAdminUser(input: {
   password?: string;
   active?: boolean;
   actorRole: Role;
+  actorId?: string;
 }) {
   if (input.role === "owner" && input.actorRole !== "owner") {
     throw new PlatformError("Only the owner can assign the owner role.", 403);
@@ -1084,6 +1523,13 @@ export async function saveAdminUser(input: {
       user.role = input.role;
       if (input.active !== undefined) user.active = input.active;
       if (input.password) user.passwordHash = await hashPassword(input.password);
+      writeAudit(state, auditActor(state, input.actorId), {
+        action: "user.save",
+        entity: "admin_user",
+        entityId: user.id,
+        summary: `Updated admin user ${user.email}`,
+        meta: { role: user.role, active: user.active },
+      });
       return publicAdmin(user);
     }
     if (state.adminUsers.some((item) => item.email === email)) {
@@ -1100,6 +1546,13 @@ export async function saveAdminUser(input: {
       createdAt: new Date().toISOString(),
     };
     state.adminUsers.push(user);
+    writeAudit(state, auditActor(state, input.actorId), {
+      action: "user.save",
+      entity: "admin_user",
+      entityId: user.id,
+      summary: `Created admin user ${user.email}`,
+      meta: { role: user.role },
+    });
     return publicAdmin(user);
   });
 }
@@ -1113,6 +1566,7 @@ function publicAdmin(user: AdminUser) {
     active: user.active,
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
+    mfaEnabled: Boolean(user.mfaEnabled),
   };
 }
 

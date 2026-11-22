@@ -1,10 +1,12 @@
 import type { CatalogData } from "@/lib/catalog";
+import type { AuditEntry } from "@/lib/audit";
 import type {
   AdminUser,
   Customer,
   CustomerAddress,
   Discount,
   InventoryMovement,
+  MfaChallenge,
   OtpChallenge,
   SessionRecord,
   StoreSettings,
@@ -42,6 +44,8 @@ export type PlatformState = {
   /** customerId → wishlist product ids */
   wishlists: Record<string, WishlistEntry[]>;
   pages: ContentPage[];
+  auditLogs: AuditEntry[];
+  mfaChallenges: MfaChallenge[];
 };
 
 export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings): PlatformState {
@@ -77,6 +81,8 @@ export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings
     returns: [],
     wishlists: {},
     pages: seedContentPages(),
+    auditLogs: [],
+    mfaChallenges: [],
   };
 }
 

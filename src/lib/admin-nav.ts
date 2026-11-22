@@ -18,6 +18,8 @@ export const ADMIN_NAV: {
   { href: "/admin/discounts", label: "Discounts", permission: "discounts.manage" },
   { href: "/admin/content", label: "Content", permission: "products.manage" },
   { href: "/admin/users", label: "Users", permission: "users.manage" },
+  { href: "/admin/audit", label: "Audit log", permission: "audit.view" },
+  { href: "/admin/security", label: "Security", permission: "dashboard.view" },
   { href: "/admin/settings", label: "Settings", permission: "settings.manage" },
 ];
 

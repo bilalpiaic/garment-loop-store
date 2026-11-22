@@ -27,7 +27,7 @@ Optional: `cp .env.example .env.local` — every variable is optional. Set `DATA
 | --- | --- |
 | Storefront | Home → Shop filters → PDP (wishlist/reviews) → Cart → multi-step Checkout (COD) |
 | Account | `/account/login` (OTP shown outside production) → orders → returns |
-| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 · Settings shows Neon vs demo |
+| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 · CSV import, Security (MFA), Audit log · Settings shows Neon vs demo |
 
 Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages.
 
@@ -52,6 +52,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` | Live Avalara tax quotes (else local PK/GCC/intl) |
 | `TAXJAR_API_KEY` | TaxJar quotes when Avalara unset |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
+| `ADMIN_MFA_REQUIRED` | When `1`/`true`, owner/admin must enroll + use TOTP (staff optional) |
 
 ### Enable live EasyPost rates
 

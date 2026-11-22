@@ -15,7 +15,7 @@
 
 ## Sidebar
 
-Dashboard · Orders · Returns · Products · Reviews · Inventory · Categories · Collections · Customers · Analytics · Discounts · **Content** · Users · Settings
+Dashboard · Orders · Returns · Products · Reviews · Inventory · Categories · Collections · Customers · Analytics · Discounts · **Content** · Users · **Audit log** · **Security** · Settings
 
 ## Owner CRUD (demo store — no required DATABASE_URL)
 
@@ -35,9 +35,15 @@ Dashboard · Orders · Returns · Products · Reviews · Inventory · Categories
 | Settings | — | Persistence/Stripe/email status | Store settings form | — | — |
 | Dashboard | — | KPIs | — | — | Cards link to filtered lists |
 
+## CSV import / MFA / audit
+
+- **CSV:** `/admin/products/import` — validate → preview → commit (owner/admin). Export via `/api/admin/products/export`.
+- **MFA:** TOTP on `/admin/security`. Login challenges when enrolled. `ADMIN_MFA_REQUIRED=1` forces owner/admin enroll+verify (staff optional).
+- **Audit:** `/admin/audit` lists who/what/when for admin mutations (filterable).
+
 ## Deferred (Phase 2+)
 
-CSV import/export, carrier label print, MFA/audit log UI, multi-warehouse, Ctrl+K command palette, saved views, homepage block CMS scheduling.
+Carrier label print, multi-warehouse, Ctrl+K command palette, saved views, homepage block CMS scheduling.
 
 ## Seeds
 

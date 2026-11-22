@@ -60,9 +60,9 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Returns / RMA queue | Must | Done | RMA for GL-0006 |
 | Reviews moderation | Must | Done | |
 | Content pages editor | Must | Done | |
-| CSV import/export | Should | Not started | |
+| CSV import/export | Should | Done | Admin Products → CSV import (+ export); validate/preview/commit |
 | Carrier label print / webhooks | Should | Not started | |
-| MFA / audit log UI | Should | Not started | |
+| MFA / audit log UI | Should | Done | TOTP enroll/verify; Audit log page; ADMIN_MFA_REQUIRED for owner/admin |
 | Gift cards / loyalty | Could | Not started | |
 | Multi-warehouse / 3PL | Could | Not started | |
 | Full BI / ERP sync | Could | Not started | |
@@ -87,7 +87,8 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
 | **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
-| **Should (Phase 2)** | **~45%** | EasyPost rates + Stripe wallets + tax engine; label buy, autocomplete, CSV, MFA still open |
+| **Should (Phase 2)** | **~55%** | EasyPost + wallets + tax + CSV/MFA/audit; label buy + autocomplete still open |
+| **Could / Phase 3 wish list** | **~14%** | Wallets/BNPL + tax path shipped; circular/loyalty/i18n/personalization still open |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
 
 ## Honest top gaps
@@ -96,11 +97,11 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 2. Prepaid RMA / outbound label purchase (EasyPost rates done; buy-label stubbed)  
 3. ~~Stripe wallets / BNPL / express pay~~ (done when Stripe keys + Dashboard methods enabled)  
 4. ~~Tax engine beyond PK estimate~~ (local regions + optional Avalara/TaxJar)  
-5. CSV product import, MFA, audit log UI  
+5. ~~CSV product import, MFA, audit log UI~~ (done — Products CSV import; Security TOTP; Audit log; `ADMIN_MFA_REQUIRED`)  
 6. Circular take-back / repair / recycling subscriptions (productized)  
 7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)
 
 ## Login UX
 
 - **Customers:** `/account/login` — email OTP (production: email via Resend/SMTP; no `devCode` unless `AUTH_SHOW_OTP`)  
-- **Staff/Owner:** `/admin/login` — email + password; linked from footer + account login
+- **Staff/Owner:** `/admin/login` — email + password (+ TOTP when enrolled / when `ADMIN_MFA_REQUIRED`); linked from footer + account login

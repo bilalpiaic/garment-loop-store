@@ -28,9 +28,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin("products.manage");
+    const session = await requireAdmin("products.manage");
     const { id } = await context.params;
-    await deleteProduct(id);
+    await deleteProduct(id, session.user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

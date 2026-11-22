@@ -85,6 +85,8 @@ export async function loadNeonState(): Promise<PlatformState> {
     returns: raw?.returns ?? [],
     wishlists: raw?.wishlists ?? {},
     pages: raw?.pages?.length ? raw.pages : base.pages,
+    auditLogs: raw?.auditLogs ?? [],
+    mfaChallenges: raw?.mfaChallenges ?? [],
   };
 
   const orderRows = await db.select().from(orders).orderBy(desc(orders.createdAt));
@@ -122,6 +124,8 @@ export async function saveNeonState(state: PlatformState) {
     returns: state.returns,
     wishlists: state.wishlists,
     pages: state.pages ?? [],
+    auditLogs: state.auditLogs ?? [],
+    mfaChallenges: state.mfaChallenges ?? [],
   };
   const payload = JSON.stringify(meta);
   await sql`

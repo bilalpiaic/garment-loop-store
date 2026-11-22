@@ -25,13 +25,13 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdmin("orders.manage");
+    const session = await requireAdmin("orders.manage");
     const { id } = await context.params;
     const parsed = orderPatchSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const order = await updateOrder(id, parsed.data);
+    const order = await updateOrder(id, parsed.data, session.user.id);
     return NextResponse.json({ order });
   } catch (error) {
     return errorResponse(error);

@@ -9,6 +9,21 @@ export type AdminUser = {
   active: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  /** Base32 TOTP secret when MFA is enrolled. Never expose to clients. */
+  mfaSecret?: string;
+  mfaEnabled?: boolean;
+  mfaEnabledAt?: string;
+};
+
+export type MfaChallenge = {
+  id: string;
+  userId: string;
+  /** password_ok → needs TOTP; setup → enrollment before full session */
+  purpose: "verify" | "setup";
+  /** Pending secret while completing setup at login */
+  pendingSecret?: string;
+  expiresAt: string;
+  createdAt: string;
 };
 
 export type Customer = {
@@ -101,3 +116,4 @@ export const DEFAULT_SETTINGS: StoreSettings = {
 
 export const CUSTOMER_COOKIE = "gl_customer";
 export const ADMIN_COOKIE = "gl_admin";
+export const ADMIN_MFA_COOKIE = "gl_admin_mfa";

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse, withAdmin } from "@/lib/http";
-import { requestCustomerOtp, verifyCustomerOtp, logout, loginAdmin } from "@/lib/platform";
+import {
+  requestCustomerOtp,
+  verifyCustomerOtp,
+  logout,
+  loginAdmin,
+  verifyAdminMfa,
+  completeAdminMfaSetup,
+} from "@/lib/platform";
 
 const emailSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
@@ -14,6 +21,11 @@ const otpSchema = emailSchema.extend({
 const adminLoginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1, "Enter your password."),
+});
+
+const adminMfaSchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit authenticator code."),
+  challengeId: z.string().trim().optional(),
 });
 
 export async function handleOtpRequest(request: Request) {
@@ -57,7 +69,33 @@ export async function handleAdminLogin(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    await loginAdmin(parsed.data.email, parsed.data.password);
+    const result = await loginAdmin(parsed.data.email, parsed.data.password);
+    return NextResponse.json(result);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function handleAdminMfaVerify(request: Request) {
+  try {
+    const parsed = adminMfaSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+    }
+    await verifyAdminMfa(parsed.data.code, parsed.data.challengeId);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function handleAdminMfaSetupComplete(request: Request) {
+  try {
+    const parsed = adminMfaSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+    }
+    await completeAdminMfaSetup(parsed.data.code, parsed.data.challengeId);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);
