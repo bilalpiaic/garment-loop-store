@@ -25,17 +25,29 @@ export default async function AdminDashboardPage() {
           </p>
           <p className="mt-1 text-muted-foreground">
             Review inventory before the next drop.{" "}
-            <Link href="/admin/inventory" className="underline underline-offset-4">
-              Open inventory
+            <Link href="/admin/inventory?low=1" className="underline underline-offset-4">
+              Open low-stock inventory
             </Link>
           </p>
         </div>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Orders today" value={String(metrics.ordersToday)} />
-        <Metric label="Revenue today" value={formatPkr(metrics.revenueToday)} />
-        <Metric label="Open orders" value={String(metrics.pendingOrders)} />
-        <Metric label="Low stock" value={String(metrics.lowStockCount)} />
+        <Metric
+          label="Orders today"
+          value={String(metrics.ordersToday)}
+          href="/admin/orders"
+        />
+        <Metric label="Revenue today" value={formatPkr(metrics.revenueToday)} href="/admin/analytics" />
+        <Metric
+          label="Open orders"
+          value={String(metrics.pendingOrders)}
+          href="/admin/orders?status=pending"
+        />
+        <Metric
+          label="Low stock"
+          value={String(metrics.lowStockCount)}
+          href="/admin/inventory?low=1"
+        />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border bg-card p-5">
@@ -93,11 +105,17 @@ export default async function AdminDashboardPage() {
             <Link href="/admin/products/new" className="underline underline-offset-4">
               New product
             </Link>
-            <Link href="/admin/inventory" className="underline underline-offset-4">
+            <Link href="/admin/inventory?low=1" className="underline underline-offset-4">
               Inventory
             </Link>
             <Link href="/admin/discounts" className="underline underline-offset-4">
               New discount
+            </Link>
+            <Link href="/admin/returns" className="underline underline-offset-4">
+              Returns queue
+            </Link>
+            <Link href="/admin/content" className="underline underline-offset-4">
+              Edit content
             </Link>
           </div>
         </section>
@@ -131,11 +149,12 @@ export default async function AdminDashboardPage() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, href }: { label: string; value: string; href: string }) {
   return (
-    <div className="rounded-xl border bg-card p-5">
+    <Link href={href} className="rounded-xl border bg-card p-5 transition hover:border-foreground/30">
       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <p className="mt-2 font-serif text-3xl">{value}</p>
-    </div>
+      <p className="mt-2 text-xs text-muted-foreground underline underline-offset-4">Open list</p>
+    </Link>
   );
 }
