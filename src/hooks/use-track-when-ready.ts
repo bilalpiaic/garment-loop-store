@@ -2,7 +2,11 @@
 
 import { useEffect, useEffectEvent, useRef } from "react";
 import { readConsent } from "@/lib/analytics/consent";
-import { isTrackingReady, subscribeConsent } from "@/lib/analytics/ready";
+import {
+  isAllPixelsReady,
+  isAnyPixelReady,
+  subscribeConsent,
+} from "@/lib/analytics/ready";
 
 const SCRIPT_WAIT_MS = 100;
 const MAX_SCRIPT_WAITS = 50; // ~5s after Accept while gtag/fbq load
@@ -10,8 +14,8 @@ const MAX_SCRIPT_WAITS = 50; // ~5s after Accept while gtag/fbq load
 /**
  * Runs `track` once when analytics consent + pixel runtimes are ready.
  * Waits for consent via event (no polling while undecided/declined).
- * After Accept, polls briefly for script load, then stops.
- * Return `false` from `track` to retry while scripts/data settle (also capped).
+ * After Accept, waits for all configured pixels; if the cap elapses with
+ * at least one pixel ready, fires anyway so a slow secondary tag cannot block.
  */
 export function useTrackWhenReady(track: () => boolean | void, deps: unknown[]) {
   const doneRef = useRef(false);
@@ -46,10 +50,16 @@ export function useTrackWhenReady(track: () => boolean | void, deps: unknown[]) 
         return;
       }
 
-      if (!isTrackingReady()) {
+      const allReady = isAllPixelsReady();
+      const anyReady = isAnyPixelReady();
+      if (!allReady) {
         scriptWaits += 1;
-        if (scriptWaits <= MAX_SCRIPT_WAITS) schedule(attempt);
-        return;
+        if (scriptWaits <= MAX_SCRIPT_WAITS) {
+          schedule(attempt);
+          return;
+        }
+        // Cap elapsed: proceed only if at least one pixel loaded.
+        if (!anyReady) return;
       }
 
       const result = onTrack();

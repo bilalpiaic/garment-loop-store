@@ -3,8 +3,26 @@
 import { hasAnalyticsConsent } from "@/lib/analytics/consent";
 import { gaMeasurementId, metaPixelId } from "@/lib/analytics/config";
 
-/** True when consent is granted and any configured pixel runtime is available. */
-export function isTrackingReady() {
+function gaRuntimeReady() {
+  return Boolean(gaMeasurementId()) && typeof window.gtag === "function";
+}
+
+function metaRuntimeReady() {
+  return Boolean(metaPixelId()) && typeof window.fbq === "function";
+}
+
+/** True when consent is granted and at least one configured pixel runtime exists. */
+export function isAnyPixelReady() {
+  if (typeof window === "undefined") return false;
+  if (!hasAnalyticsConsent()) return false;
+  const ga = gaMeasurementId();
+  const meta = metaPixelId();
+  if (!ga && !meta) return true;
+  return gaRuntimeReady() || metaRuntimeReady();
+}
+
+/** True when every configured pixel runtime is available (or none are configured). */
+export function isAllPixelsReady() {
   if (typeof window === "undefined") return false;
   if (!hasAnalyticsConsent()) return false;
   const ga = gaMeasurementId();
@@ -13,6 +31,11 @@ export function isTrackingReady() {
   if (ga && typeof window.gtag !== "function") return false;
   if (meta && typeof window.fbq !== "function") return false;
   return true;
+}
+
+/** Prefer all pixels; callers may fall back to any after a wait cap. */
+export function isTrackingReady() {
+  return isAllPixelsReady();
 }
 
 export function subscribeConsent(onChange: () => void) {
