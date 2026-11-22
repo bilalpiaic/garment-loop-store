@@ -832,7 +832,8 @@ export async function requestCustomerOtp(emailRaw: string) {
 
   return {
     ok: true as const,
-    emailed: mail.ok,
+    // Mock always returns ok — only treat Resend/SMTP as a real inbox delivery.
+    emailed: mail.ok && mail.mode !== "mock",
     emailMode: mail.mode,
     devCode: show ? code : undefined,
   };
