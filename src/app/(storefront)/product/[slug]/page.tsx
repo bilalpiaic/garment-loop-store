@@ -10,8 +10,9 @@ import {
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductForm } from "@/components/product-form";
 import { ProductGrid } from "@/components/product-card";
+import { ProductReviews } from "@/components/product-reviews";
 import { getProductBySlug, relatedProducts } from "@/lib/catalog";
-import { getPublishedCatalog } from "@/lib/platform";
+import { getPublishedCatalog, listApprovedReviews } from "@/lib/platform";
 import { site } from "@/lib/site";
 
 export async function generateMetadata({
@@ -40,6 +41,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = getProductBySlug(slug, catalog.products);
   if (!product) notFound();
   const related = relatedProducts(product, 4, catalog.products);
+  const reviews = await listApprovedReviews(product.id);
+  const avg =
+    reviews.length === 0
+      ? undefined
+      : reviews.reduce((sum, review) => sum + review.rating, of) / reviews.length;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -57,6 +63,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
     },
+    ...(avg
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: Number(avg.toFixed(1)),
+            reviewCount: reviews.length,
+          },
+        }
+      : {}),
   };
 
   return (
@@ -111,14 +126,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <AccordionTrigger>Shipping & returns</AccordionTrigger>
               <AccordionContent>
                 <p>
-                  Pakistan: PKR 300 flat, free over PKR 8,000. International dispatch is a flat fee
-                  at checkout. Unused items can be returned within 30 days.
+                  Pakistan: standard or express zone rates (free standard over PKR{" "}
+                  {site.freeShippingThresholdPkr.toLocaleString("en-PK")}). GCC and international air
+                  options at checkout. Unused items can be returned within 30 days.
                 </p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </div>
       </div>
+      <ProductReviews productId={product.id} productSlug={product.slug} initialReviews={reviews} />
       {related.length > 0 ? (
         <section className="mt-16">
           <h2 className="mb-6 font-serif text-3xl">You may also like</h2>
