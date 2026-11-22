@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse } from "@/lib/http";
 import {
+  deleteReview,
   getCustomerSession,
   listApprovedReviews,
   listReviewsForAdmin,
   moderateReview,
+  replyToReview,
   requireAdmin,
   submitReview,
 } from "@/lib/platform";
@@ -77,14 +79,35 @@ export async function PATCH(request: Request) {
     const parsed = z
       .object({
         id: z.string().min(1),
-        status: z.enum(["approved", "rejected"]),
+        status: z.enum(["approved", "rejected"]).optional(),
+        adminReply: z.string().trim().min(2).max(1200).optional(),
       })
       .safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid moderation payload." }, { status: 400 });
     }
+    if (parsed.data.adminReply) {
+      const review = await replyToReview(parsed.data.id, parsed.data.adminReply);
+      return NextResponse.json({ review });
+    }
+    if (!parsed.data.status) {
+      return NextResponse.json({ error: "Provide status or adminReply." }, { status: 400 });
+    }
     const review = await moderateReview(parsed.data.id, parsed.data.status);
     return NextResponse.json({ review });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAdmin("products.manage");
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing review id." }, { status: 400 });
+    await deleteReview(id);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);
   }
