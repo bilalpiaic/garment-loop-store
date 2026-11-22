@@ -9,7 +9,7 @@
 | Docs + brand tokens | Done (#9) |
 | Commerce depth (filters, wishlist, reviews, zone shipping, Stripe session) | Done (#10) |
 | Returns portal + webhooks + email | Done (#11) |
-| **Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout** | Done (this branch) |
+| **Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout** | Done (#12 / GitHub `main`) |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
@@ -26,3 +26,6 @@ npm install && npm run build && npm start
 ```
 
 http://localhost:43123 — no env required.
+
+**Production:** https://garment-loop-store.vercel.app  
+**GitHub:** https://github.com/bilalpiaic/garment-loop-store (`main`)

@@ -4,6 +4,9 @@ Premium **circular-wardrobe / modern atelier** ecommerce demo for **GarmentLoop*
 
 **No database required.** Catalog, cart, checkout, admin, returns, reviews, and sample orders run on an in-memory/file demo store. Neon (`DATABASE_URL`) is optional for durable persistence.
 
+**Live:** https://garment-loop-store.vercel.app  
+**GitHub:** https://github.com/bilalpiaic/garment-loop-store
+
 ## Run locally (zero config)
 
 ```bash
@@ -42,7 +45,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
 
-4. Deploy. Suggested project name: `garment-loop-ecommerce`.
+4. Deploy. Project name: `garment-loop-store` (team `bilalpiaics-projects`).
 
 > Demo mode on Vercel: state lives in the warm serverless instance (and best-effort `/tmp`). Cold starts re-seed sample data. For durable production data later, attach Neon.
 

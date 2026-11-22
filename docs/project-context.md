@@ -16,9 +16,12 @@ Soft Cream `#F5F1E8`, Warm Ochre `#E5B65B`, Deep Olive `#4A5F43`, Charcoal `#333
 
 ## Repo
 
+- GitHub: https://github.com/bilalpiaic/garment-loop-store (default branch `main`)
 - Origin: `bilalpiaic/garment-loop-store`
 - Local: `npm run dev` → http://localhost:43123
-- Stacked PRs: #9 docs → #10 commerce → #11 returns/email → **vercel-ready demo** branch
+- Production: https://garment-loop-store.vercel.app (Vercel project `garment-loop-store`, team bilalpiaics-projects)
+- No required `DATABASE_URL`
+- Stacked PRs on Origin: #9 docs → #10 commerce → #11 returns/email → #12 vercel-ready demo
 
 ## Decisions
 
