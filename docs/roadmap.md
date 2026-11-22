@@ -12,7 +12,9 @@
 | Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout | Done (#12 / GitHub main) |
 | Admin vs customer login discoverability | Done |
 | Owner admin CRUD (bulk + forms end-to-end) | Done |
+| Production QA on Neon (Vercel READY) | Done |
 | **Neon Postgres production default (`DATABASE_URL` on Vercel)** | Done |
+| Theme / colors / UI polish (storefront + admin brand chrome) | Done |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
