@@ -30,8 +30,8 @@ export default async function AdminSettingsPage() {
           <li>
             <span className="text-foreground">Email:</span>{" "}
             {emailConfigured()
-              ? `Active (${mail}) — order confirmation, shipment, and return notices.`
-              : "Mock / console log — set RESEND_API_KEY or SMTP_HOST + SMTP_USER (+ SMTP_PASS)."}
+              ? `Active (${mail}) — order confirmation, shipment, return notices, and customer login OTP.`
+              : "Mock / console log — set RESEND_API_KEY or SMTP_HOST + SMTP_USER (+ SMTP_PASS) for real delivery (including login OTP)."}
           </li>
           <li>
             <span className="text-foreground">Stripe Checkout:</span>{" "}

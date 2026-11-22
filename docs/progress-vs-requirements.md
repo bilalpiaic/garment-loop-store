@@ -74,7 +74,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Zero required DB locally | Done | Demo/file/memory without `DATABASE_URL` |
 | Neon on Vercel production | Done | Confirmed Settings + SQL persistence |
 | Stripe Checkout + webhook | Partial | Works when keyed; demo otherwise |
-| Transactional email | Partial | Resend/SMTP or mock; prod OTP needs mail |
+| Transactional email | Partial | Resend/SMTP or mock; OTP emails wired — set keys on Vercel for inbox |
 | WhatsApp confirm links | Partial | Env number optional |
 | Performance / a11y AA basics | Partial | Brand atmosphere + reduced-motion; no formal audit |
 | Theme / visual system | Must | Done | Soft Cream atmosphere, Olive Deep admin, Rust sale, motion — ui-polish-notes.md |
@@ -86,14 +86,14 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
-| **MVP Must items** | **~93%** | Neon prod + full Must storefront/admin verified in QA; residual Must-adjacent: GA4 wiring + production OTP email delivery |
+| **MVP Must items** | **~94%** | Neon prod + OTP email code shipped; residual Must-adjacent: GA4 wiring + Vercel mail keys for inbox OTP |
 | **Should (Phase 2)** | **~28%** | Neon + webhooks/email paths lift slightly; carriers, autocomplete, CSV, MFA, Avalara still open |
 | **Could / Phase 3 wish list** | **~10%** | Circular messaging only; no loyalty, i18n, personalization, BNPL |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
 
 ## Honest top gaps
 
-1. Production customer OTP **email delivery** (codes hidden in prod until Resend/SMTP)  
+1. Set Resend/SMTP on Vercel so production OTP reaches inboxes (code already sends via email stack)  
 2. Live carrier rates / prepaid RMA labels  
 3. Stripe wallets / BNPL / express pay  
 4. Tax engine beyond PK estimate  
@@ -103,5 +103,5 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 
 ## Login UX
 
-- **Customers:** `/account/login` — email OTP (production: no `devCode` in API)  
+- **Customers:** `/account/login` — email OTP (production: email via Resend/SMTP; no `devCode` unless `AUTH_SHOW_OTP`)  
 - **Staff/Owner:** `/admin/login` — email + password; linked from footer + account login

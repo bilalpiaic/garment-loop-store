@@ -194,6 +194,34 @@ export async function sendShipmentNotice(order: Order) {
   return sendRaw({ to: order.customer.email, ...content });
 }
 
+export function loginOtpEmail(input: { code: string; expiresMinutes: number }) {
+  const subject = "Your GarmentLoop sign-in code";
+  const text = [
+    "Your GarmentLoop sign-in code is:",
+    "",
+    input.code,
+    "",
+    `This code expires in ${input.expiresMinutes} minutes.`,
+    "If you did not request this, you can ignore this email.",
+    "",
+    `— ${site.name}`,
+  ].join("\n");
+  const html = `
+    <div style="font-family:Georgia,serif;color:#333;max-width:560px">
+      <p style="letter-spacing:.2em;text-transform:uppercase;font-size:11px;color:#7d8b6b">GarmentLoop</p>
+      <h1 style="font-weight:normal;font-size:28px">Your sign-in code</h1>
+      <p style="font-size:32px;letter-spacing:.35em;font-weight:bold;margin:24px 0">${escapeHtml(input.code)}</p>
+      <p style="color:#5c6358;font-size:14px">Expires in ${input.expiresMinutes} minutes. If you did not request this, ignore this email.</p>
+    </div>
+  `;
+  return { subject, text, html };
+}
+
+export async function sendLoginOtpEmail(to: string, code: string, expiresMinutes = 10) {
+  const content = loginOtpEmail({ code, expiresMinutes });
+  return sendRaw({ to, ...content });
+}
+
 export async function sendReturnRequestNotice(ret: ReturnRequest) {
   const content = returnRequestEmail(ret);
   return sendRaw({ to: ret.customerEmail, ...content });

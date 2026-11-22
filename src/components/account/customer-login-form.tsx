@@ -25,14 +25,29 @@ export function CustomerLoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json()) as { error?: string; devCode?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        devCode?: string;
+        emailed?: boolean;
+        emailMode?: string;
+      };
       if (!response.ok) {
         toast.error(data.error ?? "Could not send a code.");
         return;
       }
       setDevCode(data.devCode);
       setStep("code");
-      toast.success(data.devCode ? `Dev code: ${data.devCode}` : "Check your email for a sign-in code.");
+      if (data.devCode) {
+        toast.success(`Dev code: ${data.devCode}`);
+      } else if (data.emailed) {
+        toast.success("Check your email for a sign-in code.");
+      } else {
+        toast.message(
+          data.emailMode === "mock"
+            ? "Code generated. Email is in mock mode — set RESEND_API_KEY or SMTP on the server."
+            : "Code generated, but email delivery failed. Try again or contact support.",
+        );
+      }
     } finally {
       setPending(false);
     }
