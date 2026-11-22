@@ -1133,6 +1133,18 @@ export function shippingCostFromSettings(subtotalPkr: number, countryCode: strin
   return resolveShippingOption(countryCode, undefined, subtotalPkr, settings).amountPkr;
 }
 
+export async function attachStripePaymentIntent(orderNumber: string, paymentIntentId: string) {
+  return mutate((state) => {
+    const order = state.orders.find(
+      (item) => item.orderNumber === orderNumber || item.orderNumber === orderNumber.toUpperCase(),
+    );
+    if (!order) throw new PlatformError("Order not found.", 404);
+    order.stripePaymentIntentId = paymentIntentId;
+    order.updatedAt = new Date().toISOString();
+    return order;
+  });
+}
+
 export async function markOrderPaid(orderNumber: string, stripeSessionId?: string) {
   const result = await mutate((state) => {
     const order = state.orders.find(
@@ -1142,7 +1154,12 @@ export async function markOrderPaid(orderNumber: string, stripeSessionId?: strin
     const newlyPaid = order.paymentStatus !== "paid";
     order.paymentStatus = "paid";
     if (order.status === "pending") order.status = "confirmed";
-    if (stripeSessionId) order.stripeSessionId = stripeSessionId;
+    if (stripeSessionId) {
+      order.stripeSessionId = stripeSessionId;
+      if (stripeSessionId.startsWith("pi_")) {
+        order.stripePaymentIntentId = stripeSessionId;
+      }
+    }
     order.updatedAt = new Date().toISOString();
     return { order, newlyPaid };
   });

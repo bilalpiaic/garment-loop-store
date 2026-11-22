@@ -31,6 +31,7 @@ export type CustomerAddress = {
   city: string;
   area: string;
   address: string;
+  postalCode?: string;
   isDefault: boolean;
 };
 

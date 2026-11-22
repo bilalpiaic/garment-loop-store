@@ -20,7 +20,7 @@
 ## Explicitly deferred (Could / Phase 2–3)
 
 - EasyPost label purchase + prepaid RMA labels (rates env-gated; buy stubbed)
-- Apple Pay / Google Pay / BNPL
+- ~~Apple Pay / Google Pay / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
 - Avalara / full VAT
 - AI personalization, i18n, loyalty subscriptions
 

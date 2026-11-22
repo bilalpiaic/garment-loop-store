@@ -97,14 +97,16 @@ export function CheckoutForm({
     if (stripeEnabled) {
       list.push({
         id: "stripe",
-        title: "Card (Stripe)",
-        detail: "Secure checkout via Stripe. You will be redirected to pay.",
+        title: "Card · wallets · BNPL",
+        detail:
+          "Stripe Payment Element — cards, Apple Pay / Google Pay / Link when available, plus Klarna / Afterpay where Stripe enables them.",
       });
     } else {
       list.push({
         id: "card_demo",
         title: "Card (demo)",
-        detail: "Sandbox card payment — no real charge. Set STRIPE_SECRET_KEY to enable live Stripe.",
+        detail:
+          "Sandbox card payment — no real charge. Set STRIPE_SECRET_KEY + NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for wallets / BNPL.",
       });
     }
     return list;
@@ -252,6 +254,9 @@ export function CheckoutForm({
         orderNumber?: string;
         order?: unknown;
         checkoutUrl?: string;
+        clientSecret?: string;
+        publishableKey?: string;
+        payPath?: string;
       };
       if (!response.ok || !data.orderNumber) {
         toast.error(data.error ?? "Could not place the order.");
@@ -260,7 +265,24 @@ export function CheckoutForm({
       if (data.order) {
         sessionStorage.setItem(`garmentloop-order:${data.orderNumber}`, JSON.stringify(data.order));
       }
+      if (data.clientSecret && data.publishableKey) {
+        try {
+          sessionStorage.setItem(
+            `garmentloop-stripe:${data.orderNumber}`,
+            JSON.stringify({
+              clientSecret: data.clientSecret,
+              publishableKey: data.publishableKey,
+            }),
+          );
+        } catch {
+          /* ignore */
+        }
+        clear();
+        router.push(data.payPath ?? `/order/${data.orderNumber}/pay`);
+        return;
+      }
       if (data.checkoutUrl) {
+        clear();
         window.location.href = data.checkoutUrl;
         return;
       }
@@ -391,9 +413,10 @@ export function CheckoutForm({
             {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
           </div>
           <Field
-            label="Postal / ZIP (needed for live carrier rates)"
+            label="Postal / ZIP (for live rates, wallets & BNPL)"
             name="postalCode"
             autoComplete="postal-code"
+            defaultValue={defaults?.address?.postalCode}
           />
           <div className="space-y-2">
             <Label htmlFor="notes">Order notes (optional)</Label>
@@ -570,17 +593,19 @@ export function CheckoutForm({
         >
           {pending
             ? paymentMethod === "stripe"
-              ? "Redirecting to Stripe…"
+              ? "Opening secure payment…"
               : "Placing order…"
             : step !== 3
               ? "Complete steps to place order"
               : paymentMethod === "stripe"
-                ? "Continue to Stripe"
+                ? "Continue to payment"
                 : "Place order"}
         </Button>
         <p className="mt-3 text-xs text-muted-foreground">
           Guest checkout is supported. No card data is stored on this site
-          {stripeEnabled ? " — Stripe handles payment fields." : "."}
+          {stripeEnabled
+            ? " — Stripe Payment Element handles cards, wallets, and BNPL."
+            : "."}
         </p>
       </aside>
     </form>

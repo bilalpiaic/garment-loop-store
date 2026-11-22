@@ -32,7 +32,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Static pages + policies + consent | Must | Done | Content editor |
 | SEO meta + Product JSON-LD + sitemap | Must | Done | |
 | Address autocomplete | Should | Not started | |
-| Express pay / BNPL / wallets | Should–Could | Not started | |
+| Express pay / BNPL / wallets | Should–Could | Done | Payment Element + Express Checkout when Stripe keyed |
 | Live carrier rates | Should | Partial | EasyPost rates when keyed; label buy / prepaid RMA stubbed |
 | Avalara / full VAT | Should | Partial | Simple PK estimate only |
 | Photo UGC / Q&A | Should–Could | Not started | |
@@ -73,7 +73,7 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | --- | --- | --- |
 | Zero required DB locally | Done | Demo/file/memory without `DATABASE_URL` |
 | Neon on Vercel production | Done | Confirmed Settings + SQL persistence |
-| Stripe Checkout + webhook | Partial | Works when keyed; demo otherwise |
+| Stripe Checkout + webhook | Done | PaymentIntent Elements + webhook; demo without keys |
 | Transactional email | Partial | Resend/SMTP or mock; OTP emails wired — set keys on Vercel for inbox |
 | WhatsApp confirm links | Partial | Env number optional |
 | Performance / a11y AA basics | Partial | Brand atmosphere + reduced-motion; no formal audit |
@@ -87,15 +87,15 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
 | **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
-| **Should (Phase 2)** | **~32%** | EasyPost live rates path + prior Neon/email; label buy, autocomplete, CSV, MFA, Avalara still open |
-| **Could / Phase 3 wish list** | **~10%** | Circular messaging only; no loyalty, i18n, personalization, BNPL |
+| **Should (Phase 2)** | **~38%** | EasyPost rates + Stripe wallets/BNPL; label buy, autocomplete, CSV, MFA, Avalara still open |
+| **Could / Phase 3 wish list** | **~14%** | Wallets/BNPL path shipped; circular/loyalty/i18n/personalization still open |
 | **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
 
 ## Honest top gaps
 
 1. Set Resend/SMTP on Vercel so production OTP reaches inboxes (code already sends via email stack)  
 2. Prepaid RMA / outbound label purchase (EasyPost rates done; buy-label stubbed)  
-3. Stripe wallets / BNPL / express pay  
+3. ~~Stripe wallets / BNPL / express pay~~ (done when Stripe keys + Dashboard methods enabled)  
 4. Tax engine beyond PK estimate  
 5. CSV product import, MFA, audit log UI  
 6. Circular take-back / repair / recycling subscriptions (productized)  

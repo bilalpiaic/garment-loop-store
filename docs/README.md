@@ -36,7 +36,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | Variable | Effect when set |
 | --- | --- |
 | `DATABASE_URL` | Neon persistence (set on Vercel; optional locally) |
-| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Live Stripe Checkout |
+| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Element (cards / wallets / BNPL) |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `RESEND_API_KEY` or `SMTP_*` | Real transactional email |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp confirm links |
@@ -56,7 +56,7 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 ## Remaining Phase-3 / Could items (deferred)
 
 - Prepaid RMA / outbound label purchase (EasyPost rates are wired; label buy is stubbed)
-- Stripe wallets / BNPL
+- ~~Stripe wallets / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
 - Avalara/VAT tax engine
 - Production OTP email for auth
 - Prepaid RMA labels, AI personalization, i18n, loyalty

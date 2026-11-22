@@ -33,7 +33,7 @@ export type CheckoutCustomer = {
   city: string;
   area: string;
   address: string;
-  /** Optional; required when placing an order with an EasyPost live rate. */
+  /** Optional; useful for EasyPost rates and Stripe wallets/BNPL. */
   postalCode?: string;
   notes?: string;
 };
@@ -74,6 +74,8 @@ export type Order = {
   notes?: string;
   discountCode?: string;
   stripeSessionId?: string;
+  /** Reused across pay-page reloads to avoid duplicate charges. */
+  stripePaymentIntentId?: string;
 };
 
 export function whatsappOrderLink(order: Order) {

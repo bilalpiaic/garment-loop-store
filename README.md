@@ -40,7 +40,7 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 | Variable | Effect when set |
 | --- | --- |
 | `DATABASE_URL` | Neon persistence (set on Vercel; optional locally) |
-| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Live Stripe Checkout |
+| `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Element (cards, wallets, BNPL) |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`) | Real transactional email (orders, returns, **customer login OTP**) |
 | `EMAIL_FROM` | From address. Resend test sender `onboarding@resend.dev` can only deliver to the Resend account owner email. After verifying a domain at resend.com/domains, use e.g. `GarmentLoop <orders@garmentloop.store>` (or `noreply@your-verified-domain`). |
@@ -68,10 +68,18 @@ Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pendin
 
 See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, admin + storefront specs.
 
+### Enable Stripe wallets / BNPL
+
+1. Create a Stripe account and copy **real** secret + publishable keys (never invent or commit them).
+2. Set `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` on Vercel / `.env.local`.
+3. In Stripe Dashboard → Settings → Payment methods: enable **Klarna**, **Afterpay / Clearpay**, and any wallets you need. Apple Pay / Google Pay also need a verified domain for production.
+4. Set `STRIPE_WEBHOOK_SECRET` and point a webhook to `POST /api/stripe/webhook` (`payment_intent.succeeded`, `checkout.session.completed`).
+5. Redeploy. Checkout offers **Card · wallets · BNPL** → `/order/{id}/pay` with Express Checkout + Payment Element. Without keys, COD / bank / card_demo remain.
+
 ## Remaining Phase-3 / Could items (deferred)
 
 - Prepaid RMA / outbound EasyPost label purchase (rates env-gated; buy stubbed)
-- Stripe wallets / BNPL
+- ~~Stripe wallets / BNPL~~ (Payment Element path; enable methods in Stripe Dashboard)
 - Avalara/VAT tax engine
 - Prepaid RMA labels, AI personalization, i18n, loyalty
 

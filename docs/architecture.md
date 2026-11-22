@@ -22,7 +22,7 @@ Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zu
 | Service | Env | Fallback |
 | --- | --- | --- |
 | Neon | `DATABASE_URL` | Demo memory/file |
-| Stripe Checkout | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | COD / bank / card_demo |
+| Stripe payments | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | COD / bank / card_demo |
 | Stripe webhooks | `STRIPE_WEBHOOK_SECRET` | No-op 200 |
 | Email | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`, `SMTP_PORT`, `SMTP_SECURE`) and optional `EMAIL_FROM` | Console mock |
 | Customer OTP | Same email stack; `AUTH_SHOW_OTP=1` to return/show code in API (auto outside production) | Mock email logs code preview; production API omits `devCode` unless `AUTH_SHOW_OTP` |
@@ -52,6 +52,16 @@ Page views fire on client navigations after consent when either ID is set. Imple
 - Selected EasyPost method ids look like `easypost:{shipmentId}:{rateId}`; `createOrder` re-fetches that rate server-side (client amounts are not trusted).
 - Incomplete EasyPost config or API errors → zone fallback with an explanatory note.
 - Admin tracking fields remain; `POST /api/admin/shipping/label` is a **stub** (501) for future outbound / prepaid RMA label PDFs.
+
+## Stripe wallets / BNPL
+
+When both Stripe keys are set, checkout creates a **PaymentIntent** with `automatic_payment_methods` and sends the shopper to `/order/{orderNumber}/pay`:
+
+- **Express Checkout Element** — Apple Pay / Google Pay / Link when the browser + Stripe account + domain allow them
+- **Payment Element** — cards plus BNPL (Klarna, Afterpay Clearpay) when enabled in the Dashboard and eligible for USD charges / customer country
+- Redirect BNPL returns to `/order/{id}?stripe=success&payment_intent=…`; confirm via `POST /api/stripe/confirm`
+- Hosted Checkout Session remains a server-side fallback if PaymentIntent creation fails
+- No invented keys — unavailable methods simply do not render
 
 ## Auth email (customer OTP)
 

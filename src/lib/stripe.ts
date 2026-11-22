@@ -20,21 +20,131 @@ export function getStripe() {
   return new Stripe(key, { apiVersion: "2026-11-18.endive" });
 }
 
-/** Create a Stripe Checkout Session for an existing pending order. */
+/** Charge amount in the smallest currency unit (USD cents). PKR totals convert via store usdRate. */
+export function stripeChargeAmount(order: Order) {
+  if (order.currency === "USD") {
+    return {
+      currency: "usd" as const,
+      amount: Math.max(50, Math.round((order.totalPkr / site.usdRate) * 100)),
+    };
+  }
+  return {
+    currency: "usd" as const,
+    amount: Math.max(50, Math.round((order.totalPkr / site.usdRate) * 100)),
+  };
+}
+
+const REUSABLE_PI_STATUSES = new Set([
+  "requires_payment_method",
+  "requires_confirmation",
+  "requires_action",
+]);
+
+function shippingForPaymentIntent(order: Order): Stripe.PaymentIntentCreateParams.Shipping | undefined {
+  const postal = order.customer.postalCode?.trim();
+  // BNPL methods (Afterpay etc.) reject shipping without postal_code — omit shipping until we have one.
+  if (!postal) return undefined;
+  return {
+    name: order.customer.fullName,
+    phone: order.customer.phone,
+    address: {
+      line1: order.customer.address,
+      city: order.customer.city,
+      state: order.customer.area,
+      postal_code: postal,
+      country: order.customer.country,
+    },
+  };
+}
+
+/**
+ * Reuse an open PaymentIntent for the order when possible to avoid double charges.
+ * Creates a new one only when none exists or the previous one is terminal/canceled.
+ * `automatic_payment_methods` surfaces card, wallets, and BNPL when Dashboard allows.
+ */
+export async function getOrCreateStripePaymentIntent(order: Order) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return { ok: false as const, error: "Stripe is not configured." };
+  }
+
+  try {
+    if (order.stripePaymentIntentId) {
+      const existing = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+      if (existing.status === "succeeded" || existing.status === "processing") {
+        return {
+          ok: false as const,
+          error:
+            existing.status === "succeeded"
+              ? "This order is already paid."
+              : "Payment is still processing. Refresh the order page shortly.",
+          status: existing.status,
+          paymentIntentId: existing.id,
+        };
+      }
+      if (REUSABLE_PI_STATUSES.has(existing.status) && existing.client_secret) {
+        return {
+          ok: true as const,
+          clientSecret: existing.client_secret,
+          paymentIntentId: existing.id,
+          publishableKey: getStripePublishableKey(),
+          reused: true as const,
+        };
+      }
+    }
+
+    const { currency, amount } = stripeChargeAmount(order);
+    const intent = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      receipt_email: order.customer.email,
+      description: `${site.name} order ${order.orderNumber}`,
+      metadata: {
+        orderNumber: order.orderNumber,
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      shipping: shippingForPaymentIntent(order),
+    });
+
+    if (!intent.client_secret) {
+      return { ok: false as const, error: "Stripe did not return a client secret." };
+    }
+
+    return {
+      ok: true as const,
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      publishableKey: getStripePublishableKey(),
+      reused: false as const,
+    };
+  } catch (error) {
+    console.error("[stripe] payment intent", error);
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Could not create Stripe payment.",
+    };
+  }
+}
+
+/** @deprecated Prefer getOrCreateStripePaymentIntent — kept as alias for call sites. */
+export async function createStripePaymentIntent(order: Order) {
+  return getOrCreateStripePaymentIntent(order);
+}
+
+/** Hosted Checkout Session fallback (still includes automatic methods when Dashboard allows). */
 export async function createStripeCheckoutSession(order: Order, origin: string) {
   const stripe = getStripe();
   if (!stripe) {
     return { ok: false as const, error: "Stripe is not configured." };
   }
 
-  const currency = order.currency.toLowerCase();
-  const amount =
-    currency === "usd"
-      ? Math.max(50, Math.round((order.totalPkr / site.usdRate) * 100))
-      : Math.max(100, order.totalPkr * 100); // PKR in paisa if Stripe supports; fallback uses smallest unit
+  const { currency, amount } = stripeChargeAmount(order);
 
-  // Stripe may not support PKR in all accounts — prefer USD line when currency is USD,
-  // otherwise charge a single line in the order currency when available.
+  // Hosted Checkout fallback. Wallets appear when the domain is verified in Stripe.
+  // BNPL methods are listed when the Stripe account has them enabled; we omit forced
+  // payment_method_types so Dashboard defaults apply (avoids inventing unavailable methods).
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: order.customer.email,
@@ -46,11 +156,8 @@ export async function createStripeCheckoutSession(order: Order, origin: string) 
       {
         quantity: 1,
         price_data: {
-          currency: currency === "usd" ? "usd" : "usd",
-          unit_amount:
-            currency === "usd"
-              ? amount
-              : Math.max(50, Math.round((order.totalPkr / site.usdRate) * 100)),
+          currency,
+          unit_amount: amount,
           product_data: {
             name: `${site.name} order ${order.orderNumber}`,
             description: order.items.map((item) => `${item.productTitle} ×${item.quantity}`).join(", "),
@@ -79,6 +186,23 @@ export async function verifyStripeCheckoutSession(sessionId: string) {
     paid,
     orderNumber: orderNumber ?? undefined,
     sessionId: session.id,
+  };
+}
+
+export async function verifyStripePaymentIntent(paymentIntentId: string) {
+  const stripe = getStripe();
+  if (!stripe) return { ok: false as const, error: "Stripe is not configured." };
+  const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const paid = intent.status === "succeeded";
+  const processing = intent.status === "processing";
+  const orderNumber = intent.metadata?.orderNumber || undefined;
+  return {
+    ok: true as const,
+    paid,
+    processing,
+    orderNumber,
+    paymentIntentId: intent.id,
+    status: intent.status,
   };
 }
 

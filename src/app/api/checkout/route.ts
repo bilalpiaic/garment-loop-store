@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { createOrder } from "@/lib/orders";
-import { getCustomerSession } from "@/lib/platform";
-import { createStripeCheckoutSession, stripeConfigured } from "@/lib/stripe";
+import { attachStripePaymentIntent, getCustomerSession } from "@/lib/platform";
+import {
+  createStripeCheckoutSession,
+  getOrCreateStripePaymentIntent,
+  stripeConfigured,
+} from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +34,7 @@ export async function POST(request: Request) {
   }
 
   const session = await getCustomerSession();
+  const postalCode = parsed.data.postalCode?.trim() || undefined;
 
   const result = await createOrder({
     items: parsed.data.items,
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
       city: parsed.data.city,
       area: parsed.data.area,
       address: parsed.data.address,
-      postalCode: parsed.data.postalCode,
+      postalCode,
       notes: parsed.data.notes,
     },
     paymentMethod: parsed.data.paymentMethod,
@@ -57,14 +62,36 @@ export async function POST(request: Request) {
 
   if (parsed.data.paymentMethod === "stripe") {
     const origin = new URL(request.url).origin;
-    const stripe = await createStripeCheckoutSession(result.order, origin);
-    if (!stripe.ok) {
-      return NextResponse.json({ error: stripe.error, orderNumber: result.order.orderNumber }, { status: 502 });
+    const intent = await getOrCreateStripePaymentIntent(result.order);
+    if (intent.ok) {
+      const order = intent.reused
+        ? result.order
+        : await attachStripePaymentIntent(result.order.orderNumber, intent.paymentIntentId);
+      return NextResponse.json({
+        orderNumber: order.orderNumber,
+        order,
+        clientSecret: intent.clientSecret,
+        paymentIntentId: intent.paymentIntentId,
+        publishableKey: intent.publishableKey,
+        payPath: `/order/${order.orderNumber}/pay`,
+      });
+    }
+
+    // Fallback to hosted Checkout if PaymentIntent creation fails.
+    const checkout = await createStripeCheckoutSession(result.order, origin);
+    if (!checkout.ok) {
+      return NextResponse.json(
+        {
+          error: intent.error || checkout.error,
+          orderNumber: result.order.orderNumber,
+        },
+        { status: 502 },
+      );
     }
     return NextResponse.json({
       orderNumber: result.order.orderNumber,
       order: result.order,
-      checkoutUrl: stripe.url,
+      checkoutUrl: checkout.url,
     });
   }
 

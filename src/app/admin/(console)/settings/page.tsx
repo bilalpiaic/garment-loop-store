@@ -37,7 +37,7 @@ export default async function AdminSettingsPage() {
           <li>
             <span className="text-foreground">Stripe Checkout:</span>{" "}
             {stripeConfigured()
-              ? "Keys present — Card (Stripe) available at checkout."
+              ? "Keys present — Payment Element + Express Checkout (cards, wallets, BNPL when Dashboard allows)."
               : "Inactive — set STRIPE_SECRET_KEY + NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (card_demo fallback)."}
           </li>
           <li>
