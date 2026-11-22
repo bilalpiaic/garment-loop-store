@@ -745,5 +745,5 @@ export {
   getCustomerSession,
   getAdminSession,
   requireAdmin,
-} from "./platform-internals";
+} from "./platform-auth-tail";
 export * from "./platform-rest";
