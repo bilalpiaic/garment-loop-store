@@ -434,6 +434,86 @@ export const products: Product[] = [
       {},
     ),
   },
+  {
+    id: "thermal-set",
+    slug: "thermal-base-layer-set",
+    title: "Thermal Base Layer Set",
+    subtitle: "Top and bottom, merino blend",
+    description:
+      "A two-piece base layer in a merino blend that sits smoothly under knits and trousers. Wicks moisture, holds heat, and stays comfortable through long days outdoors.",
+    features: [
+      "Merino-blend jersey",
+      "Flatlock seams",
+      "Includes long-sleeve top and leggings",
+    ],
+    specs: [
+      { label: "Fabric", value: "60% merino, 40% nylon" },
+      { label: "Care", value: "Machine wash cold, lay flat" },
+    ],
+    category: "knitwear",
+    collections: ["essentials"],
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1400&q=80",
+        alt: "Thermal base layer",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1400&q=80",
+        alt: "White long sleeve layer",
+      },
+    ],
+    variants: variants(
+      "thermal-set",
+      [
+        { color: "Black", hex: "#202020" },
+        { color: "Grey", hex: "#8a8a8a" },
+      ],
+      ["S", "M", "L", "XL"],
+      4500,
+      {},
+    ),
+  },
+  {
+    id: "wool-trousers",
+    slug: "winter-wool-trousers",
+    title: "Winter Wool Trousers",
+    subtitle: "Pressed front, flannel hand",
+    description:
+      "Mid-weight wool trousers with a soft flannel hand. Tapered without being skinny, with enough drape to wear with a crewneck or under a long coat.",
+    features: [
+      "Wool flannel with slight stretch",
+      "Hook-and-bar closure, zip fly",
+      "Two rear pockets, one coin pocket",
+    ],
+    specs: [
+      { label: "Fabric", value: "97% wool, 3% elastane" },
+      { label: "Rise", value: "Mid" },
+      { label: "Care", value: "Dry clean recommended" },
+    ],
+    category: "trousers",
+    collections: ["winter-collection", "essentials"],
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=1400&q=80",
+        alt: "Wool trousers",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=1400&q=80",
+        alt: "Tailored trousers detail",
+      },
+    ],
+    variants: variants(
+      "wool-trousers",
+      [
+        { color: "Charcoal", hex: "#454545" },
+        { color: "Navy", hex: "#2a3550" },
+        { color: "Brown", hex: "#5c4636" },
+      ],
+      ["30", "32", "34", "36"],
+      7900,
+      { "Navy-30": 2 },
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
