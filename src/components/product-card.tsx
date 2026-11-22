@@ -3,33 +3,46 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { comparePrice, lowestPrice, type Product } from "@/lib/catalog";
 import { Price } from "@/components/price";
+import { ProductQuickView } from "@/components/product-quick-view";
 
 export function ProductCard({ product }: { product: Product }) {
   const price = lowestPrice(product);
   const compare = comparePrice(product);
   return (
-    <Link href={`/product/${product.slug}`} className="group block">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
-        <Image
-          src={product.images[0]?.src ?? ""}
-          alt={product.images[0]?.alt ?? product.title}
-          fill
-          sizes="(max-width: 768px) 50vw, 25vw"
-          className="object-cover transition duration-500 group-hover:scale-[1.04]"
-        />
-        <div className="absolute top-3 left-3 flex gap-2">
-          {product.isNew ? <Badge className="bg-background/90 text-foreground">New</Badge> : null}
-          {compare ? <Badge className="bg-primary text-primary-foreground">Sale</Badge> : null}
+    <div className="group block">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-secondary/80">
+        <Link href={`/product/${product.slug}`} className="absolute inset-0">
+          <Image
+            src={product.images[0]?.src ?? ""}
+            alt={product.images[0]?.alt ?? product.title}
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
+          />
+        </Link>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/25 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+        <div className="absolute top-3 left-3 z-10 flex gap-2">
+          {product.isNew ? (
+            <Badge className="rounded-md border-0 bg-cream/95 text-charcoal shadow-none">New</Badge>
+          ) : null}
+          {compare ? (
+            <Badge className="rounded-md border-0 bg-copper text-cream shadow-none">Sale</Badge>
+          ) : null}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 z-10 p-0">
+          <ProductQuickView product={product} />
         </div>
       </div>
-      <div className="mt-3 space-y-1">
-        <h3 className="text-sm font-medium tracking-tight">{product.title}</h3>
+      <Link href={`/product/${product.slug}`} className="mt-3.5 block space-y-1">
+        <h3 className="font-serif text-base tracking-tight transition-colors duration-300 group-hover:text-olive">
+          {product.title}
+        </h3>
         <p className="text-xs text-muted-foreground">{product.subtitle}</p>
         <p className="text-sm">
           <Price amountPkr={price} compareAtPkr={compare} />
         </p>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
