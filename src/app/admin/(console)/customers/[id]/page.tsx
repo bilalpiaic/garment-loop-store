@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { getCustomer } from "@/lib/platform";
+import { can } from "@/lib/roles";
 import { formatDateTime, formatPkr } from "@/lib/admin-nav";
+import { CustomerProfileForm } from "@/components/admin/admin-crud";
 
 export const metadata = { title: "Customer" };
 
@@ -12,6 +14,7 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
   const { id } = await params;
   const detail = await getCustomer(id);
   if (!detail) notFound();
+  const canEdit = can(access.session.user.role, "customers.manage");
   return (
     <div className="space-y-6">
       <div>
@@ -19,6 +22,7 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
         <h1 className="mt-1 font-serif text-3xl">{detail.customer.fullName || detail.customer.email}</h1>
         <p className="text-sm text-muted-foreground">{detail.customer.email}</p>
       </div>
+      <CustomerProfileForm customer={detail.customer} canEdit={canEdit} />
       <section className="rounded-xl border bg-card p-5">
         <h2 className="font-serif text-2xl">Addresses</h2>
         {detail.addresses.length === 0 ? (
