@@ -268,6 +268,47 @@ export const products: Product[] = [
       { "Black-M": 14, "Olive-S": 1 },
     ),
   },
+  {
+    id: "down-vest",
+    slug: "ridge-down-vest",
+    title: "Ridge Down Vest",
+    subtitle: "Core warmth, free arms",
+    description:
+      "A compact down vest for days when a full jacket is too much. Wear it over a crewneck for errands, or under a coat on mountain drives.",
+    features: [
+      "700-fill down, baffled construction",
+      "Stand collar and two-way zipper",
+      "Hand-warmer pockets with snap flaps",
+    ],
+    specs: [
+      { label: "Fill", value: "Recycled down, 700 fill" },
+      { label: "Shell", value: "Ripstop nylon" },
+      { label: "Care", value: "Professional wash" },
+    ],
+    category: "jackets",
+    collections: ["new-arrivals"],
+    isNew: true,
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=1400&q=80",
+        alt: "Down vest",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?auto=format&fit=crop&w=1400&q=80",
+        alt: "Layered winter vest look",
+      },
+    ],
+    variants: variants(
+      "down-vest",
+      [
+        { color: "Black", hex: "#161616" },
+        { color: "Navy", hex: "#24344d" },
+      ],
+      ["S", "M", "L", "XL"],
+      9900,
+      {},
+    ),
+  },
 ];
 
 export function getProductBySlug(slug: string, list: Product[] = products) {
