@@ -1,0 +1,2 @@
+GarmentLoop production redeploy trigger — 2026-11-22T01:50Z
+No DATABASE_URL required.
