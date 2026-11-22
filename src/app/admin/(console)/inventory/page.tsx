@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { listInventory, listMovements } from "@/lib/platform";
 import { InventoryAdjust } from "@/components/admin/admin-forms";
@@ -6,18 +7,34 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Inventory" };
 
-export default async function AdminInventoryPage() {
+export default async function AdminInventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ low?: string }>;
+}) {
   const access = await loadAdminPage("inventory.manage");
   if (access.forbidden) return <Forbidden />;
-  const [items, movements] = await Promise.all([listInventory(), listMovements(20)]);
+  const { low } = await searchParams;
+  const [allItems, movements] = await Promise.all([listInventory(), listMovements(40)]);
+  const items = low === "1" ? allItems.filter((item) => item.low) : allItems;
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stock</p>
-        <h1 className="mt-1 font-serif text-3xl">Inventory</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stock</p>
+          <h1 className="mt-1 font-serif text-3xl">Inventory</h1>
+        </div>
+        <div className="flex gap-2 text-sm">
+          <Link href="/admin/inventory" className="rounded-full border px-3 py-1">
+            All
+          </Link>
+          <Link href="/admin/inventory?low=1" className="rounded-full border px-3 py-1">
+            Low stock
+          </Link>
+        </div>
       </div>
       <div className="overflow-x-auto rounded-xl border bg-card">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Product</th>
@@ -50,6 +67,9 @@ export default async function AdminInventoryPage() {
             ))}
           </tbody>
         </table>
+        {items.length === 0 ? (
+          <p className="px-4 py-10 text-center text-sm text-muted-foreground">No SKUs match this filter.</p>
+        ) : null}
       </div>
       <section>
         <h2 className="mb-3 font-serif text-2xl">Recent movements</h2>
@@ -61,6 +81,7 @@ export default async function AdminInventoryPage() {
                 {movement.change}
               </span>{" "}
               {movement.variantId} · {movement.type}
+              {movement.reason ? ` · ${movement.reason}` : ""}
               {movement.relatedOrderNumber ? ` · ${movement.relatedOrderNumber}` : ""}
               <span className="block text-xs text-muted-foreground">{formatDateTime(movement.createdAt)}</span>
             </li>
