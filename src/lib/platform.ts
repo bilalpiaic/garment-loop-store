@@ -1,1 +1,1 @@
-PLACEHOLDER_LOAD_FROM_/workspace/src/lib/platform.ts
+LOAD_FROM_FILE:/tmp/grow1-content.ts
