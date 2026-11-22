@@ -1,81 +1,85 @@
 # GarmentLoop — Design System
 
-Circular fashion atelier: warm earth tones, editorial serif headlines, clean sans UI. Tokens live in `src/app/globals.css` and Next font variables in `src/app/layout.tsx`.
+**Atelier Ink** — a premium circular-fashion system: deep forest ink, jewel olive, champagne gold, ivory mist. Tokens live in `src/app/globals.css`; fonts in `src/app/layout.tsx`.
 
-## Brand palette
+## Brand palette (luxury)
 
 | Token | Hex | Role |
 | --- | --- | --- |
-| Soft Cream | `#F5F1E8` | Page background, soft surfaces |
-| Warm Ochre | `#E5B65B` | Secondary accent, highlights |
-| Deep Olive | `#4A5F43` | Primary actions, brand emphasis |
-| Charcoal | `#333333` | Body text, high-contrast UI |
-| Rust | `#B35D44` | CTA / sale / destructive-adjacent accent |
-| Sage | `#7D8B6B` | Secondary accent, success/eco cues |
+| Ink Night | `#0E1612` | Announcement bar, admin sidebar, hero depth, overlays |
+| Jewel Olive | `#2F4F3A` | Primary CTAs, brand emphasis |
+| Olive Jewel (hover) | `#3D6350` | Primary hover lift |
+| Olive Deep | `#1F3328` | Deep chrome / gradients |
+| Champagne | `#C8A96B` | Gold accent, underlines, cart badge, sidebar highlight |
+| Champagne Soft | `#E6D5B0` | Soft gold washes |
+| Ivory Mist / Cream | `#F3EBE0` | Atmosphere, soft surfaces |
+| Ivory | `#F7F1E8` | Cards / panels |
+| Charcoal Ink | `#1C1F1C` | Body text |
+| Copper Burnish | `#A65A3F` | Sale badges / destructive |
+| Soft Moss (Sage) | `#8B9A7C` | Section eyebrows, eco cues |
 
-Supporting neutrals: cream-tinted borders, muted olive-gray for secondary text. All body text combinations must meet **WCAG AA** (≥ 4.5:1). Charcoal on Soft Cream and Soft Cream on Deep Olive are preferred pairings.
+Supporting neutrals: champagne-tinted borders (`#D4C7B2`), muted moss-gray for secondary text. Meet **WCAG AA** (≥ 4.5:1). Prefer Charcoal on Ivory and Ivory on Ink / Jewel Olive.
 
-### CSS mapping (MVP)
+### CSS mapping
 
 | CSS variable | Intent |
 | --- | --- |
-| `--background` | Soft Cream |
-| `--foreground` | Charcoal |
-| `--primary` | Deep Olive |
-| `--primary-foreground` | Soft Cream |
-| `--accent` | Warm Ochre tint |
-| `--destructive` / sale cues | Rust |
-| `--muted-foreground` | Softened charcoal / sage-leaning mute |
-| `--ring` | Deep Olive focus |
+| `--ink` | Ink Night |
+| `--olive` / `--primary` | Jewel Olive |
+| `--champagne` / `--accent` / `--ochre` | Champagne gold (ochre alias kept for legacy class names) |
+| `--cream` / `--background` | Ivory mist atmosphere |
+| `--copper` / `--rust` / `--destructive` | Copper burnish |
+| `--sage` | Soft moss eyebrows |
+| `--sidebar` | Ink Night |
+| `--charcoal` | Body text |
+
+## Atmosphere
+
+- Fixed champagne + jewel-olive + ink radials over ivory mist; light paper grain.
+- `.atelier-panel` — ivory→champagne wash, champagne border, soft ink shadow.
+- `.gold-rule` — champagne hairline accent.
 
 ## Typography
 
 | Role | Family | Notes |
 | --- | --- | --- |
-| Headlines | **Newsreader** (`--font-heading`) | Serif; H1 ~2.5rem, H2 ~2rem |
-| Body / UI | **Geist** (`--font-sans`) | 1rem body, clear form labels |
-| Mono | Geist Mono (system fallback) | SKUs, codes |
+| Headlines / brand | **Newsreader** | Hero brand ~4–6rem; must dominate first viewport |
+| Body / UI | **Geist** | Clear labels; not Inter/Roboto |
+| Mono | Geist Mono | SKUs |
 
-Rules: brand name and hero headlines use serif; never let a generic sans H1 overpower the brand lockup. Avoid Inter/Roboto/Arial as primary faces.
+## Motion (quality over noise)
 
-## Spacing, radius, elevation
+1. **Hero:** parallax media (`HeroParallax`) + staggered fade-up for brand / headline / CTAs  
+2. **Scroll reveal:** `Reveal` (up / slide) on trust strip, grids, story  
+3. **Product / category hover:** image scale ~6% + quick-look affordance  
+4. **Buttons:** `.btn-lux` lift + `.btn-shimmer` champagne sheen  
+5. **Nav:** `.nav-link` champagne underline grow  
+6. **Modals / drawers:** ink-tinted backdrop + atelier cart sheet / newsletter invite / product quick look  
+7. **ATC:** `.bag-pulse` micro-scale on add  
 
-- **Grid:** 4px base (Tailwind spacing scale).
-- **Radius:** `--radius: 0.7rem` with sm/md/lg derived scales — soft, not pill-heavy.
-- **Elevation:** Prefer subtle borders over multi-layer shadows; soft shadow only for sheets/dialogs.
-- **Layout:** Generous whitespace; one job per section.
-
-## Motion
-
-Purposeful, not noisy (2–3 intentional motions on marketing surfaces):
-
-1. Hero / section fade-in on load.
-2. Product image gentle scale on hover (~3–5%).
-3. Sheet/drawer slide for cart and mobile nav.
-
-Duration ~200–350ms; easing ease-out. Respect `prefers-reduced-motion`.
+Respect `prefers-reduced-motion` (parallax, reveals, shimmer, pulse disabled).
 
 ## Components
 
 | Pattern | Guidance |
 | --- | --- |
-| Buttons | Primary = Deep Olive; secondary outline Charcoal; hover ±10% lightness; visible focus ring |
-| Product cards | Image-led; title + price; avoid heavy card chrome on hero |
-| Forms | Labeled inputs, inline Zod errors, 44px touch targets |
-| Admin tables | Dense but same tokens; sidebar collapses on tablet |
-| Icons | Lucide line icons; limited set |
+| Buttons | Jewel Olive → Olive Jewel hover; champagne outline accents |
+| Product cards | Image-led; Quick look modal; New = cream; Sale = Copper |
+| Newsletter | Delayed atelier invite (localStorage dismiss); not spammy |
+| Cart drawer | Ivory panel, champagne eyebrow, ink overlay |
+| Admin | Ink sidebar, champagne role labels; dense tables unchanged |
 
-## Imagery
+## Hero composition
 
-Editorial photography of garments, fabric, atelier context. Full-bleed hero on home (edge-to-edge). Meaningful `alt` on all product/category images. Prefer WebP via Next Image.
+First viewport: **GarmentLoop** (hero-level) + one headline + one sentence + CTA group + full-bleed image. No overlay stickers/cards. Trust strip below fold.
 
 ## Do / Don’t
 
-**Do:** Soft Cream atmosphere, olive primary CTAs, serif brand voice, circular/sustainability microcopy.  
-**Don’t:** Purple-indigo AI defaults, flat sterile white-only chrome, emoji clutter, floating promo stickers on hero media.
+**Do:** Ink depth, champagne accents, jewel olive CTAs, serif brand, intentional motion.  
+**Don’t:** Purple-indigo AI defaults, flat cream-only clichés, terracotta-on-cream tropes, emoji clutter, noisy infinite loops.
 
-## Implementation files
+## Files
 
-- `src/app/globals.css` — color tokens
-- `src/app/layout.tsx` — font loading
-- `src/components/ui/*` — shadcn primitives consuming tokens
+- `src/app/globals.css` — tokens, atmosphere, motion utilities  
+- `src/components/hero-parallax.tsx`, `reveal.tsx`, `newsletter-invite.tsx`, `product-quick-view.tsx`  
+- `docs/ui-polish-notes.md` — before/after of polish passes  
