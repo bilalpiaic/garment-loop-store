@@ -11,6 +11,7 @@
 | Returns portal + webhooks + email | Done (#11) |
 | **Zero-DB / Vercel-ready demo seed + content pages + consent + multi-step checkout** | Done (#12 / GitHub main) |
 | Admin vs customer login discoverability | Done |
+| Owner admin CRUD (bulk + forms end-to-end) | Done |
 
 ## Explicitly deferred (Could / Phase 2–3)
 
