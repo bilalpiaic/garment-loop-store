@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { getVariant } from "@/lib/catalog";
+import { rejectCardDemoIfDisallowed } from "@/lib/card-demo";
+import { createToken } from "@/lib/ids";
 import { shippingCostPkr } from "@/lib/money";
 import type {
   CheckoutCustomer,
@@ -69,6 +71,10 @@ export function createOrder(input: {
   paymentMethod: PaymentMethod;
   currency: "PKR" | "USD";
 }): { ok: true; order: Order } | { ok: false; error: string } {
+  const cardDemoBlock = rejectCardDemoIfDisallowed(input.paymentMethod);
+  if (cardDemoBlock) {
+    return { ok: false, error: cardDemoBlock };
+  }
   if (input.items.length === 0) {
     return { ok: false, error: "Your cart is empty." };
   }
@@ -133,6 +139,7 @@ export function createOrder(input: {
     paymentStatus,
     status,
     currency: input.currency,
+    accessToken: createToken(),
   };
 
   state.orders.push(order);

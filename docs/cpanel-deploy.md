@@ -131,8 +131,9 @@ Create the DB in cPanel → **MySQL® Databases**. Put credentials only in serve
 
 | Name | Purpose |
 | --- | --- |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
-| `ADMIN_MFA_REQUIRED` | Require TOTP for owner/admin when `1`/`true` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Required to seed the first owner when no admins exist |
+| `ADMIN_MFA_REQUIRED` | Require TOTP for owner/admin when `1`/`true` (recommended in production) |
+| `ALLOW_CARD_DEMO` | Opt-in sandbox `card_demo` payments in production |
 | `AUTH_SHOW_OTP` | Expose OTP in API/UI (keep off in production) |
 
 ### Storefront / analytics / shipping / tax (optional)

@@ -32,7 +32,7 @@ Optional: `cp .env.example .env.local` — every variable is optional. Set `DATA
 | Circular | `/circular` take-back · repair · subscribe (mock without Stripe) |
 | Admin | `/admin/login` (email + password; **no on-page demo passwords**) → CSV import, Security (MFA), Audit log, Circular queue · Settings shows MySQL / Neon / demo |
 
-Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages. Override owner seed with `ADMIN_EMAIL` / `ADMIN_PASSWORD` in private env only.
+Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages. On first boot with no admins, set `ADMIN_EMAIL` + `ADMIN_PASSWORD` in private env (required — no default password).
 
 ## Deploy on cPanel (garmentloop.com)
 
@@ -61,8 +61,9 @@ Preferred: Node 20+ + `server.js` (or Apache reverse-proxy to Node when Passenge
 | `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Live carrier rates at checkout (else zone rates) |
 | `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` | Live Avalara tax quotes (else local PK/GCC/intl) |
 | `TAXJAR_API_KEY` | TaxJar quotes when Avalara unset |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Override owner seed |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Required to seed the first owner when no admins exist |
 | `ADMIN_MFA_REQUIRED` | When `1`/`true`, owner/admin must enroll + use TOTP (staff optional) |
+| `ALLOW_CARD_DEMO` | Opt-in sandbox `card_demo` in production (`1`/`true`) |
 
 ### Enable live EasyPost rates
 

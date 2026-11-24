@@ -116,6 +116,14 @@ function orderLinesText(order: Order) {
 
 export function orderConfirmationEmail(order: Order) {
   const subject = `GarmentLoop order ${order.orderNumber} confirmed`;
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    process.env.SITE_URL?.replace(/\/$/, "") ||
+    site.url;
+  const path = order.accessToken
+    ? `/order/${encodeURIComponent(order.orderNumber)}?t=${encodeURIComponent(order.accessToken)}`
+    : `/order/${encodeURIComponent(order.orderNumber)}`;
+  const viewUrl = `${origin}${path}`;
   const text = [
     `Thank you, ${order.customer.fullName}.`,
     `Order ${order.orderNumber} is ${order.status} (payment: ${order.paymentStatus}).`,
@@ -124,6 +132,7 @@ export function orderConfirmationEmail(order: Order) {
     order.taxPkr ? `Tax: ${formatMoney(order.taxPkr, order.currency)}` : undefined,
     `Total: ${formatMoney(order.totalPkr, order.currency)}`,
     `Ship to: ${order.customer.address}, ${order.customer.area}, ${order.customer.city}, ${order.customer.country}`,
+    `View order: ${viewUrl}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -134,6 +143,7 @@ export function orderConfirmationEmail(order: Order) {
       <p>Order <strong>${escapeHtml(order.orderNumber)}</strong> is ${escapeHtml(order.status)} · payment ${escapeHtml(order.paymentStatus)}.</p>
       <table style="width:100%;border-collapse:collapse;margin:16px 0">${orderLinesHtml(order)}</table>
       <p>Total <strong>${escapeHtml(formatMoney(order.totalPkr, order.currency))}</strong></p>
+      <p><a href="${escapeHtml(viewUrl)}">View your order</a></p>
       <p style="color:#5c6358;font-size:14px">We will follow up on WhatsApp if needed. Questions? ${escapeHtml(site.email)}</p>
     </div>
   `;

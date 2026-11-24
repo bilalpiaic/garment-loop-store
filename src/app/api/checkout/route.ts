@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { rejectCardDemoIfDisallowed } from "@/lib/card-demo";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { createOrder } from "@/lib/orders";
+import { orderAccessPath } from "@/lib/order-model";
 import { attachStripePaymentIntent, getCustomerSession } from "@/lib/platform";
 import {
   createStripeCheckoutSession,
@@ -26,9 +28,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const cardDemoBlock = rejectCardDemoIfDisallowed(parsed.data.paymentMethod);
+  if (cardDemoBlock) {
+    return NextResponse.json({ error: cardDemoBlock }, { status: 400 });
+  }
+
   if (parsed.data.paymentMethod === "stripe" && !stripeConfigured()) {
     return NextResponse.json(
-      { error: "Stripe keys are not configured. Use card demo, COD, or bank transfer." },
+      { error: "Stripe keys are not configured. Use COD or bank transfer." },
       { status: 400 },
     );
   }
@@ -73,7 +80,7 @@ export async function POST(request: Request) {
         clientSecret: intent.clientSecret,
         paymentIntentId: intent.paymentIntentId,
         publishableKey: intent.publishableKey,
-        payPath: `/order/${order.orderNumber}/pay`,
+        payPath: orderAccessPath(order.orderNumber, order.accessToken, "/pay"),
       });
     }
 
