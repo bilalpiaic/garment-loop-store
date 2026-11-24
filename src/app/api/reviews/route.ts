@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin("products.manage");
+    const session = await requireAdmin("products.manage");
     let body: unknown;
     try {
       body = await request.json();
@@ -87,13 +87,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid moderation payload." }, { status: 400 });
     }
     if (parsed.data.adminReply) {
-      const review = await replyToReview(parsed.data.id, parsed.data.adminReply);
+      const review = await replyToReview(parsed.data.id, parsed.data.adminReply, session.user.id);
       return NextResponse.json({ review });
     }
     if (!parsed.data.status) {
       return NextResponse.json({ error: "Provide status or adminReply." }, { status: 400 });
     }
-    const review = await moderateReview(parsed.data.id, parsed.data.status);
+    const review = await moderateReview(parsed.data.id, parsed.data.status, session.user.id);
     return NextResponse.json({ review });
   } catch (error) {
     return errorResponse(error);
@@ -102,11 +102,11 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    await requireAdmin("products.manage");
+    const session = await requireAdmin("products.manage");
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing review id." }, { status: 400 });
-    await deleteReview(id);
+    await deleteReview(id, session.user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

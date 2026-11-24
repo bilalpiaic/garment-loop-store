@@ -24,12 +24,12 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin("customers.manage");
+    const session = await requireAdmin("customers.manage");
     const parsed = customerPatchSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const customer = await updateCustomerProfile(parsed.data);
+    const customer = await updateCustomerProfile(parsed.data, session.user.id);
     return NextResponse.json({ customer });
   } catch (error) {
     return errorResponse(error);

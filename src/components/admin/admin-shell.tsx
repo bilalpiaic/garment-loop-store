@@ -18,6 +18,7 @@ export function AdminShell({
   const pathname = usePathname();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const items = ADMIN_NAV.filter((item) => can(user.role, item.permission));
 
   async function signOut() {
@@ -67,13 +68,18 @@ export function AdminShell({
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border/80 bg-[color-mix(in_oklab,var(--cream)_90%,transparent)] px-4 py-3 backdrop-blur-sm md:px-8">
-          <div className="flex flex-wrap gap-2 md:hidden">
-            {items.slice(0, 5).map((item) => (
-              <Link key={item.href} href={item.href} className="text-xs uppercase tracking-wide text-muted-foreground">
-                {item.label}
-              </Link>
-            ))}
+        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-[color-mix(in_oklab,var(--cream)_90%,transparent)] px-4 py-3 backdrop-blur-sm md:px-8">
+          <div className="md:hidden">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-expanded={menuOpen}
+              aria-controls="admin-mobile-nav"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? "Close menu" : "Menu"}
+            </Button>
           </div>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <Link href="/" className="text-muted-foreground hover:text-olive">
@@ -88,8 +94,40 @@ export function AdminShell({
             >
               Add product
             </Button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline md:hidden"
+              onClick={signOut}
+              disabled={pending}
+            >
+              Sign out
+            </button>
           </div>
         </header>
+        {menuOpen ? (
+          <nav
+            id="admin-mobile-nav"
+            className="grid grid-cols-2 gap-1 border-b border-border/80 bg-card px-3 py-3 md:hidden"
+          >
+            {items.map((item) => {
+              const active =
+                item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm",
+                    active ? "bg-olive/10 text-olive" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        ) : null}
         <div className="flex-1 px-4 py-6 md:px-8">{children}</div>
       </div>
     </div>

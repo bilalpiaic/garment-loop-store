@@ -17,12 +17,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin("discounts.manage");
+    const session = await requireAdmin("discounts.manage");
     const parsed = discountSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const discount = await saveDiscount(parsed.data);
+    const discount = await saveDiscount(parsed.data, session.user.id);
     return NextResponse.json({ discount });
   } catch (error) {
     return errorResponse(error);
@@ -31,11 +31,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    await requireAdmin("discounts.manage");
+    const session = await requireAdmin("discounts.manage");
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id." }, { status: 400 });
-    await deleteDiscount(id);
+    await deleteDiscount(id, session.user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);
