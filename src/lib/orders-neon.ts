@@ -7,6 +7,8 @@ import {
   orders as mysqlOrders,
 } from "@/db/schema-mysql";
 import { getVariant } from "@/lib/catalog";
+import { rejectCardDemoIfDisallowed } from "@/lib/card-demo";
+import { createToken } from "@/lib/ids";
 import { shippingCostPkr } from "@/lib/money";
 import type {
   CheckoutCustomer,
@@ -240,6 +242,7 @@ async function createMysqlOrder(input: {
         paymentStatus: input.paymentStatus,
         status: input.status,
         currency: input.currency,
+        accessToken: createToken(),
       },
     };
   } catch (error) {
@@ -276,6 +279,11 @@ export async function createOrder(input: {
 
   await ensureDatabase();
 
+  const cardDemoBlock = rejectCardDemoIfDisallowed(input.paymentMethod);
+  if (cardDemoBlock) {
+    return { ok: false, error: cardDemoBlock };
+  }
+
   const paymentStatus: PaymentStatus =
     input.paymentMethod === "card_demo" ? "paid" : "pending";
   const status: OrderStatus =
@@ -303,6 +311,7 @@ export async function createOrder(input: {
     return { ok: false, error: "DATABASE_URL is not set." };
   }
 
+  const accessToken = createToken();
   const payload = {
     createdAt,
     customer: input.customer,
@@ -314,6 +323,7 @@ export async function createOrder(input: {
     paymentStatus,
     status,
     currency: input.currency,
+    accessToken,
   };
 
   try {

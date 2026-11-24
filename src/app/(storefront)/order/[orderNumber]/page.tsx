@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OrderReceipt } from "@/components/order-receipt";
-import { ClientOrderLookup } from "@/components/client-order-lookup";
+import { OrderEmailLookup } from "@/components/order-email-lookup";
 import { StripeOrderConfirm } from "@/components/stripe-order-confirm";
 import { Button } from "@/components/ui/button";
-import { getOrder } from "@/lib/orders";
+import { authorizeOrderAccess, publicOrderView } from "@/lib/order-access";
 import { emailConfigured, emailMode } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,8 @@ export default async function OrderPage({
 }: {
   params: Promise<{ orderNumber: string }>;
   searchParams: Promise<{
+    t?: string;
+    email?: string;
     stripe?: string;
     session_id?: string;
     payment_intent?: string;
@@ -28,7 +30,6 @@ export default async function OrderPage({
 }) {
   const { orderNumber } = await params;
   const query = await searchParams;
-  const order = await getOrder(orderNumber);
   const emailNote = emailConfigured()
     ? `A confirmation email was sent via ${emailMode()}.`
     : "Email provider not configured — confirmation was logged (mock). Set RESEND_API_KEY or SMTP_* for real delivery.";
@@ -36,6 +37,7 @@ export default async function OrderPage({
   const paymentIntentId = query.payment_intent;
   const sessionId = query.session_id;
   const redirectStatus = query.redirect_status;
+  const tokenSuffix = query.t ? `?t=${encodeURIComponent(query.t)}` : "";
 
   if (query.stripe === "success" && redirectStatus && redirectStatus !== "succeeded" && redirectStatus !== "pending") {
     return (
@@ -45,7 +47,7 @@ export default async function OrderPage({
           Stripe reported status “{redirectStatus}”. You can try again — your bag items are on the
           order if stock was reserved.
         </p>
-        <Button className="mt-6" render={<Link href={`/order/${orderNumber}/pay`} />}>
+        <Button className="mt-6" render={<Link href={`/order/${orderNumber}/pay${tokenSuffix}`} />}>
           Return to payment
         </Button>
       </div>
@@ -57,18 +59,30 @@ export default async function OrderPage({
     (sessionId || paymentIntentId) &&
     (!redirectStatus || redirectStatus === "succeeded" || redirectStatus === "pending")
   ) {
+    const access = await authorizeOrderAccess(orderNumber, {
+      token: query.t,
+      email: query.email,
+    });
     return (
       <StripeOrderConfirm
         orderNumber={orderNumber}
         sessionId={sessionId}
         paymentIntentId={paymentIntentId}
-        initialOrder={order}
+        initialOrder={access.ok ? publicOrderView(access.order) : null}
       />
     );
   }
 
-  if (order) {
-    return <OrderReceipt order={order} emailNote={emailNote} recordPurchase />;
+  const access = await authorizeOrderAccess(orderNumber, {
+    token: query.t,
+    email: query.email,
+  });
+
+  if (access.ok) {
+    return (
+      <OrderReceipt order={publicOrderView(access.order)} emailNote={emailNote} recordPurchase />
+    );
   }
-  return <ClientOrderLookup orderNumber={orderNumber} recordPurchase />;
+
+  return <OrderEmailLookup orderNumber={orderNumber} recordPurchase />;
 }

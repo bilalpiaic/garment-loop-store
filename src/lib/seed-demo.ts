@@ -1,4 +1,4 @@
-import { createId } from "@/lib/ids";
+import { createId, createToken } from "@/lib/ids";
 import type { Discount } from "@/lib/identity";
 import type { Order } from "@/lib/order-model";
 import type { ProductReview } from "@/lib/commerce-types";
@@ -149,6 +149,7 @@ export function seedSampleOrders(state: PlatformState): Order[] {
   return samples.map((order, index) => ({
     ...order,
     orderNumber: `GL-DEMO-${String(index + 1).padStart(3, "0")}`,
+    accessToken: createToken(),
   }));
 }
 

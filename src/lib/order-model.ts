@@ -76,6 +76,8 @@ export type Order = {
   stripeSessionId?: string;
   /** Reused across pay-page reloads to avoid duplicate charges. */
   stripePaymentIntentId?: string;
+  /** Opaque capability token for guest order confirmation / pay links. */
+  accessToken?: string;
 };
 
 export function whatsappOrderLink(order: Order) {
@@ -84,4 +86,12 @@ export function whatsappOrderLink(order: Order) {
     `Hi GarmentLoop, I placed order ${order.orderNumber} for ${order.customer.fullName}. Please confirm delivery to ${order.customer.city}.`,
   );
   return `https://wa.me/${number}?text=${text}`;
+}
+
+/** Guest confirmation / pay URL with opaque access token. */
+export function orderAccessPath(orderNumber: string, accessToken?: string, suffix = "") {
+  const base = `/order/${encodeURIComponent(orderNumber)}${suffix}`;
+  if (!accessToken) return base;
+  const join = base.includes("?") ? "&" : "?";
+  return `${base}${join}t=${encodeURIComponent(accessToken)}`;
 }

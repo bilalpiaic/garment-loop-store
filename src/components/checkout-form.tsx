@@ -17,7 +17,9 @@ import { useCartStore, usePreferenceStore } from "@/store/store";
 import { useCatalog } from "@/components/catalog-provider";
 import { Price } from "@/components/price";
 import { cn } from "@/lib/utils";
+import { cardDemoAllowed } from "@/lib/card-demo";
 import type { CustomerAddress } from "@/lib/identity";
+import { orderAccessPath, type Order } from "@/lib/order-model";
 
 type PaymentId = "cod" | "bank_transfer" | "card_demo" | "stripe";
 
@@ -104,7 +106,7 @@ export function CheckoutForm({
         detail:
           "Stripe Payment Element — cards, Apple Pay / Google Pay / Link when available, plus Klarna / Afterpay where Stripe enables them.",
       });
-    } else {
+    } else if (cardDemoAllowed()) {
       list.push({
         id: "card_demo",
         title: "Card (demo)",
@@ -289,7 +291,7 @@ export function CheckoutForm({
       const data = (await response.json()) as {
         error?: string;
         orderNumber?: string;
-        order?: unknown;
+        order?: Order;
         checkoutUrl?: string;
         clientSecret?: string;
         publishableKey?: string;
@@ -299,6 +301,7 @@ export function CheckoutForm({
         toast.error(data.error ?? "Could not place the order.");
         return;
       }
+      const accessToken = data.order?.accessToken;
       if (data.order) {
         sessionStorage.setItem(`garmentloop-order:${data.orderNumber}`, JSON.stringify(data.order));
       }
@@ -315,7 +318,9 @@ export function CheckoutForm({
           /* ignore */
         }
         clear();
-        router.push(data.payPath ?? `/order/${data.orderNumber}/pay`);
+        router.push(
+          data.payPath ?? orderAccessPath(data.orderNumber, accessToken, "/pay"),
+        );
         return;
       }
       if (data.checkoutUrl) {
@@ -324,7 +329,7 @@ export function CheckoutForm({
         return;
       }
       clear();
-      router.push(`/order/${data.orderNumber}`);
+      router.push(orderAccessPath(data.orderNumber, accessToken));
     } catch {
       toast.error("Network error. Please try again.");
     } finally {

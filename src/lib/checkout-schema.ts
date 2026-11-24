@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cardDemoAllowed } from "@/lib/card-demo";
 
 export const checkoutSchema = z
   .object({
@@ -34,6 +35,13 @@ export const checkoutSchema = z
         code: "custom",
         path: ["paymentMethod"],
         message: "Cash on delivery is available in Pakistan only.",
+      });
+    }
+    if (data.paymentMethod === "card_demo" && !cardDemoAllowed()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["paymentMethod"],
+        message: "Card demo checkout is disabled in production.",
       });
     }
   });

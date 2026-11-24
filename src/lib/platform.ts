@@ -14,6 +14,7 @@ import { appendAudit, type AuditEntry } from "@/lib/audit";
 import { buildProductsFromCsv, parseProductCsv, productsToCsv } from "@/lib/csv-products";
 import { hashPassword, sha256, verifyPassword } from "@/lib/password";
 import { createId, createOtpCode, createToken } from "@/lib/ids";
+import { rejectCardDemoIfDisallowed } from "@/lib/card-demo";
 import { slugify } from "@/lib/slug";
 import {
   ADMIN_COOKIE,
@@ -164,36 +165,21 @@ async function ensureSeed(state: PlatformState) {
     }
   }
   if (state.adminUsers.length === 0) {
-    changed = true;
-    const now = new Date().toISOString();
-    const seeds: { email: string; name: string; role: Role; password: string }[] = [
-      {
-        email: (process.env.ADMIN_EMAIL ?? "owner@garmentloop.store").toLowerCase(),
-        name: "Owner",
-        role: "owner",
-        password: process.env.ADMIN_PASSWORD ?? "GarmentLoop-Owner-2026",
-      },
-      {
-        email: "admin@garmentloop.store",
-        name: "Store Admin",
-        role: "admin",
-        password: "GarmentLoop-Admin-2026",
-      },
-      {
-        email: "staff@garmentloop.store",
-        name: "Floor Staff",
-        role: "staff",
-        password: "GarmentLoop-Staff-2026",
-      },
-    ];
-    for (const seed of seeds) {
-      if (state.adminUsers.some((user) => user.email === seed.email)) continue;
+    const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const password = process.env.ADMIN_PASSWORD;
+    if (!email || !password) {
+      console.error(
+        "[admin] No admin users seeded — set ADMIN_EMAIL and ADMIN_PASSWORD before first boot.",
+      );
+    } else {
+      changed = true;
+      const now = new Date().toISOString();
       state.adminUsers.push({
         id: createId("usr"),
-        email: seed.email,
-        name: seed.name,
-        passwordHash: await hashPassword(seed.password),
-        role: seed.role,
+        email,
+        name: "Owner",
+        passwordHash: await hashPassword(password),
+        role: "owner",
         active: true,
         createdAt: now,
       });
@@ -362,8 +348,15 @@ export async function createOrder(input: {
   customerId?: string;
 }): Promise<{ ok: true; order: Order } | { ok: false; error: string }> {
   try {
+    const cardDemoBlock = rejectCardDemoIfDisallowed(input.paymentMethod);
+    if (cardDemoBlock) {
+      return { ok: false, error: cardDemoBlock };
+    }
     if (input.paymentMethod === "stripe" && !stripeConfigured()) {
-      return { ok: false, error: "Card payments are unavailable. Choose COD, bank transfer, or card demo." };
+      return {
+        ok: false,
+        error: "Card payments are unavailable. Choose COD or bank transfer.",
+      };
     }
 
     // Resolve EasyPost outside mutate so we can await the carrier API safely.
@@ -535,6 +528,7 @@ export async function createOrder(input: {
         shippingMethodId: shipping.id,
         shippingLabel: shipping.label,
         discountCode: code,
+        accessToken: createToken(),
       };
       state.orders.unshift(order);
       return order;

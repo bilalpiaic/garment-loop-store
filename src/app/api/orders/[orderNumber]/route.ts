@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
-import { getOrder } from "@/lib/orders";
+import { authorizeOrderAccess, publicOrderView } from "@/lib/order-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ orderNumber: string }> },
 ) {
   const { orderNumber } = await context.params;
-  const order = await getOrder(orderNumber);
-  if (!order) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get("t") ?? request.headers.get("x-order-token");
+  const email = url.searchParams.get("email");
+
+  const access = await authorizeOrderAccess(orderNumber, { token, email });
+  if (!access.ok) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
-  return NextResponse.json({ order });
+
+  return NextResponse.json({ order: publicOrderView(access.order) });
 }
