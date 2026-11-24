@@ -110,9 +110,12 @@ All are optional for a demo-style run; production on your domain should set pers
 
 | Name | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Neon (or other) Postgres — durable catalog/orders/admin |
+| `DATABASE_URL` | Prefer **cPanel MySQL/MariaDB** as `mysql://USER:PASS@localhost:3306/DB` (or Postgres/Neon `postgresql://…`). Do not commit the password. |
+| `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE` / `MYSQL_PORT` | Alternative to a MySQL `DATABASE_URL` (same credentials cPanel creates under MySQL® Databases) |
 | `RESEND_API_KEY` **or** `SMTP_HOST` + `SMTP_PORT` + `SMTP_USER` + `SMTP_PASS` | Order/return email + customer login OTP |
 | `EMAIL_FROM` | From-address (verify domain in Resend for non-owner recipients) |
+
+Create the DB in cPanel → **MySQL® Databases** (database + user + ALL PRIVILEGES). Put credentials only in the server `.env.production` (loaded by `server.js`). Run `npm run db:migrate` once on the host. Admin → Settings should report **MySQL / MariaDB**.
 
 ### Payments (optional)
 

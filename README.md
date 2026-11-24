@@ -2,8 +2,9 @@
 
 Premium **circular-wardrobe / modern atelier** ecommerce for **GarmentLoop**.
 
-**Production (Vercel)** uses **Neon Postgres** via `DATABASE_URL` for durable catalog, orders, and admin data.  
-**Locally**, no database is required — catalog, cart, checkout, admin, returns, reviews, and sample orders run on an in-memory/file demo store when `DATABASE_URL` is unset. If Neon is configured but unreachable, the app falls back to that demo store.
+**Production (Vercel)** can use **Neon Postgres** via `DATABASE_URL`.  
+**cPanel (garmentloop.com)** prefers **MySQL/MariaDB** via `mysql://…` `DATABASE_URL` or `MYSQL_*` (see `docs/cpanel-deploy.md`).  
+**Locally**, no database is required — catalog, cart, checkout, admin, returns, reviews, and sample orders run on an in-memory/file demo store when no DB URL is set. If the DB is configured but unreachable, the app falls back to that demo store.
 
 **Live:** https://garment-loop-store.vercel.app  
 **GitHub:** https://github.com/bilalpiaic/garment-loop-store

@@ -36,6 +36,7 @@ import type {
   PaymentStatus,
 } from "@/lib/order-model";
 import { readDemoState, writeDemoState } from "@/lib/platform-memory";
+import { getDialect } from "@/db/client";
 import { loadNeonState, neonAvailable, saveNeonState } from "@/lib/platform-neon";
 import { mergeStockIntoCatalog, publicCatalog, type ContentPage, type PlatformState } from "@/lib/platform-state";
 import { can, type Permission, type Role } from "@/lib/roles";
@@ -246,9 +247,17 @@ export async function saveContentPage(page: ContentPage) {
 }
 
 export function persistenceInfo() {
+  const dialect = getDialect();
   return {
-    neon: neonAvailable(),
-    mode: neonAvailable() ? "neon" : process.env.VERCEL ? "memory-demo" : "file-demo",
+    neon: dialect === "postgres",
+    mysql: dialect === "mysql",
+    mode: dialect === "mysql"
+      ? "mysql"
+      : dialect === "postgres"
+        ? "neon"
+        : process.env.VERCEL
+          ? "memory-demo"
+          : "file-demo",
   };
 }
 

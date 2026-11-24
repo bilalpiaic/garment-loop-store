@@ -25,9 +25,11 @@ export default async function AdminSettingsPage() {
         <ul className="mt-3 space-y-2 text-muted-foreground">
           <li>
             <span className="text-foreground">Data store:</span>{" "}
-            {persistence.neon
-              ? "Neon Postgres (DATABASE_URL set)."
-              : `Demo mode (${persistence.mode}) — no database required. Sample catalog, orders, and discounts are seeded automatically.`}
+            {persistence.mysql
+              ? "MySQL / MariaDB (cPanel DATABASE_URL or MYSQL_* set)."
+              : persistence.neon
+                ? "Neon Postgres (DATABASE_URL set)."
+                : `Demo mode (${persistence.mode}) — no database required. Sample catalog, orders, and discounts are seeded automatically.`}
           </li>
           <li>
             <span className="text-foreground">Email:</span>{" "}

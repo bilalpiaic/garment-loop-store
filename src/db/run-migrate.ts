@@ -38,7 +38,16 @@ if (!process.env.DATABASE_URL?.trim()) {
 
 async function main() {
   await migrateDatabase();
-  console.log("Neon schema, place_order function, and inventory seed are ready.");
+  const dialect = process.env.DATABASE_URL?.startsWith("mysql")
+    ? "mysql"
+    : process.env.MYSQL_HOST
+      ? "mysql"
+      : "postgres";
+  console.log(
+    dialect === "mysql"
+      ? "MySQL/MariaDB schema and inventory seed are ready."
+      : "Neon/Postgres schema, place_order function, and inventory seed are ready.",
+  );
 }
 
 main().catch((error) => {

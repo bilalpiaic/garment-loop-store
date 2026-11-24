@@ -1,5 +1,5 @@
 import { allVariants } from "@/lib/catalog";
-import { getSql } from "@/db/client";
+import { getDialect, getMysqlPool, getSql } from "@/db/client";
 
 const PLACE_ORDER_FN = `
 CREATE OR REPLACE FUNCTION place_order(p_order jsonb)
@@ -51,10 +51,10 @@ $fn$;
 
 let ready: Promise<void> | null = null;
 
-async function applySchema() {
+async function applyPostgresSchema() {
   const sql = getSql();
   if (!sql) {
-    throw new Error("DATABASE_URL is not set.");
+    throw new Error("DATABASE_URL is not set for Postgres.");
   }
 
   await sql`CREATE TABLE IF NOT EXISTS inventory (
@@ -102,6 +102,86 @@ async function applySchema() {
       ON CONFLICT (variant_id) DO NOTHING
     `;
   }
+}
+
+async function applyMysqlSchema() {
+  const pool = getMysqlPool();
+  if (!pool) {
+    throw new Error("MySQL DATABASE_URL or MYSQL_* is not set.");
+  }
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      variant_id VARCHAR(191) PRIMARY KEY,
+      stock INT NOT NULL,
+      CHECK (stock >= 0)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      order_number VARCHAR(64) PRIMARY KEY,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NULL DEFAULT NULL,
+      customer_id VARCHAR(191) NULL,
+      customer JSON NOT NULL,
+      items JSON NOT NULL,
+      subtotal_pkr INT NOT NULL,
+      shipping_pkr INT NOT NULL,
+      tax_pkr INT NOT NULL DEFAULT 0,
+      discount_pkr INT NOT NULL DEFAULT 0,
+      total_pkr INT NOT NULL,
+      payment_method VARCHAR(64) NOT NULL,
+      payment_status VARCHAR(64) NOT NULL,
+      status VARCHAR(64) NOT NULL,
+      currency VARCHAR(8) NOT NULL,
+      shipping_method_id VARCHAR(191) NULL,
+      shipping_label TEXT NULL,
+      tracking_number VARCHAR(191) NULL,
+      courier VARCHAR(191) NULL,
+      notes TEXT NULL,
+      discount_code VARCHAR(64) NULL,
+      stripe_session_id VARCHAR(191) NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS platform_state (
+      id VARCHAR(64) PRIMARY KEY,
+      data JSON NOT NULL,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_number_seq (
+      id INT NOT NULL PRIMARY KEY DEFAULT 1,
+      next_val INT NOT NULL DEFAULT 1
+    ) ENGINE=InnoDB
+  `);
+  await pool.query(`
+    INSERT IGNORE INTO order_number_seq (id, next_val) VALUES (1, 1)
+  `);
+
+  for (const { variant } of allVariants()) {
+    await pool.query(
+      `INSERT IGNORE INTO inventory (variant_id, stock) VALUES (?, ?)`,
+      [variant.id, variant.stock],
+    );
+  }
+}
+
+async function applySchema() {
+  const dialect = getDialect();
+  if (dialect === "mysql") {
+    await applyMysqlSchema();
+    return;
+  }
+  if (dialect === "postgres") {
+    await applyPostgresSchema();
+    return;
+  }
+  throw new Error("DATABASE_URL or MYSQL_* is not set.");
 }
 
 export function ensureDatabase() {
