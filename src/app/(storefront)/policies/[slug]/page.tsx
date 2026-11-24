@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ContentPageView } from "@/components/content-page-view";
 import { getContentPage } from "@/lib/platform";
 import { seedContentPages } from "@/lib/seed-demo";
+import { pageMeta } from "@/lib/seo";
 
 const ALLOWED = new Set(["privacy", "terms", "shipping"]);
 
@@ -14,7 +15,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const page =
     (await getContentPage(slug)) ?? seedContentPages().find((item) => item.slug === slug);
-  return { title: page?.title ?? "Policy", description: page?.excerpt };
+  return pageMeta({
+    title: page?.title ?? "Policy",
+    description: page?.excerpt ?? "GarmentLoop store policy.",
+    path: `/policies/${slug}`,
+  });
 }
 
 export default async function PolicyPage({ params }: { params: Promise<{ slug: string }> }) {

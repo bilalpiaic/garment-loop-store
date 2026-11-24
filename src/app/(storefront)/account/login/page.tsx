@@ -3,8 +3,14 @@ import Link from "next/link";
 import { CustomerLoginForm } from "@/components/account/customer-login-form";
 import { getCustomerSession } from "@/lib/platform";
 import { redirect } from "next/navigation";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Sign in" };
+export const metadata = pageMeta({
+  title: "Sign in",
+  description: "Sign in to your GarmentLoop customer account with an email code.",
+  path: "/account/login",
+  index: false,
+});
 
 export default async function AccountLoginPage() {
   const session = await getCustomerSession();

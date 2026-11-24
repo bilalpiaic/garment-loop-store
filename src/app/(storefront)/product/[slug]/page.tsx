@@ -12,9 +12,11 @@ import { ProductForm } from "@/components/product-form";
 import { ProductGrid } from "@/components/product-card";
 import { ProductReviews } from "@/components/product-reviews";
 import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
+import { JsonLd } from "@/components/json-ld";
 import { getProductBySlug, relatedProducts } from "@/lib/catalog";
 import { getPublishedCatalog, listApprovedReviews } from "@/lib/platform";
 import { site } from "@/lib/site";
+import { absoluteUrl, breadcrumbJsonLd, pageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -25,15 +27,12 @@ export async function generateMetadata({
   const catalog = await getPublishedCatalog();
   const product = getProductBySlug(slug, catalog.products);
   if (!product) return { title: "Product" };
-  return {
+  return pageMeta({
     title: product.title,
     description: product.description,
-    openGraph: {
-      title: `${product.title} · ${site.name}`,
-      description: product.description,
-      images: product.images[0] ? [product.images[0].src] : undefined,
-    },
-  };
+    path: `/product/${product.slug}`,
+    images: product.images[0] ? [product.images[0].src] : undefined,
+  });
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -48,21 +47,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ? undefined
       : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
-  const jsonLd = {
+  const productUrl = absoluteUrl(`/product/${product.slug}`);
+  const lowPrice = Math.min(...product.variants.map((v) => v.salePricePkr ?? v.pricePkr));
+  const highPrice = Math.max(...product.variants.map((v) => v.pricePkr));
+  const inStock = product.variants.some((v) => v.stock > 0);
+  const firstSku = product.variants[0]?.sku;
+
+  const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
     description: product.description,
     image: product.images.map((image) => image.src),
+    url: productUrl,
+    sku: firstSku,
     brand: { "@type": "Brand", name: site.name },
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "PKR",
-      lowPrice: Math.min(...product.variants.map((v) => v.salePricePkr ?? v.pricePkr)),
-      highPrice: Math.max(...product.variants.map((v) => v.pricePkr)),
-      availability: product.variants.some((v) => v.stock > 0)
+      lowPrice,
+      highPrice,
+      url: productUrl,
+      availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
+      offerCount: product.variants.length,
     },
     ...(avg
       ? {
@@ -75,10 +84,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
+  const categoryLabel = product.category.replaceAll("-", " ");
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <ViewItemTracker key={product.id} product={product} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd
+        data={[
+          productJsonLd,
+          breadcrumbJsonLd([
+            { name: "Shop", path: "/shop" },
+            { name: categoryLabel, path: `/category/${product.category}` },
+            { name: product.title, path: `/product/${product.slug}` },
+          ]),
+        ]}
+      />
       <nav className="mb-6 text-xs text-muted-foreground">
         <Link href="/shop">Shop</Link>
         <span className="mx-2">/</span>

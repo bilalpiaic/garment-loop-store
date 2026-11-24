@@ -43,7 +43,13 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
               )}
               aria-label={`View image ${index + 1}`}
             >
-              <Image src={image.src} alt="" fill className="object-cover" sizes="64px" />
+              <Image
+                src={image.src}
+                alt={image.alt || `${title} thumbnail ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="64px"
+              />
             </button>
           ))}
         </div>

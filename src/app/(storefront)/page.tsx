@@ -8,6 +8,17 @@ import { Reveal } from "@/components/reveal";
 import { featuredProducts, productsByCollection } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
 import { site } from "@/lib/site";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: `${site.name} — Circular wardrobe atelier`,
+  description: site.description,
+  path: "/",
+  absoluteTitle: true,
+  images: [
+    "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=2000&q=80",
+  ],
+});
 
 export default async function HomePage() {
   const catalog = await getPublishedCatalog();

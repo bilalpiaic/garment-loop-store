@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { OrderReceipt } from "@/components/order-receipt";
 import { OrderEmailLookup } from "@/components/order-email-lookup";
@@ -6,12 +5,16 @@ import { StripeOrderConfirm } from "@/components/stripe-order-confirm";
 import { Button } from "@/components/ui/button";
 import { authorizeOrderAccess, publicOrderView } from "@/lib/order-access";
 import { emailConfigured, emailMode } from "@/lib/email";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Order confirmation",
-};
+  description: "GarmentLoop order confirmation.",
+  path: "/order",
+  index: false,
+});
 
 export default async function OrderPage({
   params,

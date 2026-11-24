@@ -4,8 +4,14 @@ import { getCustomerSession, listReturnsForCustomer } from "@/lib/platform";
 import { formatDateTime } from "@/lib/admin-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Returns" };
+export const metadata = pageMeta({
+  title: "Returns",
+  description: "Track GarmentLoop returns and exchanges.",
+  path: "/account/returns",
+  index: false,
+});
 
 export default async function AccountReturnsPage() {
   const session = await getCustomerSession();

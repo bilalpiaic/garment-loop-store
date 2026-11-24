@@ -1,13 +1,17 @@
-import type { Metadata } from "next";
+import { JsonLd } from "@/components/json-ld";
+import { faqPageJsonLd, pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Shipping & returns",
-};
+  description:
+    "Cash on delivery, shipping rates, delivery times, returns, and sizing help for GarmentLoop orders.",
+  path: "/faq",
+});
 
 const items = [
   {
     q: "Do you offer cash on delivery?",
-    a: "Yes. COD is available across Pakistan. International orders use bank transfer or the demo card checkout.",
+    a: "Yes. COD is available across Pakistan. International orders use bank transfer or card checkout when Stripe is configured.",
   },
   {
     q: "How much is shipping?",
@@ -34,6 +38,7 @@ const items = [
 export default function FaqPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
+      <JsonLd data={faqPageJsonLd(items)} />
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Help</p>
       <h1 className="mt-2 font-serif text-4xl">Shipping, returns, and sizing</h1>
       <dl className="mt-10 space-y-8">

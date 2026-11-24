@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CircularStatusLookup } from "@/components/circular/status-lookup";
 import { TakeBackForm } from "@/components/circular/take-back-form";
 import { getCustomerSession } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Take-back",
   description: "Request a GarmentLoop garment take-back with status tracking.",
-};
+  path: "/circular/take-back",
+});
 
 export default async function TakeBackPage({
   searchParams,

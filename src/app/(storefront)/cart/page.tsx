@@ -1,10 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CartLines, CartSummary } from "@/components/cart-drawer";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Bag",
-};
+  description: "Your GarmentLoop shopping bag.",
+  path: "/cart",
+  index: false,
+});
 
 export default function CartPage() {
   return (

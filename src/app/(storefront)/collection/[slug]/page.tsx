@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/product-card";
 import { ShopFilters } from "@/components/shop-filters";
+import { JsonLd } from "@/components/json-ld";
 import { filterProducts, getCollection, productsByCollection } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
+import { breadcrumbJsonLd, pageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -15,7 +17,12 @@ export async function generateMetadata({
   const catalog = await getPublishedCatalog();
   const collection = getCollection(slug, catalog.collections);
   if (!collection) return { title: "Collection" };
-  return { title: collection.name, description: collection.description };
+  return pageMeta({
+    title: collection.name,
+    description: collection.description,
+    path: `/collection/${slug}`,
+    images: collection.image ? [collection.image] : undefined,
+  });
 }
 
 export default async function CollectionPage({
@@ -43,6 +50,12 @@ export default async function CollectionPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Shop", path: "/shop" },
+          { name: collection.name, path: `/collection/${slug}` },
+        ])}
+      />
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Collection</p>
       <h1 className="mt-2 font-serif text-4xl">{collection.name}</h1>
       <p className="mt-2 max-w-xl text-muted-foreground">{collection.description}</p>

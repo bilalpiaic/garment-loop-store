@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { SubscribeForm } from "@/components/circular/subscribe-form";
 import { CIRCULAR_PLANS } from "@/lib/circular";
 import { getCustomerSession, shouldUseMockCircularSubscription } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Circular subscriptions",
   description: "Care, Repair+, and Recycle Loop memberships from GarmentLoop.",
-};
+  path: "/circular/subscribe",
+});
 
 export default async function SubscribePage({
   searchParams,
