@@ -1,17 +1,20 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderEmailLookup } from "@/components/order-email-lookup";
 import { StripePayPage } from "@/components/stripe-pay-page";
 import { Button } from "@/components/ui/button";
 import { authorizeOrderAccess, orderAccessPath, publicOrderView } from "@/lib/order-access";
+import { pageMeta } from "@/lib/seo";
 import { stripeConfigured } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Pay with Stripe",
-};
+  description: "Complete your GarmentLoop payment.",
+  path: "/order",
+  index: false,
+});
 
 export default async function OrderPayPage({
   params,

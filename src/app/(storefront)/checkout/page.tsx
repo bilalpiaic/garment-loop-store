@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
 import { CheckoutForm } from "@/components/checkout-form";
 import { BeginCheckoutTracker } from "@/components/analytics/begin-checkout-tracker";
 import { getCustomerSession } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 import { stripeConfigured } from "@/lib/stripe";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Checkout",
   description: "Guest checkout with cash on delivery across Pakistan.",
-};
+  path: "/checkout",
+  index: false,
+});
 
 export default async function CheckoutPage() {
   const session = await getCustomerSession();

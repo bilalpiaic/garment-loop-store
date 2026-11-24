@@ -5,8 +5,14 @@ import { ReturnRequestForm } from "@/components/account/return-request-form";
 import { getCustomerSession, getOrder, listReturnsForCustomer } from "@/lib/platform";
 import { emailConfigured, emailMode } from "@/lib/email";
 import { Badge } from "@/components/ui/badge";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Order" };
+export const metadata = pageMeta({
+  title: "Order",
+  description: "Your GarmentLoop order details.",
+  path: "/account/orders",
+  index: false,
+});
 
 export default async function AccountOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getCustomerSession();

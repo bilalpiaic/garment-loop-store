@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CircularStatusLookup } from "@/components/circular/status-lookup";
 import { RepairForm } from "@/components/circular/repair-form";
 import { getCustomerSession } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Repair booking",
   description: "Request a GarmentLoop atelier repair with quote and scheduling.",
-};
+  path: "/circular/repair",
+});
 
 export default async function RepairPage({
   searchParams,

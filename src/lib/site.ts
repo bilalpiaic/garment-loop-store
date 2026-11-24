@@ -3,8 +3,8 @@ export const site = {
   tagline: "A circular wardrobe atelier — garments made to last and return.",
   description:
     "GarmentLoop is a modern atelier for circular fashion. Shop jackets, knitwear, and essentials designed for longevity, reuse, and everyday warmth — with guest checkout and cash on delivery across Pakistan.",
-  url: "https://garmentloop.store",
-  email: "hello@garmentloop.store",
+  url: "https://garmentloop.com",
+  email: "hello@garmentloop.com",
   phone: "+92 300 1234567",
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "923001234567",
   address: "Lahore, Pakistan",

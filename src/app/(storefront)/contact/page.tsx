@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { site } from "@/lib/site";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Contact",
-};
+  description: "Reach GarmentLoop on WhatsApp or email for sizing, orders, and returns.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   const wa = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent("Hi GarmentLoop, I have a question about an order / size.")}`;

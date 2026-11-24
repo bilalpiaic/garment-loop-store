@@ -4,8 +4,14 @@ import { formatPkr } from "@/lib/admin-nav";
 import { formatDateTime } from "@/lib/admin-nav";
 import { AddressForm, SignOutButton } from "@/components/account/account-forms";
 import { redirect } from "next/navigation";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Account" };
+export const metadata = pageMeta({
+  title: "Account",
+  description: "Your GarmentLoop customer account.",
+  path: "/account",
+  index: false,
+});
 
 export default async function AccountPage() {
   const session = await getCustomerSession();

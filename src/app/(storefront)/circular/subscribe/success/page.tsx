@@ -1,10 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { SubscribeSuccess } from "@/components/circular/subscribe-success";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Subscription confirmed",
-};
+  description: "GarmentLoop circular subscription confirmation.",
+  path: "/circular/subscribe/success",
+  index: false,
+});
 
 export default async function SubscribeSuccessPage({
   searchParams,

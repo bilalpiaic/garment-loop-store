@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ProductGrid } from "@/components/product-card";
 import { ShopFilters } from "@/components/shop-filters";
 import { filterProducts } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Shop",
   description: "Browse GarmentLoop jackets, knitwear, trousers, and winter accessories.",
-};
+  path: "/shop",
+});
 
 export default async function ShopPage({
   searchParams,

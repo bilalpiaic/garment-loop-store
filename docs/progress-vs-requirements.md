@@ -30,7 +30,8 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 | Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed; production rejects `card_demo` unless `ALLOW_CARD_DEMO` |
 | Account OTP + orders + returns portal | Must | Done | Prod OTP hides `devCode`; RMA via admin |
 | Static pages + policies + consent | Must | Done | Content editor |
-| SEO meta + Product JSON-LD + sitemap | Must | Done | |
+| SEO meta + Product JSON-LD + sitemap | Must | Done | `.com` canonicals; pageMeta; robots/sitemap from origin |
+| BreadcrumbList + OG/Twitter | Should | Done | Org/WebSite/FAQ schema; default OG image |
 | Address autocomplete | Should | Not started | |
 | Express pay / BNPL / wallets | Should–Could | Not started | |
 | Live carrier rates | Should | Not started | |
@@ -38,7 +39,7 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 | Photo UGC / Q&A | Should–Could | Not started | |
 | GA4 ecommerce events | Must hooks | Partial | Consent stub; no GA4 wired |
 | Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues; Stripe or mock |
-| i18n / hreflang | Could | Not started | EN + PKR/USD display |
+| i18n / hreflang | Could | Deferred | EN + PKR/USD display; SEO Could deferred |
 | Personalization | Could | Not started | |
 
 ## Admin

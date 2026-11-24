@@ -12,7 +12,12 @@ Home · Shop (multi-facet) · Collections/Categories · PDP · Cart · **multi-s
 
 ## SEO / trust
 
-Product JSON-LD · sitemap/robots · meta titles · trust strip under hero (free delivery, COD, circular)
+- **Canonical host:** `https://garmentloop.com` via `site.url` / `NEXT_PUBLIC_SITE_URL` (`siteOrigin()` in `src/lib/seo.ts`); root `metadataBase`, default OG + Twitter `summary_large_image`, `en_PK`.
+- **Must:** per-route titles/descriptions (`pageMeta`), Product JSON-LD (url/sku/AggregateOffer), dynamic `robots.ts` + `sitemap.ts` (no cart/checkout; includes policies + circular).
+- **Should:** Organization + WebSite JSON-LD, BreadcrumbList (product/category/collection), FAQPage schema, Open Graph images (default `/og-default.svg`).
+- **Could (deferred):** hreflang / multi-locale; Search Console verification meta (env later).
+- Private routes (cart, checkout, account, wishlist, order) set `robots: noindex` in addition to robots.txt disallow.
+- Trust strip under hero (free delivery, COD, circular).
 
 ## Persistence note
 

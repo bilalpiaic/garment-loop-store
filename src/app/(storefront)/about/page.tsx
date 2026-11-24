@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "About",
   description:
     "GarmentLoop is a circular-wardrobe atelier — premium garments designed for longevity and reuse.",
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

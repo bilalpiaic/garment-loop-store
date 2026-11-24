@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { ProductGrid } from "@/components/product-card";
 import { searchProducts } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Search",
-};
+  description: "Search GarmentLoop jackets, knits, and circular wardrobe essentials.",
+  path: "/search",
+});
 
 export default async function SearchPage({
   searchParams,

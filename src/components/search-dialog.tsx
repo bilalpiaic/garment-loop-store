@@ -60,7 +60,7 @@ export function SearchDialog({
                     <span className="relative size-12 overflow-hidden rounded-md bg-muted">
                       <Image
                         src={product.images[0]?.src ?? ""}
-                        alt=""
+                        alt={product.images[0]?.alt || product.title}
                         fill
                         className="object-cover"
                         sizes="48px"

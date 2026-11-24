@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CIRCULAR_PLANS } from "@/lib/circular";
 import { formatPkr } from "@/lib/admin-nav";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Circular wardrobe",
   description: "Take-back, atelier repair, and recycling subscriptions from GarmentLoop.",
-};
+  path: "/circular",
+});
 
 export default function CircularHubPage() {
   return (

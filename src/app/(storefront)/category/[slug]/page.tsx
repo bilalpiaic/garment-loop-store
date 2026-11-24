@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/product-card";
+import { JsonLd } from "@/components/json-ld";
 import { getCategory, productsByCategory } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
+import { breadcrumbJsonLd, pageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -13,7 +15,12 @@ export async function generateMetadata({
   const catalog = await getPublishedCatalog();
   const category = getCategory(slug, catalog.categories);
   if (!category) return { title: "Category" };
-  return { title: category.name, description: category.description };
+  return pageMeta({
+    title: category.name,
+    description: category.description,
+    path: `/category/${slug}`,
+    images: category.image ? [category.image] : undefined,
+  });
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,6 +32,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Shop", path: "/shop" },
+          { name: category.name, path: `/category/${slug}` },
+        ])}
+      />
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Category</p>
       <h1 className="mt-2 font-serif text-4xl">{category.name}</h1>
       <p className="mt-2 max-w-xl text-muted-foreground">{category.description}</p>

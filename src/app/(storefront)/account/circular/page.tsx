@@ -9,8 +9,14 @@ import {
   listRepairsForCustomer,
   listTakeBacksForCustomer,
 } from "@/lib/platform";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Circular account" };
+export const metadata = pageMeta({
+  title: "Circular account",
+  description: "Your GarmentLoop repairs, take-backs, and subscriptions.",
+  path: "/account/circular",
+  index: false,
+});
 
 export default async function AccountCircularPage() {
   const session = await getCustomerSession();
