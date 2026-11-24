@@ -1,6 +1,9 @@
 ---
 deployment:
   tasks:
+    # Adjust DEPLOYPATH to your cPanel home + Application root from "Setup Node.js App".
     - export DEPLOYPATH=/home/garmentloop21/garment-loop-app/
     - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -R src public drizzle package.json package-lock.json next.config.ts tsconfig.json postcss.config.mjs drizzle.config.ts $DEPLOYPATH
+    - /bin/cp -R src public drizzle package.json package-lock.json server.js next.config.ts tsconfig.json postcss.config.mjs drizzle.config.ts .env.example $DEPLOYPATH
+    # After copy: activate the Node.js App virtualenv, then npm ci && npm run build && restart the app.
+    # Startup file in cPanel: server.js — see docs/cpanel-deploy.md

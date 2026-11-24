@@ -32,6 +32,10 @@ Optional: `cp .env.example .env.local` — every variable is optional. Set `DATA
 
 Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages.
 
+## Deploy on cPanel (garmentloop.com)
+
+Preferred host path is cPanel **Setup Node.js App** / Passenger with startup file **`server.js`** (Node 20+), then `npm ci && npm run build`. Full DNS, env-var names, `.htaccess` / Passenger notes, and the **PHP-only fallback** (keep Vercel + domain DNS) are in [`docs/cpanel-deploy.md`](./docs/cpanel-deploy.md).
+
 ## Deploy on Vercel
 
 1. Import `bilalpiaic/garment-loop-store` in Vercel (framework: Next.js).
