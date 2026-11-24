@@ -1,7 +1,11 @@
 import { desc, eq } from "drizzle-orm";
-import { getDb, getSql } from "@/db/client";
+import { getDb, getDialect, getMysqlPool, getSql } from "@/db/client";
 import { ensureDatabase } from "@/db/migrate";
-import { inventory, orders } from "@/db/schema";
+import { inventory as pgInventory, orders as pgOrders } from "@/db/schema";
+import {
+  inventory as mysqlInventory,
+  orders as mysqlOrders,
+} from "@/db/schema-mysql";
 import { getVariant } from "@/lib/catalog";
 import { shippingCostPkr } from "@/lib/money";
 import type {
@@ -14,20 +18,52 @@ import type {
   PaymentStatus,
 } from "@/lib/order-model";
 
-function rowToOrder(row: typeof orders.$inferSelect): Order {
+function parseJson<T>(value: unknown, fallback: T): T {
+  if (value == null) return fallback;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return value as T;
+}
+
+function rowToOrder(row: {
+  orderNumber?: string;
+  order_number?: string;
+  createdAt?: Date | string;
+  created_at?: Date | string;
+  customer: unknown;
+  items: unknown;
+  subtotalPkr?: number;
+  subtotal_pkr?: number;
+  shippingPkr?: number;
+  shipping_pkr?: number;
+  totalPkr?: number;
+  total_pkr?: number;
+  paymentMethod?: string;
+  payment_method?: string;
+  paymentStatus?: string;
+  payment_status?: string;
+  status: string;
+  currency: string;
+}): Order {
+  const createdAt = row.createdAt ?? row.created_at!;
   return {
-    orderNumber: row.orderNumber,
+    orderNumber: row.orderNumber ?? row.order_number!,
     createdAt:
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : new Date(row.createdAt).toISOString(),
-    customer: row.customer,
-    items: row.items,
-    subtotalPkr: row.subtotalPkr,
-    shippingPkr: row.shippingPkr,
-    totalPkr: row.totalPkr,
-    paymentMethod: row.paymentMethod as PaymentMethod,
-    paymentStatus: row.paymentStatus as PaymentStatus,
+      createdAt instanceof Date
+        ? createdAt.toISOString()
+        : new Date(createdAt).toISOString(),
+    customer: parseJson(row.customer, {} as Order["customer"]),
+    items: parseJson(row.items, [] as Order["items"]),
+    subtotalPkr: row.subtotalPkr ?? row.subtotal_pkr!,
+    shippingPkr: row.shippingPkr ?? row.shipping_pkr!,
+    totalPkr: row.totalPkr ?? row.total_pkr!,
+    paymentMethod: (row.paymentMethod ?? row.payment_method) as PaymentMethod,
+    paymentStatus: (row.paymentStatus ?? row.payment_status) as PaymentStatus,
     status: row.status as OrderStatus,
     currency: row.currency as "PKR" | "USD",
   };
@@ -72,10 +108,18 @@ export async function getStock(variantId: string) {
   if (!db) {
     return getVariant(variantId)?.variant.stock ?? 0;
   }
-  const [row] = await db
+  if (getDialect() === "mysql") {
+    const [row] = await (db as import("@/db/client").MysqlDatabase)
+      .select()
+      .from(mysqlInventory)
+      .where(eq(mysqlInventory.variantId, variantId))
+      .limit(1);
+    return row?.stock ?? getVariant(variantId)?.variant.stock ?? 0;
+  }
+  const [row] = await (db as import("@/db/client").PgDatabase)
     .select()
-    .from(inventory)
-    .where(eq(inventory.variantId, variantId))
+    .from(pgInventory)
+    .where(eq(pgInventory.variantId, variantId))
     .limit(1);
   return row?.stock ?? getVariant(variantId)?.variant.stock ?? 0;
 }
@@ -86,10 +130,18 @@ export async function getOrder(orderNumber: string) {
   if (!db) {
     return undefined;
   }
-  const [row] = await db
+  if (getDialect() === "mysql") {
+    const [row] = await (db as import("@/db/client").MysqlDatabase)
+      .select()
+      .from(mysqlOrders)
+      .where(eq(mysqlOrders.orderNumber, orderNumber.toUpperCase()))
+      .limit(1);
+    return row ? rowToOrder(row) : undefined;
+  }
+  const [row] = await (db as import("@/db/client").PgDatabase)
     .select()
-    .from(orders)
-    .where(eq(orders.orderNumber, orderNumber.toUpperCase()))
+    .from(pgOrders)
+    .where(eq(pgOrders.orderNumber, orderNumber.toUpperCase()))
     .limit(1);
   return row ? rowToOrder(row) : undefined;
 }
@@ -100,8 +152,115 @@ export async function listOrders() {
   if (!db) {
     return [];
   }
-  const rows = await db.select().from(orders).orderBy(desc(orders.createdAt));
+  if (getDialect() === "mysql") {
+    const rows = await (db as import("@/db/client").MysqlDatabase)
+      .select()
+      .from(mysqlOrders)
+      .orderBy(desc(mysqlOrders.createdAt));
+    return rows.map(rowToOrder);
+  }
+  const rows = await (db as import("@/db/client").PgDatabase)
+    .select()
+    .from(pgOrders)
+    .orderBy(desc(pgOrders.createdAt));
   return rows.map(rowToOrder);
+}
+
+async function createMysqlOrder(input: {
+  items: CheckoutItem[];
+  customer: CheckoutCustomer;
+  paymentMethod: PaymentMethod;
+  currency: "PKR" | "USD";
+  lines: OrderLine[];
+  paymentStatus: PaymentStatus;
+  status: OrderStatus;
+  subtotalPkr: number;
+  shippingPkr: number;
+  createdAt: string;
+}): Promise<{ ok: true; order: Order } | { ok: false; error: string }> {
+  const pool = getMysqlPool();
+  if (!pool) {
+    return { ok: false, error: "DATABASE_URL is not set." };
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    for (const line of input.lines) {
+      const [result] = await connection.query(
+        `UPDATE inventory SET stock = stock - ? WHERE variant_id = ? AND stock >= ?`,
+        [line.quantity, line.variantId, line.quantity],
+      );
+      const affected = (result as { affectedRows?: number }).affectedRows ?? 0;
+      if (affected === 0) {
+        throw new Error(`out of stock: ${line.variantId}`);
+      }
+    }
+    const [seqRows] = await connection.query(
+      `SELECT next_val FROM order_number_seq WHERE id = 1 FOR UPDATE`,
+    );
+    const nextVal = (seqRows as Array<{ next_val: number }>)[0]?.next_val ?? 1;
+    await connection.query(`UPDATE order_number_seq SET next_val = ? WHERE id = 1`, [
+      nextVal + 1,
+    ]);
+    const orderNumber = `GL-${String(nextVal).padStart(4, "0")}`;
+    const totalPkr = input.subtotalPkr + input.shippingPkr;
+    await connection.query(
+      `INSERT INTO orders (
+        order_number, created_at, customer, items,
+        subtotal_pkr, shipping_pkr, total_pkr,
+        payment_method, payment_status, status, currency
+      ) VALUES (?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orderNumber,
+        new Date(input.createdAt),
+        JSON.stringify(input.customer),
+        JSON.stringify(input.lines),
+        input.subtotalPkr,
+        input.shippingPkr,
+        totalPkr,
+        input.paymentMethod,
+        input.paymentStatus,
+        input.status,
+        input.currency,
+      ],
+    );
+    await connection.commit();
+    return {
+      ok: true,
+      order: {
+        orderNumber,
+        createdAt: input.createdAt,
+        customer: input.customer,
+        items: input.lines,
+        subtotalPkr: input.subtotalPkr,
+        shippingPkr: input.shippingPkr,
+        totalPkr,
+        paymentMethod: input.paymentMethod,
+        paymentStatus: input.paymentStatus,
+        status: input.status,
+        currency: input.currency,
+      },
+    };
+  } catch (error) {
+    await connection.rollback();
+    const message = error instanceof Error ? error.message : "";
+    if (message.toLowerCase().includes("out of stock")) {
+      const variantId = message.split("out of stock:")[1]?.trim();
+      const match = variantId ? getVariant(variantId) : null;
+      if (match) {
+        return {
+          ok: false,
+          error: `${match.product.title} (${match.variant.color}, ${match.variant.size}) is out of stock.`,
+        };
+      }
+      return { ok: false, error: "One of the items is out of stock." };
+    }
+    console.error("MySQL checkout failed", error);
+    return { ok: false, error: "Could not place the order. Please try again." };
+  } finally {
+    connection.release();
+  }
 }
 
 export async function createOrder(input: {
@@ -116,10 +275,6 @@ export async function createOrder(input: {
   }
 
   await ensureDatabase();
-  const sql = getSql();
-  if (!sql) {
-    return { ok: false, error: "DATABASE_URL is not set." };
-  }
 
   const paymentStatus: PaymentStatus =
     input.paymentMethod === "card_demo" ? "paid" : "pending";
@@ -130,6 +285,24 @@ export async function createOrder(input: {
   const subtotalPkr = built.lines.reduce((sum, line) => sum + line.totalPkr, 0);
   const shippingPkr = shippingCostPkr(subtotalPkr, input.customer.country);
   const createdAt = new Date().toISOString();
+
+  if (getDialect() === "mysql") {
+    return createMysqlOrder({
+      ...input,
+      lines: built.lines,
+      paymentStatus,
+      status,
+      subtotalPkr,
+      shippingPkr,
+      createdAt,
+    });
+  }
+
+  const sql = getSql();
+  if (!sql) {
+    return { ok: false, error: "DATABASE_URL is not set." };
+  }
+
   const payload = {
     createdAt,
     customer: input.customer,

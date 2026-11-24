@@ -26,12 +26,6 @@ export default async function AdminLoginPage() {
         <div className="mt-6">
           <AdminLoginForm />
         </div>
-        <div className="mt-6 space-y-1 rounded-md border border-dashed border-border/80 bg-secondary/40 px-3 py-3 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">Demo credentials</p>
-          <p>owner@garmentloop.store / GarmentLoop-Owner-2026</p>
-          <p>admin@garmentloop.store / GarmentLoop-Admin-2026</p>
-          <p>staff@garmentloop.store / GarmentLoop-Staff-2026</p>
-        </div>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Looking for your orders?{" "}
           <Link href="/account/login" className="font-medium text-olive underline-offset-4 hover:underline">
