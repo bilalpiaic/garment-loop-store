@@ -4,87 +4,49 @@
 
 | Mode | When | Notes |
 | --- | --- | --- |
-| **Neon (production default on Vercel)** | `DATABASE_URL` set | Drizzle schema (`inventory`, `orders`, `platform_state`) + JSON catalog/admin state; **falls back to demo** if Neon errors |
-| **Demo** | `DATABASE_URL` unset | `src/lib/platform-memory.ts` — global memory + `.data/` or `/tmp` file |
+| **MySQL / MariaDB (garmentloop.com)** | `DATABASE_URL` starts with `mysql://` **or** `MYSQL_HOST` + `MYSQL_USER` + `MYSQL_DATABASE` | Drizzle + `mysql2`; tables `inventory`, `orders`, `platform_state`, `order_number_seq`; **falls back to demo** if MySQL errors |
+| **Neon / Postgres (Vercel option)** | `DATABASE_URL` is `postgresql://…` | Drizzle + `@neondatabase/serverless`; same logical tables + `place_order` function; **falls back to demo** if Neon errors |
+| **Demo** | No DB URL / MYSQL_* | `src/lib/platform-memory.ts` — global memory + `.data/` or `/tmp` file |
 
-On Vercel project `garment-loop-store`, pooled `DATABASE_URL` is configured for production / preview / development, so deployed environments use Neon by default. Local runs without `.env.local` stay on the demo store.
+Dialect detection: [`src/db/client.ts`](https://github.com/bilalpiaic/garment-loop-store/blob/main/src/db/client.ts). Migrate with `npm run db:migrate`.
 
-`ensureDemoWalkthrough` / `ensureSeed` seed catalog, admin users, discounts, content pages, sample orders/customers, and a pending review when empty (including first Neon load).
-
-Migrate locally: `npm run db:migrate` (requires `DATABASE_URL`).
-
-## Stack
-
-Next.js 16 App Router · React 19 · TypeScript · Tailwind 4 · shadcn/ui · Zustand · Zod · Neon (Vercel default) · optional Stripe / Resend / SMTP.
+**Live cPanel:** app under `/home/garmentloop21/repositories/garment-loop-store`, Node 22 (`ea-nodejs22`), `server.js` behind Apache reverse-proxy (port **3060** after cutover; keepalive `~/bin/garmentloop-start.sh`). Feature `passengerapps` not enabled on the package.
 
 ## Integrations
 
 | Service | Env | Fallback |
 | --- | --- | --- |
-| Neon | `DATABASE_URL` | Demo memory/file |
+| MySQL (cPanel) | `DATABASE_URL` mysql://… or `MYSQL_*` | Demo memory/file |
+| Neon | `DATABASE_URL` postgresql://… | Demo memory/file |
 | Stripe payments | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | COD / bank / card_demo |
-| Stripe webhooks | `STRIPE_WEBHOOK_SECRET` | No-op 200 |
-| Email | `RESEND_API_KEY` or `SMTP_HOST` + `SMTP_USER` (+ `SMTP_PASS`, `SMTP_PORT`, `SMTP_SECURE`) and optional `EMAIL_FROM` | Console mock |
-| Customer OTP | Same email stack; `AUTH_SHOW_OTP=1` to return/show code in API (auto outside production) | Mock email logs code preview; production API omits `devCode` unless `AUTH_SHOW_OTP` |
+| Email | `RESEND_API_KEY` or `SMTP_*` + optional `EMAIL_FROM` | Console mock |
+| Customer OTP | Same email stack; `AUTH_SHOW_OTP` for API `devCode` outside prod | Mock / failed send returns safe `emailError` |
 | GA4 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | No scripts / events when unset |
 | Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` | No scripts / events when unset |
-| EasyPost shipping | `EASYPOST_API_KEY` + `EASYPOST_FROM_NAME/STREET1/CITY/STATE/ZIP/COUNTRY` (+ optional `PHONE`) | Zone rates in `shipping.ts` |
-| Tax | `AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY` or `TAXJAR_API_KEY` | Local PK / GCC / intl estimates |
-
-## Storefront analytics
-
-Consent banner (`garmentloop-consent`) gates marketing tags: **Accept analytics** loads GA4 + Meta; **Essential only** keeps them off. Both IDs are optional public env vars — never invent measurement IDs.
-
-| Surface | GA4 | Meta |
-| --- | --- | --- |
-| Product grids | `view_item_list`, `select_item` | — |
-| PDP | `view_item` | `ViewContent` |
-| Add / remove bag | `add_to_cart`, `remove_from_cart` | `AddToCart` |
-| Checkout | `begin_checkout` | `InitiateCheckout` |
-| Order confirm | `purchase` | `Purchase` |
-| Admin mark refunded | `refund` (staff, consent bypass) | — |
-
-Page views fire on client navigations after consent when either ID is set. Implementation: `src/lib/analytics/*` + `AnalyticsBootstrap`.
-
-## Shipping rates
-
-- Default: config zone rates (PK standard/express, GCC, intl) via `listShippingOptions`.
-- When EasyPost is fully configured, checkout `POST /api/shipping/rates` creates a shipment quote and returns carrier options (amounts converted to PKR with store `usdRate`).
-- Selected EasyPost method ids look like `easypost:{shipmentId}:{rateId}`; `createOrder` re-fetches that rate server-side (client amounts are not trusted).
-- Incomplete EasyPost config or API errors → zone fallback with an explanatory note.
-- Admin tracking fields remain; `POST /api/admin/shipping/label` is a **stub** (501) for future outbound / prepaid RMA label PDFs.
-
-## Stripe wallets / BNPL
-
-When both Stripe keys are set, checkout creates a **PaymentIntent** with `automatic_payment_methods` and sends the shopper to `/order/{orderNumber}/pay`:
-
-- **Express Checkout Element** — Apple Pay / Google Pay / Link when the browser + Stripe account + domain allow them
-- **Payment Element** — cards plus BNPL (Klarna, Afterpay Clearpay) when enabled in the Dashboard and eligible for USD charges / customer country
-- Redirect BNPL returns to `/order/{id}?stripe=success&payment_intent=…`; confirm via `POST /api/stripe/confirm`
-- Hosted Checkout Session remains a server-side fallback if PaymentIntent creation fails
-- No invented keys — unavailable methods simply do not render
+| EasyPost shipping | `EASYPOST_API_KEY` + `EASYPOST_FROM_*` | Zone rates |
 
 ## Tax engine
 
-- **Local rules:** PK ≈5% sales tax; GCC (AE/SA/QA/KW/BH/OM) ≈5% VAT; intl = PKR 0 at checkout with “duties at destination” note.
-- **Avalara** (when account + license set): AvaTax `SalesOrder` estimate; amounts converted via store `usdRate`.
-- **TaxJar** (when Avalara unset and `TAXJAR_API_KEY` set): `/v2/taxes` estimate with optional ship-from envs.
-- Checkout summary shows tax **label + line items**; `POST /api/tax/quote` and `createOrder` share `quoteTax()`.
-- No invented keys — missing provider env keeps local estimates.
+Local PK (~5% sales tax) / GCC (~5% VAT) / intl (duties at destination). Optional Avalara (`AVALARA_ACCOUNT_ID` + `AVALARA_LICENSE_KEY`) or TaxJar (`TAXJAR_API_KEY`). Checkout shows tax line items via `POST /api/tax/quote`. No invented keys.
+
+## Stripe wallets / BNPL
+
+When Stripe keys are set, checkout creates a PaymentIntent (`automatic_payment_methods`) and routes to `/order/{id}/pay` with **Express Checkout Element** + **Payment Element**. Confirm via `POST /api/stripe/confirm`. No invented keys.
+
+## Shipping rates
+
+Checkout `POST /api/shipping/rates` returns EasyPost carrier options when the API key and ship-from address are set; otherwise zone rates.
+
+## Storefront analytics
+
+Consent banner (`garmentloop-consent`) gates marketing tags. Both measurement IDs are optional — never invent them.
 
 ## Auth email (customer OTP)
 
-`POST /api/auth/otp/request` stores a hashed 6-digit code (10‑minute TTL) and calls `sendLoginOtpEmail` via Resend or SMTP. Production never returns `devCode` unless `AUTH_SHOW_OTP=1`. Without mail keys, delivery is mock (server console). Failed sends return a safe `emailError` (e.g. Resend test-sender recipient restriction).
+`POST /api/auth/otp/request` hashes a 6-digit code and sends via the email stack. Production omits `devCode` unless `AUTH_SHOW_OTP=1`.
 
-**Resend test vs production from-address:** `EMAIL_FROM=GarmentLoop <onboarding@resend.dev>` may only send to the Resend account owner. To email any shopper, verify a domain at [resend.com/domains](https://resend.com/domains) and set `EMAIL_FROM` to an address on that domain, e.g. `GarmentLoop <orders@garmentloop.store>` or `GarmentLoop <noreply@garmentloop.store>`.
+**Admin UI:** `/admin/login` shows email/password fields only — no on-page demo password list.
 
-## Vercel
+## Related
 
-- App Router + serverless routes only.
-- Production uses Neon via `DATABASE_URL`; Admin → Settings reports “Neon Postgres” when the URL is set.
-- Without `DATABASE_URL`, demo mode re-seeds on cold start — fine for local demos.
-- For live OTP email on production, set `RESEND_API_KEY` (preferred) or `SMTP_HOST` + `SMTP_USER` + `SMTP_PASS`, plus `EMAIL_FROM` with a verified sender.
-
-## Key libs
-
-`platform.ts` · `platform-neon.ts` · `platform-memory.ts` · `seed-demo.ts` · `db/migrate.ts` · `shipping.ts` · `easypost.ts` · `tax.ts` · `tax-avalara.ts` · `tax-taxjar.ts` · `stripe.ts` · `email.ts` · `analytics/`
+See [cpanel-deploy.md](./cpanel-deploy.md) for host steps and live status.

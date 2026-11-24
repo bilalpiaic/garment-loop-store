@@ -1,7 +1,9 @@
 # GarmentLoop — Production QA Report
 
+> **Current host (2026-11-24):** https://garmentloop.com runs on cPanel with **MySQL/MariaDB** (PR #12). `/admin/login` no longer shows a Demo credentials box (`LIVE_OK`). The table below remains the **2026-11-22 Vercel/Neon** QA snapshot.
+
 **Date:** 2026-11-22  
-**Production:** https://garment-loop-store.vercel.app  
+**Production (then):** https://garment-loop-store.vercel.app  
 **Deploy:** `dpl_4FFbW1e43XHCRH6DB7jsG6FyPBx8` · GitHub `main` `3507b1a` · **READY**  
 **Method:** Authenticated HTTP probes (owner login) + Neon SQL checks. No secrets recorded.
 

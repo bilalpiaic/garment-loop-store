@@ -6,7 +6,8 @@ Premium **circular-wardrobe / modern atelier** ecommerce for **GarmentLoop**.
 **cPanel (garmentloop.com)** prefers **MySQL/MariaDB** via `mysql://…` `DATABASE_URL` or `MYSQL_*` (see `docs/cpanel-deploy.md`).  
 **Locally**, no database is required — catalog, cart, checkout, admin, returns, reviews, and sample orders run on an in-memory/file demo store when no DB URL is set. If the DB is configured but unreachable, the app falls back to that demo store.
 
-**Live:** https://garment-loop-store.vercel.app  
+**Live:** https://garmentloop.com (cPanel MySQL)  
+**Vercel:** https://garment-loop-store.vercel.app  
 **GitHub:** https://github.com/bilalpiaic/garment-loop-store
 
 ## Run locally (zero config)
@@ -20,7 +21,7 @@ npm run build && npm start
 
 Open [http://localhost:43123](http://localhost:43123).
 
-Optional: `cp .env.example .env.local` — every variable is optional. Set `DATABASE_URL` only if you want Neon locally, then `npm run db:migrate`.
+Optional: `cp .env.example .env.local` — every variable is optional. Set `DATABASE_URL` (mysql or postgres) or `MYSQL_*`, then `npm run db:migrate`.
 
 ### Demo walkthrough
 
@@ -29,23 +30,24 @@ Optional: `cp .env.example .env.local` — every variable is optional. Set `DATA
 | Storefront | Home → Shop filters → PDP (wishlist/reviews) → Cart → multi-step Checkout (COD) |
 | Account | `/account/login` (OTP shown outside production) → orders → returns → `/account/circular` |
 | Circular | `/circular` take-back · repair · subscribe (mock without Stripe) |
-| Admin | `/admin` · owner@garmentloop.store / GarmentLoop-Owner-2026 · CSV import, Security (MFA), Audit log, Circular queue · Settings shows Neon vs demo |
+| Admin | `/admin/login` (email + password; **no on-page demo passwords**) → CSV import, Security (MFA), Audit log, Circular queue · Settings shows MySQL / Neon / demo |
 
-Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages.
+Seeded: winter SKUs, discounts (`WINTER10`, `WELCOME500`), sample orders, pending review, content pages. Override owner seed with `ADMIN_EMAIL` / `ADMIN_PASSWORD` in private env only.
 
 ## Deploy on cPanel (garmentloop.com)
 
-Preferred host path is cPanel **Setup Node.js App** / Passenger with startup file **`server.js`** (Node 20+), then `npm ci && npm run build`. Full DNS, env-var names, `.htaccess` / Passenger notes, and the **PHP-only fallback** (keep Vercel + domain DNS) are in [`docs/cpanel-deploy.md`](./docs/cpanel-deploy.md).
+Preferred: Node 20+ + `server.js` (or Apache reverse-proxy to Node when Passenger UI is unavailable), `npm ci && npm run build`, MySQL via cPanel **MySQL® Databases**. Full guide: [`docs/cpanel-deploy.md`](./docs/cpanel-deploy.md).
 
 ## Deploy on Vercel
 
 1. Import `bilalpiaic/garment-loop-store` in Vercel (framework: Next.js).
-2. Project `garment-loop-store` already has pooled `DATABASE_URL` (Neon) for production / preview / development — that is the production default.
+2. Optional Neon `DATABASE_URL` (postgres) for durable preview/production on Vercel.
 3. Optional env vars (all safe to omit for a demo):
 
 | Variable | Effect when set |
 | --- | --- |
-| `DATABASE_URL` | Neon persistence (set on Vercel; optional locally) |
+| `DATABASE_URL` | Postgres/Neon **or** `mysql://…` persistence |
+| `MYSQL_*` | cPanel-style MySQL when not using a MySQL `DATABASE_URL` |
 | `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Element (cards, wallets, BNPL) + circular subscription Checkout |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `CIRCULAR_SUBSCRIPTIONS_MOCK` | Force mock circular memberships even when Stripe is keyed |
@@ -78,9 +80,9 @@ Preferred host path is cPanel **Setup Node.js App** / Passenger with startup fil
 3. **TaxJar:** if Avalara is unset, set `TAXJAR_API_KEY` (+ optional `TAXJAR_FROM_*` / `TAXJAR_ENV=sandbox`).
 4. Redeploy. Checkout calls `POST /api/tax/quote`; order create uses the same resolver. Never invent or commit API keys.
 
-5. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres**.
+5. Deploy. After migrate + seed, Admin → Settings reports **Neon Postgres** or **MySQL / MariaDB** depending on dialect.
 
-> Without `DATABASE_URL` (typical local): state lives in memory / `.data` / best-effort `/tmp`. Cold starts re-seed sample data.
+> Without a DB URL (typical local): state lives in memory / `.data` / best-effort `/tmp`. Cold starts re-seed sample data.
 
 ## Documentation
 
@@ -106,4 +108,4 @@ See [`docs/`](./docs/) for requirements, architecture, design system, roadmap, a
 
 ## Stack
 
-Next.js App Router · TypeScript · Tailwind · shadcn/ui · Zustand · Drizzle/Neon (Vercel default) · Stripe (optional) · Resend/SMTP (optional)
+Next.js App Router · TypeScript · Tailwind · shadcn/ui · Zustand · Drizzle + MySQL (cPanel) / Neon (Vercel option) · Stripe (optional) · Resend/SMTP (optional)

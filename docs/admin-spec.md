@@ -2,7 +2,7 @@
 
 ## Auth
 
-- Staff/Owner: `/admin/login` (email + password). Seeded owner/admin/staff in README.
+- Staff/Owner: `/admin/login` (email + password). Seed accounts exist server-side (env / defaults) — **do not display passwords on the login page**.
 - Shoppers: `/account/login` (OTP). Footer + account login link to Staff / Admin sign in.
 
 ## Roles (RBAC)
@@ -17,7 +17,7 @@
 
 Dashboard · Orders · Returns · Products · Reviews · Inventory · Categories · Collections · Customers · Analytics · Discounts · **Content** · Users · **Audit log** · **Security** · Settings
 
-## Owner CRUD (demo store — no required DATABASE_URL)
+## Owner CRUD (works on demo store, cPanel MySQL, or Neon)
 
 | Module | Create | Read | Update | Delete/Archive | Bulk / extras |
 | --- | --- | --- | --- | --- | --- |

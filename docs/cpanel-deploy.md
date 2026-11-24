@@ -110,12 +110,12 @@ All are optional for a demo-style run; production on your domain should set pers
 
 | Name | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Prefer **cPanel MySQL/MariaDB** as `mysql://USER:PASS@localhost:3306/DB` (or Postgres/Neon `postgresql://…`). Do not commit the password. |
-| `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE` / `MYSQL_PORT` | Alternative to a MySQL `DATABASE_URL` (same credentials cPanel creates under MySQL® Databases) |
+| `DATABASE_URL` | Prefer **cPanel MySQL/MariaDB** as `mysql://USER:PASS@localhost:3306/DB` (or Postgres/Neon). Do not commit secrets. |
+| `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE` / `MYSQL_PORT` | Alternative to a MySQL `DATABASE_URL` |
 | `RESEND_API_KEY` **or** `SMTP_HOST` + `SMTP_PORT` + `SMTP_USER` + `SMTP_PASS` | Order/return email + customer login OTP |
 | `EMAIL_FROM` | From-address (verify domain in Resend for non-owner recipients) |
 
-Create the DB in cPanel → **MySQL® Databases** (database + user + ALL PRIVILEGES). Put credentials only in the server `.env.production` (loaded by `server.js`). Run `npm run db:migrate` once on the host. Admin → Settings should report **MySQL / MariaDB**.
+Create the DB in cPanel → **MySQL® Databases**. Put credentials only in server `.env.production`. Run `npm run db:migrate`. Admin → Settings should report **MySQL / MariaDB**.
 
 ### Payments (optional)
 
@@ -195,3 +195,25 @@ Agents and docs will not invent Stripe/Resend/Neon keys; paste those only into t
 - Repo README — local run + Vercel  
 - `.env.example` — variable comments  
 - `.cpanel.yml` — optional Git deploy copy tasks (adjust `DEPLOYPATH` to your home directory)
+
+---
+
+## Live status (garmentloop.com) — Nov 2026 cutover
+
+**Currently live** on DNS IP **109.123.246.57** (cPanel user `garmentloop21`):
+
+| Item | Value |
+| --- | --- |
+| App path | `/home/garmentloop21/repositories/garment-loop-store` (symlink `~/garment-loop-app`) |
+| Node | `/opt/cpanel/ea-nodejs22/bin/node` (v22.23.5, npm 10.9.9) |
+| Process | `server.js` on `127.0.0.1:3060` (cutover from stuck `:3055`), keepalive `~/bin/garmentloop-start.sh` |
+| Public routing | `public_html/.htaccess` Apache **reverse proxy** `[P]` → **3060** |
+| Database | cPanel MySQL DB (tables `inventory`, `orders`, `platform_state`, `order_number_seq`) via `.env.production` — **do not commit** |
+| Admin login | No “Demo credentials” box on `/admin/login` (verified `LIVE_OK`) |
+| SSH | port **2200** (not 22) |
+
+**Important:** cPanel feature **`passengerapps`** is **not enabled**. Reverse-proxy + cron remains the working path until the host enables Setup Node.js App.
+
+Do **not** flip nameservers to `ns57`/`ns58` / IP `62.171.191.235` until that account accepts login and has the same app+DB.
+
+Optional Resend/Stripe keys: set in `.env.production` only (never invent keys; never paste into git/chat).
