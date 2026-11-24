@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/garmentloop21/garment-loop-app/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -R src public drizzle package.json package-lock.json next.config.ts tsconfig.json postcss.config.mjs drizzle.config.ts $DEPLOYPATH
