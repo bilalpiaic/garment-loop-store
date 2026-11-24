@@ -1,6 +1,6 @@
 # GarmentLoop — Progress vs Original Requirements
 
-Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com + admin demo creds removed). Earlier Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
+Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #15 merged; admin portal MySQL completeness). Earlier Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
 
 ## Scoring method
 
@@ -27,7 +27,7 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com + admin demo creds 
 | Cart persistent | Must | Done | Zustand + localStorage |
 | Guest multi-step checkout | Must | Done | COD verified (Neon historically; cPanel MySQL live) |
 | Zone shipping + tax line | Must | Done | Config rates; PK tax estimate |
-| Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed |
+| Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed; production rejects `card_demo` unless `ALLOW_CARD_DEMO` |
 | Account OTP + orders + returns portal | Must | Done | Prod OTP hides `devCode`; RMA via admin |
 | Static pages + policies + consent | Must | Done | Content editor |
 | SEO meta + Product JSON-LD + sitemap | Must | Done | |
@@ -54,16 +54,16 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com + admin demo creds 
 | Customers list + profile | Must | Done | |
 | Categories / collections CRUD | Must | Done | |
 | Discounts / coupons | Must | Done | QA10 created |
-| Analytics basic | Must | Done | |
+| Analytics basic | Must | Done | Revenue, status breakdown, ops queues |
 | Users / invite RBAC | Must | Done | |
-| Settings | Must | Done | Shows MySQL / Neon / demo mode |
-| Admin login (no public demo passwords) | Must | Done | Demo credentials box removed (#12) |
-| Returns / RMA queue | Must | Done | RMA for GL-0006 |
-| Reviews moderation | Must | Done | |
-| Content pages editor | Must | Done | |
-| CSV import/export | Should | Not started | |
-| Carrier label print / webhooks | Should | Not started | |
-| MFA / audit log UI | Should | Not started | |
+| Settings | Must | Done | Shows MySQL / Neon / demo mode + editable store settings |
+| Admin login (no public demo passwords) | Must | Done | Demo credentials box removed (#12); env-only owner seed (#15) |
+| Returns / RMA queue | Must | Done | RMA for GL-0006; audited |
+| Reviews moderation | Must | Done | Audited |
+| Content pages editor | Must | Done | Create/edit/delete; MySQL copy |
+| CSV import/export | Should | Done | `/admin/products/import` + export API |
+| Carrier label print / webhooks | Should | Partial | Label API stub 501 (Phase 2) |
+| MFA / audit log UI | Should | Done | `/admin/security` + `/admin/audit`; broader mutation coverage |
 | Gift cards / loyalty | Could | Not started | |
 | Multi-warehouse / 3PL | Could | Not started | |
 | Full BI / ERP sync | Could | Not started | |
