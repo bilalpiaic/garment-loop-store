@@ -349,7 +349,7 @@ async function saveMysqlState(state: PlatformState) {
   const payload = JSON.stringify(meta);
   await pool.query(
     `INSERT INTO platform_state (id, data, updated_at)
-     VALUES ('default', CAST(? AS JSON), CURRENT_TIMESTAMP)
+     VALUES ('default', ?, CURRENT_TIMESTAMP)
      ON DUPLICATE KEY UPDATE data = VALUES(data), updated_at = CURRENT_TIMESTAMP`,
     [payload],
   );
@@ -370,7 +370,7 @@ async function saveMysqlState(state: PlatformState) {
         payment_method, payment_status, status, currency,
         shipping_method_id, shipping_label,
         tracking_number, courier, notes, discount_code, stripe_session_id
-      ) VALUES (?, ?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         updated_at = VALUES(updated_at),
         customer_id = VALUES(customer_id),

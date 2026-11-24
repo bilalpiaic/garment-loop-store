@@ -210,7 +210,7 @@ async function createMysqlOrder(input: {
         order_number, created_at, customer, items,
         subtotal_pkr, shipping_pkr, total_pkr,
         payment_method, payment_status, status, currency
-      ) VALUES (?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         orderNumber,
         new Date(input.createdAt),
