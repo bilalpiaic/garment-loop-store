@@ -1,6 +1,6 @@
 # GarmentLoop — Progress vs Original Requirements
 
-Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-garmentloop-requirements.md`, `internal/source-ecommerce-requirements.md`, living `docs/requirements.md`. QA evidence: [qa-report.md](./qa-report.md).
+Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com + admin demo creds removed). Earlier Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
 
 ## Scoring method
 
@@ -25,18 +25,18 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Wishlist | Must | Done | Guest + account paths |
 | Reviews display + submit | Must | Done | Submit → pending moderation |
 | Cart persistent | Must | Done | Zustand + localStorage |
-| Guest multi-step checkout | Must | Done | COD order GL-0006 on Neon |
-| Zone shipping + tax line | Must | Done | Config rates; regional tax line + optional Avalara/TaxJar |
+| Guest multi-step checkout | Must | Done | COD verified (Neon historically; cPanel MySQL live) |
+| Zone shipping + tax line | Must | Done | Config rates; PK tax estimate |
 | Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed |
 | Account OTP + orders + returns portal | Must | Done | Prod OTP hides `devCode`; RMA via admin |
 | Static pages + policies + consent | Must | Done | Content editor |
 | SEO meta + Product JSON-LD + sitemap | Must | Done | |
 | Address autocomplete | Should | Not started | |
-| Express pay / BNPL / wallets | Should–Could | Done | Payment Element + Express Checkout when Stripe keyed |
-| Live carrier rates | Should | Partial | EasyPost rates when keyed; label buy / prepaid RMA stubbed |
-| Avalara / full VAT | Should | Done | Local PK/GCC/intl + optional Avalara/TaxJar |
+| Express pay / BNPL / wallets | Should–Could | Not started | |
+| Live carrier rates | Should | Not started | |
+| Avalara / full VAT | Should | Partial | Simple PK estimate only |
 | Photo UGC / Q&A | Should–Could | Not started | |
-| GA4 ecommerce events | Must hooks | Done | Consent-gated GA4 + Meta Pixel; env IDs optional |
+| GA4 ecommerce events | Must hooks | Partial | Consent stub; no GA4 wired |
 | Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues; Stripe or mock |
 | i18n / hreflang | Could | Not started | EN + PKR/USD display |
 | Personalization | Could | Not started | |
@@ -49,20 +49,21 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 | Owner-level module CRUD (forms + bulk) | Must | Done | Create/archive/adjust verified |
 | Dashboard KPIs + low stock | Must | Done | |
 | Orders lifecycle | Must | Done | |
-| Products CRUD + variants | Must | Done | Persisted on Neon |
+| Products CRUD + variants | Must | Done | Persisted on DB (cPanel MySQL live / Neon on Vercel) |
 | Inventory adjust + low stock | Must | Done | |
 | Customers list + profile | Must | Done | |
 | Categories / collections CRUD | Must | Done | |
 | Discounts / coupons | Must | Done | QA10 created |
 | Analytics basic | Must | Done | |
 | Users / invite RBAC | Must | Done | |
-| Settings | Must | Done | Shows Neon mode |
+| Settings | Must | Done | Shows MySQL / Neon / demo mode |
+| Admin login (no public demo passwords) | Must | Done | Demo credentials box removed (#12) |
 | Returns / RMA queue | Must | Done | RMA for GL-0006 |
 | Reviews moderation | Must | Done | |
 | Content pages editor | Must | Done | |
-| CSV import/export | Should | Done | Admin Products → CSV import (+ export); validate/preview/commit |
+| CSV import/export | Should | Not started | |
 | Carrier label print / webhooks | Should | Not started | |
-| MFA / audit log UI | Should | Done | TOTP enroll/verify; Audit log page; ADMIN_MFA_REQUIRED for owner/admin |
+| MFA / audit log UI | Should | Not started | |
 | Gift cards / loyalty | Could | Not started | |
 | Multi-warehouse / 3PL | Could | Not started | |
 | Full BI / ERP sync | Could | Not started | |
@@ -71,9 +72,10 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Zero required DB locally | Done | Demo/file/memory without `DATABASE_URL` |
-| Neon on Vercel production | Done | Confirmed Settings + SQL persistence |
-| Stripe Checkout + webhook | Done | PaymentIntent Elements + webhook; demo without keys |
+| Zero required DB locally | Done | Demo/file/memory without DB URL |
+| Neon on Vercel (optional) | Done | Postgres path retained |
+| cPanel MySQL on garmentloop.com | Done | Tables migrated; live Settings → MySQL/MariaDB |
+| Stripe Checkout + webhook | Partial | Works when keyed; demo otherwise |
 | Transactional email | Partial | Resend/SMTP or mock; OTP emails wired — set keys on Vercel for inbox |
 | WhatsApp confirm links | Partial | Env number optional |
 | Performance / a11y AA basics | Partial | Brand atmosphere + reduced-motion; no formal audit |
@@ -86,22 +88,22 @@ Audit date: 2026-11-22 (post production QA on Neon). Sources: `internal/source-g
 
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
-| **MVP Must items** | **~96%** | Neon + OTP email + GA4/Meta wired; residual: Vercel mail keys / Resend domain for inbox OTP |
-| **Should (Phase 2)** | **~55%** | EasyPost + wallets + tax + CSV/MFA/audit; label buy + autocomplete still open |
-| **Could / Phase 3 wish list** | **~30%** | Circular MVP + wallets/tax shipped; loyalty points, i18n, personalization open |
-| **Blended “full original docs”** | **~58–62%** | Must coverage + Neon production; long Phase 2–3 tail remains |
+| **MVP Must items** | **~95%** | cPanel MySQL live + admin login hardened; residual: production inbox OTP keys / GA4 IDs |
+| **Should (Phase 2)** | **~30%** | DB + webhooks/email paths; carriers, autocomplete still open |
+| **Could / Phase 3 wish list** | **~25%** | Circular MVP shipped; loyalty points, i18n, personalization open |
+| **Blended “full original docs”** | **~60–64%** | Must coverage + cPanel MySQL production; Phase 2–3 tail remains |
 
 ## Honest top gaps
 
-1. Set Resend/SMTP on Vercel so production OTP reaches inboxes (code already sends via email stack)  
-2. Prepaid RMA / outbound label purchase (EasyPost rates done; buy-label stubbed)  
-3. ~~Stripe wallets / BNPL / express pay~~ (done when Stripe keys + Dashboard methods enabled)  
-4. ~~Tax engine beyond PK estimate~~ (local regions + optional Avalara/TaxJar)  
-5. ~~CSV product import, MFA, audit log UI~~ (done — Products CSV import; Security TOTP; Audit log; `ADMIN_MFA_REQUIRED`)  
-6. ~~Circular take-back / repair / recycling subscriptions~~ (MVP done — `/circular`, admin Circular)  
-7. ~~GA4 + marketing pixels beyond consent stub~~ (done — set `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_META_PIXEL_ID`)  
+1. Set Resend/SMTP on garmentloop.com / Vercel so production OTP reaches inboxes (code already sends via email stack)  
+2. Live carrier rates / prepaid RMA labels  
+3. Stripe wallets / BNPL / express pay  
+4. Tax engine beyond PK estimate  
+5. CSV product import, MFA, audit log UI  
+6. ~~Circular take-back / repair / recycling subscriptions~~ (MVP done — `/circular`, admin Circular)
+7. GA4 + marketing pixels beyond consent stub  
 
 ## Login UX
 
 - **Customers:** `/account/login` — email OTP (production: email via Resend/SMTP; no `devCode` unless `AUTH_SHOW_OTP`)  
-- **Staff/Owner:** `/admin/login` — email + password (+ TOTP when enrolled / when `ADMIN_MFA_REQUIRED`); linked from footer + account login
+- **Staff/Owner:** `/admin/login` — email + password; linked from footer + account login

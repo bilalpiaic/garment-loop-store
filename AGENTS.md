@@ -7,7 +7,7 @@
 - `npm run lint` for ESLint
 
 ## Stack
-Next.js App Router, TypeScript, Tailwind, shadcn/ui. Catalog is persisted via Neon when `DATABASE_URL` is set (Vercel production default) and via the demo memory/file store when unset; seeded from `src/lib/catalog.ts`. Cart is client-side (Zustand + localStorage). Checkout is `POST /api/checkout`. Customer accounts use email OTP. Admin uses password login with Owner / Admin / Staff roles at `/admin`.
+Next.js App Router, TypeScript, Tailwind, shadcn/ui. Catalog persists via **MySQL** (`mysql://` / `MYSQL_*`, cPanel garmentloop.com), **Neon/Postgres** (`postgresql://`, Vercel option), or the demo memory/file store when unset; seeded from `src/lib/catalog.ts`. Cart is client-side (Zustand + localStorage). Checkout is `POST /api/checkout`. Customer accounts use email OTP. Admin uses password login with Owner / Admin / Staff roles at `/admin` — **never render seed passwords on the login page**.
 
 ## Conventions
 - TypeScript strict. React function components.
