@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin("orders.manage");
+    const session = await requireAdmin("orders.manage");
     let body: unknown;
     try {
       body = await request.json();
@@ -79,7 +79,12 @@ export async function PATCH(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid return action." }, { status: 400 });
     }
-    const ret = await updateReturnRequest(parsed.data.id, parsed.data.action, parsed.data.adminNote);
+    const ret = await updateReturnRequest(
+      parsed.data.id,
+      parsed.data.action,
+      parsed.data.adminNote,
+      session.user.id,
+    );
     return NextResponse.json({ return: ret });
   } catch (error) {
     return errorResponse(error);

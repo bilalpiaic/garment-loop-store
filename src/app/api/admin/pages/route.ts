@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse } from "@/lib/http";
-import { listContentPages, requireAdmin, saveContentPage } from "@/lib/platform";
+import {
+  deleteContentPage,
+  listContentPages,
+  requireAdmin,
+  saveContentPage,
+} from "@/lib/platform";
+import { slugify } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +23,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    await requireAdmin("products.manage");
+    const session = await requireAdmin("products.manage");
     let body: unknown;
     try {
       body = await request.json();
@@ -26,7 +32,7 @@ export async function PUT(request: Request) {
     }
     const parsed = z
       .object({
-        slug: z.string().min(1),
+        slug: z.string().min(1).optional(),
         title: z.string().min(1),
         excerpt: z.string().min(1),
         body: z.string().min(1),
@@ -35,11 +41,30 @@ export async function PUT(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid page payload." }, { status: 400 });
     }
-    const page = await saveContentPage({
-      ...parsed.data,
-      updatedAt: new Date().toISOString(),
-    });
+    const slug = (parsed.data.slug?.trim() || slugify(parsed.data.title)).toLowerCase();
+    const page = await saveContentPage(
+      {
+        slug,
+        title: parsed.data.title,
+        excerpt: parsed.data.excerpt,
+        body: parsed.data.body,
+        updatedAt: new Date().toISOString(),
+      },
+      session.user.id,
+    );
     return NextResponse.json({ page });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await requireAdmin("products.manage");
+    const slug = new URL(request.url).searchParams.get("slug");
+    if (!slug) return NextResponse.json({ error: "Missing slug." }, { status: 400 });
+    await deleteContentPage(slug, session.user.id);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);
   }

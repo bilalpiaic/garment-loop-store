@@ -26,7 +26,7 @@ export default async function AdminSettingsPage() {
           <li>
             <span className="text-foreground">Data store:</span>{" "}
             {persistence.mysql
-              ? "MySQL / MariaDB (cPanel DATABASE_URL or MYSQL_* set)."
+              ? "MySQL / MariaDB — catalog, orders, customers, content, and admin users persist in platform_state (cPanel DATABASE_URL or MYSQL_*)."
               : persistence.neon
                 ? "Neon Postgres (DATABASE_URL set)."
                 : `Demo mode (${persistence.mode}) — no database required. Sample catalog, orders, and discounts are seeded automatically.`}
@@ -41,7 +41,7 @@ export default async function AdminSettingsPage() {
             <span className="text-foreground">Stripe Checkout:</span>{" "}
             {stripeConfigured()
               ? "Keys present — Payment Element + Express Checkout (cards, wallets, BNPL when Dashboard allows)."
-              : "Inactive — set STRIPE_SECRET_KEY + NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (card_demo fallback)."}
+              : "Inactive — set STRIPE_SECRET_KEY + NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY. COD and bank transfer remain available; card_demo is off in production unless ALLOW_CARD_DEMO=1."}
           </li>
           <li>
             <span className="text-foreground">Stripe webhooks:</span>{" "}

@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin("orders.manage");
+    const session = await requireAdmin("orders.manage");
     let body: unknown;
     try {
       body = await request.json();
@@ -112,12 +112,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid take-back update." }, { status: 400 });
     }
 
-    const takeBack = await updateTakeBackRequest(parsed.data.id, {
-      status: parsed.data.status,
-      creditEstimatePkr: parsed.data.creditEstimatePkr,
-      adminNote: parsed.data.adminNote,
-      preferredPickupDate: parsed.data.preferredPickupDate,
-    });
+    const takeBack = await updateTakeBackRequest(
+      parsed.data.id,
+      {
+        status: parsed.data.status,
+        creditEstimatePkr: parsed.data.creditEstimatePkr,
+        adminNote: parsed.data.adminNote,
+        preferredPickupDate: parsed.data.preferredPickupDate,
+      },
+      session.user.id,
+    );
     return NextResponse.json({ takeBack });
   } catch (error) {
     return errorResponse(error);

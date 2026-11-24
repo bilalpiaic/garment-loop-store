@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin("orders.manage");
+    const session = await requireAdmin("orders.manage");
     let body: unknown;
     try {
       body = await request.json();
@@ -112,12 +112,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid repair update." }, { status: 400 });
     }
 
-    const repair = await updateRepairRequest(parsed.data.id, {
-      status: parsed.data.status,
-      quotePkr: parsed.data.quotePkr,
-      appointmentAt: parsed.data.appointmentAt,
-      adminNote: parsed.data.adminNote,
-    });
+    const repair = await updateRepairRequest(
+      parsed.data.id,
+      {
+        status: parsed.data.status,
+        quotePkr: parsed.data.quotePkr,
+        appointmentAt: parsed.data.appointmentAt,
+        adminNote: parsed.data.adminNote,
+      },
+      session.user.id,
+    );
     return NextResponse.json({ repair });
   } catch (error) {
     return errorResponse(error);

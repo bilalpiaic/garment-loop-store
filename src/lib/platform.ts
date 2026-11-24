@@ -221,14 +221,36 @@ export async function getContentPage(slug: string) {
   return readPlatform((state) => (state.pages ?? []).find((page) => page.slug === slug) ?? null);
 }
 
-export async function saveContentPage(page: ContentPage) {
+export async function saveContentPage(page: ContentPage, actorId?: string) {
   return mutate((state) => {
     state.pages = state.pages ?? [];
     const index = state.pages.findIndex((item) => item.slug === page.slug);
     const next = { ...page, updatedAt: new Date().toISOString() };
+    const created = index < 0;
     if (index >= 0) state.pages[index] = next;
     else state.pages.push(next);
+    writeAudit(state, auditActor(state, actorId), {
+      action: created ? "content.create" : "content.update",
+      entity: "content",
+      entityId: next.slug,
+      summary: `${created ? "Created" : "Updated"} content page ${next.slug}`,
+    });
     return next;
+  });
+}
+
+export async function deleteContentPage(slug: string, actorId?: string) {
+  return mutate((state) => {
+    state.pages = state.pages ?? [];
+    const before = state.pages.length;
+    state.pages = state.pages.filter((item) => item.slug !== slug);
+    if (state.pages.length === before) throw new PlatformError("Content page not found.", 404);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "content.delete",
+      entity: "content",
+      entityId: slug,
+      summary: `Deleted content page ${slug}`,
+    });
   });
 }
 
@@ -756,7 +778,7 @@ export async function bulkSetProductStatus(ids: string[], status: Product["statu
   });
 }
 
-export async function setCollectionProducts(slug: string, productIds: string[]) {
+export async function setCollectionProducts(slug: string, productIds: string[], actorId?: string) {
   return mutate((state) => {
     const collection = state.catalog.collections.find((item) => item.slug === slug);
     if (!collection) throw new PlatformError("Collection not found.", 404);
@@ -767,10 +789,15 @@ export async function setCollectionProducts(slug: string, productIds: string[]) 
       if (should && !has) product.collections = [...product.collections, slug];
       if (!should && has) product.collections = product.collections.filter((value) => value !== slug);
     }
-    return {
-      slug,
-      count: state.catalog.products.filter((product) => product.collections.includes(slug)).length,
-    };
+    const count = state.catalog.products.filter((product) => product.collections.includes(slug)).length;
+    writeAudit(state, auditActor(state, actorId), {
+      action: "collection.assign",
+      entity: "collection",
+      entityId: slug,
+      summary: `Assigned ${count} product(s) to collection ${slug}`,
+      meta: { productIds },
+    });
+    return { slug, count };
   });
 }
 
@@ -782,13 +809,16 @@ export async function bulkUpdateOrders(orderNumbers: string[], status: OrderStat
   return { updated: results.length, orders: results };
 }
 
-export async function updateCustomerProfile(input: {
-  id: string;
-  fullName?: string;
-  phone?: string;
-  notes?: string;
-  tags?: string[];
-}) {
+export async function updateCustomerProfile(
+  input: {
+    id: string;
+    fullName?: string;
+    phone?: string;
+    notes?: string;
+    tags?: string[];
+  },
+  actorId?: string,
+) {
   return mutate((state) => {
     const customer = state.customers.find((item) => item.id === input.id);
     if (!customer) throw new PlatformError("Customer not found.", 404);
@@ -798,49 +828,81 @@ export async function updateCustomerProfile(input: {
     if (input.tags !== undefined) {
       customer.tags = [...new Set(input.tags.map((tag) => tag.trim()).filter(Boolean))];
     }
+    writeAudit(state, auditActor(state, actorId), {
+      action: "customer.update",
+      entity: "customer",
+      entityId: customer.id,
+      summary: `Updated customer ${customer.email}`,
+    });
     return customer;
   });
 }
 
-export async function saveCategory(input: Category) {
+export async function saveCategory(input: Category, actorId?: string) {
   return mutate((state) => {
     const slug = input.slug || slugify(input.name);
     const next = { ...input, slug };
     const index = state.catalog.categories.findIndex((item) => item.slug === slug);
+    const created = index < 0;
     if (index >= 0) state.catalog.categories[index] = next;
     else state.catalog.categories.push(next);
+    writeAudit(state, auditActor(state, actorId), {
+      action: created ? "category.create" : "category.update",
+      entity: "category",
+      entityId: slug,
+      summary: `${created ? "Created" : "Updated"} category ${slug}`,
+    });
     return next;
   });
 }
 
-export async function deleteCategory(slug: string) {
+export async function deleteCategory(slug: string, actorId?: string) {
   return mutate((state) => {
     const inUse = state.catalog.products.some(
       (product) => product.category === slug && product.status !== "archived",
     );
     if (inUse) throw new PlatformError("Unassign this category from products first.");
     state.catalog.categories = state.catalog.categories.filter((item) => item.slug !== slug);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "category.delete",
+      entity: "category",
+      entityId: slug,
+      summary: `Deleted category ${slug}`,
+    });
   });
 }
 
-export async function saveCollection(input: Collection) {
+export async function saveCollection(input: Collection, actorId?: string) {
   return mutate((state) => {
     const slug = input.slug || slugify(input.name);
     const next = { ...input, slug };
     const index = state.catalog.collections.findIndex((item) => item.slug === slug);
+    const created = index < 0;
     if (index >= 0) state.catalog.collections[index] = next;
     else state.catalog.collections.push(next);
+    writeAudit(state, auditActor(state, actorId), {
+      action: created ? "collection.create" : "collection.update",
+      entity: "collection",
+      entityId: slug,
+      summary: `${created ? "Created" : "Updated"} collection ${slug}`,
+    });
     return next;
   });
 }
 
-export async function deleteCollection(slug: string) {
+export async function deleteCollection(slug: string, actorId?: string) {
   return mutate((state) => {
     state.catalog.products = state.catalog.products.map((product) => ({
       ...product,
       collections: product.collections.filter((item) => item !== slug),
     }));
     state.catalog.collections = state.catalog.collections.filter((item) => item.slug !== slug);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "collection.delete",
+      entity: "collection",
+      entityId: slug,
+      summary: `Deleted collection ${slug}`,
+    });
   });
 }
 
@@ -962,7 +1024,10 @@ export async function listDiscounts() {
   return readPlatform((state) => state.discounts);
 }
 
-export async function saveDiscount(input: Omit<Discount, "id" | "usedCount"> & { id?: string; usedCount?: number }) {
+export async function saveDiscount(
+  input: Omit<Discount, "id" | "usedCount"> & { id?: string; usedCount?: number },
+  actorId?: string,
+) {
   return mutate((state) => {
     const code = input.code.trim().toUpperCase();
     const existing = state.discounts.find(
@@ -982,15 +1047,29 @@ export async function saveDiscount(input: Omit<Discount, "id" | "usedCount"> & {
       active: input.active,
     };
     const index = state.discounts.findIndex((item) => item.id === discount.id);
+    const created = index < 0;
     if (index >= 0) state.discounts[index] = { ...discount, usedCount: state.discounts[index]!.usedCount };
     else state.discounts.unshift(discount);
+    writeAudit(state, auditActor(state, actorId), {
+      action: created ? "discount.create" : "discount.update",
+      entity: "discount",
+      entityId: discount.id,
+      summary: `${created ? "Created" : "Updated"} discount ${discount.code}`,
+    });
     return discount;
   });
 }
 
-export async function deleteDiscount(id: string) {
+export async function deleteDiscount(id: string, actorId?: string) {
   return mutate((state) => {
+    const existing = state.discounts.find((item) => item.id === id);
     state.discounts = state.discounts.filter((item) => item.id !== id);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "discount.delete",
+      entity: "discount",
+      entityId: id,
+      summary: `Deleted discount ${existing?.code ?? id}`,
+    });
   });
 }
 
@@ -1631,6 +1710,18 @@ export async function getDashboardMetrics() {
     const topProducts = [...counts.values()]
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
+    const paidOrders = state.orders.filter(
+      (order) => order.paymentStatus === "paid" && order.status !== "cancelled",
+    );
+    const revenueAllTime = paidOrders.reduce((sum, order) => sum + order.totalPkr, 0);
+    const statusBreakdown = state.orders.reduce<Record<string, number>>((acc, order) => {
+      acc[order.status] = (acc[order.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const openReturns = (state.returns ?? []).filter(
+      (item) => item.status === "requested" || item.status === "approved",
+    ).length;
+    const pendingReviews = (state.reviews ?? []).filter((item) => item.status === "pending").length;
     return {
       ordersToday: todayOrders.length,
       revenueToday,
@@ -1642,6 +1733,11 @@ export async function getDashboardMetrics() {
       totalOrders: state.orders.length,
       totalCustomers: state.customers.length,
       publishedProducts: catalog.products.filter((product) => product.status !== "archived").length,
+      revenueAllTime,
+      statusBreakdown,
+      openReturns,
+      pendingReviews,
+      activeDiscounts: state.discounts.filter((item) => item.active).length,
     };
   });
 }
@@ -1730,31 +1826,53 @@ export async function submitReview(input: {
   });
 }
 
-export async function moderateReview(id: string, status: "approved" | "rejected") {
+export async function moderateReview(
+  id: string,
+  status: "approved" | "rejected",
+  actorId?: string,
+) {
   return mutate((state) => {
     const review = (state.reviews ?? []).find((item) => item.id === id);
     if (!review) throw new PlatformError("Review not found.", 404);
     review.status = status;
     review.moderatedAt = new Date().toISOString();
+    writeAudit(state, auditActor(state, actorId), {
+      action: `review.${status}`,
+      entity: "review",
+      entityId: id,
+      summary: `${status === "approved" ? "Approved" : "Rejected"} review ${id}`,
+    });
     return review;
   });
 }
 
-export async function replyToReview(id: string, adminReply: string) {
+export async function replyToReview(id: string, adminReply: string, actorId?: string) {
   return mutate((state) => {
     const review = (state.reviews ?? []).find((item) => item.id === id);
     if (!review) throw new PlatformError("Review not found.", 404);
     review.adminReply = adminReply.trim();
     review.repliedAt = new Date().toISOString();
+    writeAudit(state, auditActor(state, actorId), {
+      action: "review.reply",
+      entity: "review",
+      entityId: id,
+      summary: `Replied to review ${id}`,
+    });
     return review;
   });
 }
 
-export async function deleteReview(id: string) {
+export async function deleteReview(id: string, actorId?: string) {
   return mutate((state) => {
     const before = (state.reviews ?? []).length;
     state.reviews = (state.reviews ?? []).filter((item) => item.id !== id);
     if (state.reviews.length === before) throw new PlatformError("Review not found.", 404);
+    writeAudit(state, auditActor(state, actorId), {
+      action: "review.delete",
+      entity: "review",
+      entityId: id,
+      summary: `Deleted review ${id}`,
+    });
     return { ok: true };
   });
 }
@@ -1899,6 +2017,7 @@ export async function updateReturnRequest(
   id: string,
   action: "approve" | "reject" | "restock" | "refund",
   adminNote?: string,
+  actorId?: string,
 ) {
   return mutate((state) => {
     const request = (state.returns ?? []).find((item) => item.id === id);
@@ -1921,6 +2040,7 @@ export async function updateReturnRequest(
       restockReturnItems(state, request, now);
       request.status = "restocked";
     } else if (action === "refund") {
+      // Soft refund: marks RMA + order payment as refunded (no PSP reverse yet).
       request.status = "refunded";
       const order = state.orders.find((item) => item.orderNumber === request.orderNumber);
       if (order) {
@@ -1928,6 +2048,13 @@ export async function updateReturnRequest(
         order.updatedAt = now;
       }
     }
+    writeAudit(state, auditActor(state, actorId), {
+      action: `return.${action}`,
+      entity: "return",
+      entityId: id,
+      summary: `Return ${id} → ${action}`,
+      meta: { orderNumber: request.orderNumber, status: request.status },
+    });
     return request;
   });
 }
@@ -2012,6 +2139,7 @@ export async function updateTakeBackRequest(
     adminNote?: string;
     preferredPickupDate?: string;
   },
+  actorId?: string,
 ) {
   return mutate((state) => {
     const request = (state.takeBacks ?? []).find((item) => item.id === id);
@@ -2026,6 +2154,13 @@ export async function updateTakeBackRequest(
       request.preferredPickupDate = patch.preferredPickupDate || undefined;
     }
     request.updatedAt = now;
+    writeAudit(state, auditActor(state, actorId), {
+      action: "circular.takeback.update",
+      entity: "takeback",
+      entityId: id,
+      summary: `Updated take-back ${id}`,
+      meta: patch as Record<string, unknown>,
+    });
     return request;
   });
 }
@@ -2095,6 +2230,7 @@ export async function updateRepairRequest(
     appointmentAt?: string;
     adminNote?: string;
   },
+  actorId?: string,
 ) {
   return mutate((state) => {
     const request = (state.repairs ?? []).find((item) => item.id === id);
@@ -2107,6 +2243,13 @@ export async function updateRepairRequest(
     }
     if (patch.adminNote !== undefined) request.adminNote = patch.adminNote;
     request.updatedAt = now;
+    writeAudit(state, auditActor(state, actorId), {
+      action: "circular.repair.update",
+      entity: "repair",
+      entityId: id,
+      summary: `Updated repair ${id}`,
+      meta: patch as Record<string, unknown>,
+    });
     return request;
   });
 }

@@ -7,12 +7,16 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin("collections.manage");
+    const session = await requireAdmin("collections.manage");
     const parsed = collectionAssignSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
-    const result = await setCollectionProducts(parsed.data.slug, parsed.data.productIds);
+    const result = await setCollectionProducts(
+      parsed.data.slug,
+      parsed.data.productIds,
+      session.user.id,
+    );
     return NextResponse.json(result);
   } catch (error) {
     return errorResponse(error);
