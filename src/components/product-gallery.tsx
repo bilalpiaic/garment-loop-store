@@ -10,12 +10,12 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
   const current = images[active] ?? images[0];
 
   if (!current) {
-    return <div className="aspect-[3/4] rounded-xl bg-muted" />;
+    return <div className="aspect-[3/4] bg-muted/60" />;
   }
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-[color-mix(in_oklab,var(--secondary)_70%,var(--ivory))] ring-1 ring-champagne/20">
         <Image
           src={current.src}
           alt={current.alt || title}
@@ -38,8 +38,8 @@ export function ProductGallery({ images, title }: { images: ProductImage[]; titl
               type="button"
               onClick={() => setActive(index)}
               className={cn(
-                "relative size-16 shrink-0 overflow-hidden rounded-md border",
-                index === active ? "border-foreground" : "border-transparent",
+                "relative size-16 shrink-0 overflow-hidden border",
+                index === active ? "border-olive" : "border-transparent opacity-80 hover:opacity-100",
               )}
               aria-label={`View image ${index + 1}`}
             >

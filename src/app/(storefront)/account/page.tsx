@@ -24,11 +24,13 @@ export default async function AccountPage() {
   );
   const loyaltyPoints = session.customer.loyaltyPoints ?? 0;
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 space-y-10">
+    <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Account</p>
-          <h1 className="mt-2 font-serif text-4xl">{session.customer.fullName || "Your profile"}</h1>
+          <p className="section-kicker">Account</p>
+          <h1 className="mt-2 font-serif text-4xl tracking-tight sm:text-5xl">
+            {session.customer.fullName || "Your profile"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">{session.customer.email}</p>
           <p className="mt-3 text-sm">
             Loyalty points: <span className="font-medium">{loyaltyPoints}</span>
@@ -41,35 +43,38 @@ export default async function AccountPage() {
         <SignOutButton />
       </div>
       <section className="flex flex-wrap gap-3 text-sm">
-        <Link href="/account/returns" className="underline underline-offset-4">
+        <Link href="/account/returns" className="underline underline-offset-4 hover:text-olive">
           Returns & exchanges
         </Link>
-        <Link href="/account/circular" className="underline underline-offset-4">
+        <Link href="/account/circular" className="underline underline-offset-4 hover:text-olive">
           Circular wardrobe
         </Link>
-        <Link href="/wishlist" className="underline underline-offset-4">
+        <Link href="/wishlist" className="underline underline-offset-4 hover:text-olive">
           Wishlist
         </Link>
       </section>
-      <section>
-        <h2 className="font-serif text-2xl">Orders</h2>
+      <section className="atelier-panel rounded-lg p-5 sm:p-6">
+        <h2 className="font-serif text-2xl tracking-tight">Orders</h2>
         {orders.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">
             No orders yet.{" "}
-            <Link href="/shop" className="underline underline-offset-4">
+            <Link href="/shop" className="underline underline-offset-4 hover:text-olive">
               Browse the winter floor
             </Link>
             .
           </p>
         ) : (
-          <ul className="mt-4 divide-y rounded-xl border">
+          <ul className="mt-4 divide-y divide-border/70">
             {orders.map((order) => (
               <li
                 key={order.orderNumber}
-                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                className="flex items-center justify-between gap-3 py-3 text-sm first:pt-0 last:pb-0"
               >
                 <div>
-                  <Link href={`/account/orders/${order.orderNumber}`} className="font-medium">
+                  <Link
+                    href={`/account/orders/${order.orderNumber}`}
+                    className="font-medium hover:text-olive"
+                  >
                     {order.orderNumber}
                   </Link>
                   <p className="text-xs text-muted-foreground">
@@ -82,11 +87,11 @@ export default async function AccountPage() {
           </ul>
         )}
       </section>
-      <section>
-        <h2 className="font-serif text-2xl">Addresses</h2>
+      <section className="atelier-panel rounded-lg p-5 sm:p-6">
+        <h2 className="font-serif text-2xl tracking-tight">Addresses</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {session.addresses.map((address) => (
-            <li key={address.id} className="rounded-xl border px-4 py-3">
+            <li key={address.id} className="border-b border-border/60 py-3 last:border-0">
               {address.fullName}
               <span className="block text-muted-foreground">
                 {address.address}, {address.area}, {address.city}

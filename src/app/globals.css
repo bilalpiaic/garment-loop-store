@@ -64,8 +64,8 @@
 
 /*
   GarmentLoop — Atelier Ink luxury system
-  Deep forest ink + jewel olive + champagne gold + ivory mist
-  (not purple, not flat cream, not terracotta-on-cream AI defaults)
+  Soft Cream + Olive Deep + Ink Night depth
+  Champagne accent only (not muddy); cooler moss, not terracotta
 */
 :root {
   --ink: #0e1612;
@@ -81,9 +81,9 @@
   --charcoal: #1c1f1c;
   --rust: #a65a3f;
   --copper: #a65a3f;
-  --sage: #8b9a7c;
+  --sage: #7f9178;
 
-  --background: #efe6d8;
+  --background: #f3ebe0;
   --foreground: #1c1f1c;
   --card: #f7f1e8;
   --card-foreground: #1c1f1c;
@@ -91,19 +91,19 @@
   --popover-foreground: #1c1f1c;
   --primary: #2f4f3a;
   --primary-foreground: #f3ebe0;
-  --secondary: #e7dccb;
+  --secondary: #ebe2d4;
   --secondary-foreground: #1c1f1c;
-  --muted: #e7dccb;
-  --muted-foreground: #5a6358;
+  --muted: #ebe2d4;
+  --muted-foreground: #556055;
   --accent: #c8a96b;
   --accent-foreground: #1c1f1c;
   --destructive: #a65a3f;
-  --border: #d4c7b2;
-  --input: #d4c7b2;
+  --border: #d6caba;
+  --input: #d6caba;
   --ring: #2f4f3a;
   --chart-1: #2f4f3a;
   --chart-2: #c8a96b;
-  --chart-3: #8b9a7c;
+  --chart-3: #7f9178;
   --chart-4: #a65a3f;
   --chart-5: #0e1612;
   --radius: 0.55rem;
@@ -190,6 +190,18 @@
   }
 }
 
+@keyframes ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(1.5%, -1%, 0) scale(1.04);
+    opacity: 0.75;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -200,11 +212,13 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-color: var(--cream);
     background-image:
-      radial-gradient(ellipse 100% 70% at 8% -8%, color-mix(in oklab, var(--champagne) 22%, transparent), transparent 52%),
-      radial-gradient(ellipse 80% 55% at 100% 0%, color-mix(in oklab, var(--olive-jewel) 14%, transparent), transparent 48%),
-      radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in oklab, var(--ink) 6%, transparent), transparent 55%),
-      linear-gradient(180deg, #f6efe4 0%, var(--background) 42%, #e9dfcf 100%);
+      radial-gradient(ellipse 95% 65% at 6% -10%, color-mix(in oklab, var(--olive-deep) 18%, transparent), transparent 54%),
+      radial-gradient(ellipse 70% 50% at 98% 4%, color-mix(in oklab, var(--ink) 12%, transparent), transparent 50%),
+      radial-gradient(ellipse 55% 42% at 48% 100%, color-mix(in oklab, var(--sage) 14%, transparent), transparent 58%),
+      radial-gradient(ellipse 40% 30% at 72% 28%, color-mix(in oklab, var(--champagne) 8%, transparent), transparent 55%),
+      linear-gradient(180deg, #f7f1e8 0%, var(--cream) 38%, #ebe2d4 100%);
     background-attachment: fixed;
   }
   body::before {
@@ -213,9 +227,20 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    opacity: 0.04;
+    opacity: 0.035;
     mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: -12%;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 45% 40% at 18% 22%, color-mix(in oklab, var(--olive-jewel) 10%, transparent), transparent 70%),
+      radial-gradient(ellipse 40% 35% at 82% 68%, color-mix(in oklab, var(--ink) 7%, transparent), transparent 72%);
+    animation: ambient-drift 28s ease-in-out infinite;
   }
   h1,
   h2,
@@ -228,6 +253,9 @@
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
+    }
+    body::after {
+      animation: none !important;
     }
     .animate-fade-up,
     .animate-fade-in,
@@ -274,12 +302,38 @@
   .text-balance {
     text-wrap: balance;
   }
+  .page-shell {
+    @apply mx-auto w-full max-w-6xl px-4;
+  }
+  .section-kicker {
+    @apply text-[11px] font-medium uppercase tracking-[0.24em] text-sage sm:text-xs;
+  }
+  .ink-band {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--olive-deep) 8%, transparent),
+        color-mix(in oklab, var(--ink) 5%, color-mix(in oklab, var(--secondary) 70%, transparent))
+      );
+  }
+  .glass-header {
+    background: color-mix(in oklab, var(--cream) 78%, transparent);
+    border-bottom: 1px solid color-mix(in oklab, var(--champagne) 35%, transparent);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  }
   .atelier-panel {
     background:
-      linear-gradient(165deg, color-mix(in oklab, var(--ivory) 92%, white), color-mix(in oklab, var(--card) 88%, var(--champagne-soft))),
+      linear-gradient(
+        168deg,
+        color-mix(in oklab, var(--ivory) 94%, white),
+        color-mix(in oklab, var(--card) 90%, var(--champagne-soft) 6%)
+      ),
       var(--card);
-    border: 1px solid color-mix(in oklab, var(--border) 70%, var(--champagne));
-    box-shadow: 0 18px 40px -28px color-mix(in oklab, var(--ink) 45%, transparent);
+    border: 1px solid color-mix(in oklab, var(--border) 65%, var(--champagne) 22%);
+    box-shadow:
+      0 1px 0 color-mix(in oklab, white 55%, transparent),
+      0 20px 44px -30px color-mix(in oklab, var(--ink) 42%, transparent);
   }
   .reveal-pending {
     opacity: 0;

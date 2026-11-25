@@ -29,13 +29,13 @@ export function AdminShell({
   }
 
   return (
-    <div className="flex min-h-full bg-[color:var(--background)]">
+    <div className="flex min-h-full bg-[color:var(--cream)]">
       <aside className="hidden w-60 shrink-0 flex-col bg-ink text-cream md:flex">
-        <div className="px-5 py-6">
+        <div className="border-b border-cream/10 px-5 py-6">
           <p className="font-serif text-2xl tracking-tight">GarmentLoop</p>
           <p className="mt-1 text-xs uppercase tracking-[0.22em] text-champagne/80">Back office</p>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 px-3 pb-6">
+        <nav className="flex flex-1 flex-col gap-0.5 px-3 py-4">
           {items.map((item) => {
             const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
             return (
@@ -43,10 +43,10 @@ export function AdminShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  "relative rounded-md px-3 py-2 text-sm transition-colors",
                   active
-                    ? "bg-cream/12 text-cream ring-1 ring-champagne/25"
-                    : "text-cream/70 hover:bg-cream/8 hover:text-cream",
+                    ? "bg-cream/10 text-cream before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-champagne"
+                    : "text-cream/65 hover:bg-cream/6 hover:text-cream",
                 )}
               >
                 {item.label}
@@ -68,7 +68,7 @@ export function AdminShell({
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-[color-mix(in_oklab,var(--cream)_90%,transparent)] px-4 py-3 backdrop-blur-sm md:px-8">
+        <header className="glass-header flex items-center justify-between gap-3 px-4 py-3 md:px-8">
           <div className="md:hidden">
             <Button
               type="button"
@@ -107,7 +107,7 @@ export function AdminShell({
         {menuOpen ? (
           <nav
             id="admin-mobile-nav"
-            className="grid grid-cols-2 gap-1 border-b border-border/80 bg-card px-3 py-3 md:hidden"
+            className="grid grid-cols-2 gap-1 border-b border-champagne/20 bg-[color-mix(in_oklab,var(--ivory)_94%,white)] px-3 py-3 md:hidden"
           >
             {items.map((item) => {
               const active =

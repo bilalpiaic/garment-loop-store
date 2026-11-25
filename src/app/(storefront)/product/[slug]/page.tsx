@@ -93,7 +93,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const categoryLabel = product.category.replaceAll("-", " ");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="page-shell py-10">
       <ViewItemTracker key={product.id} product={product} />
       <RecentlyViewedTracker key={`rv-${product.id}`} product={product} />
       <JsonLd
@@ -107,22 +107,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         ]}
       />
       <nav className="mb-6 text-xs text-muted-foreground">
-        <Link href="/shop">Shop</Link>
+        <Link href="/shop" className="hover:text-olive">
+          Shop
+        </Link>
         <span className="mx-2">/</span>
-        <Link href={`/category/${product.category}`} className="capitalize">
+        <Link href={`/category/${product.category}`} className="capitalize hover:text-olive">
           {product.category}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{product.title}</span>
       </nav>
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
         <ProductGallery images={product.images} title={product.title} />
         <div>
-          {product.isNew ? (
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">New arrival</p>
-          ) : null}
-          <h1 className="mt-1 font-serif text-4xl">{product.title}</h1>
-          <p className="mt-2 text-muted-foreground">{product.subtitle}</p>
+          {product.isNew ? <p className="section-kicker">New arrival</p> : null}
+          <h1 className="mt-2 font-serif text-4xl tracking-tight text-ink sm:text-5xl">{product.title}</h1>
+          <p className="mt-3 text-muted-foreground leading-relaxed">{product.subtitle}</p>
           <div className="mt-8">
             <ProductForm product={product} />
           </div>
@@ -168,6 +168,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <ProductQa productId={product.id} productSlug={product.slug} initialQuestions={questions} />
       {related.length > 0 ? (
         <section className="mt-16">
+          <p className="section-kicker mb-2">More from the floor</p>
           <h2 className="mb-6 font-serif text-3xl">You may also like</h2>
           <ProductGrid products={related} listId="related" listName="You may also like" />
         </section>

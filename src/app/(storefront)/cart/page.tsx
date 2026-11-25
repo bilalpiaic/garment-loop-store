@@ -11,11 +11,11 @@ export const metadata = pageMeta({
 
 export default function CartPage() {
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.4fr_0.8fr]">
+    <div className="page-shell grid gap-10 py-12 lg:grid-cols-[1.4fr_0.8fr]">
       <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-sage">Cart</p>
-        <h1 className="mt-2 font-serif text-4xl text-balance">Your bag</h1>
-        <div className="mt-8">
+        <p className="section-kicker text-champagne">Cart</p>
+        <h1 className="mt-2 font-serif text-4xl tracking-tight text-balance sm:text-5xl">Your bag</h1>
+        <div className="atelier-panel mt-8 rounded-lg p-5 sm:p-6">
           <CartLines />
         </div>
         <p className="mt-8 text-sm text-muted-foreground">
@@ -26,7 +26,7 @@ export default function CartPage() {
           before you order.
         </p>
       </div>
-      <div className="atelier-panel rounded-lg">
+      <div className="atelier-panel h-fit rounded-lg">
         <CartSummary />
       </div>
     </div>
