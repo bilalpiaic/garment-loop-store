@@ -42,21 +42,25 @@ export async function GET(request: Request) {
 
   const { q, country } = parsed.data;
   const photon = new URL("https://photon.komoot.io/api/");
-  photon.searchParams.set("q", q);
-  photon.searchParams.set("limit", "6");
+  // Bias the query with ISO country when present; Photon has no reliable country filter param.
+  photon.searchParams.set("q", country ? `${q}, ${country.toUpperCase()}` : q);
+  photon.searchParams.set("limit", "8");
   photon.searchParams.set("lang", "en");
-  if (country) photon.searchParams.set("osm_tag", `countrycode:${country.toLowerCase()}`);
 
   try {
     const response = await fetch(photon.toString(), {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(4000),
-      next: { revalidate: 0 },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "GarmentLoopStore/1.0 (address-suggest)",
+      },
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
     });
     if (!response.ok) {
       return NextResponse.json({ suggestions: [] as AddressSuggestion[] });
     }
     const data = (await response.json()) as { features?: PhotonFeature[] };
+    const wanted = country?.toUpperCase();
     const suggestions: AddressSuggestion[] = (data.features ?? [])
       .map((feature) => {
         const p = feature.properties ?? {};
@@ -65,6 +69,7 @@ export async function GET(request: Request) {
         const area = p.state || p.county || "";
         const postalCode = p.postcode || "";
         const countryCode = (p.countrycode || country || "").toUpperCase();
+        if (wanted && countryCode && countryCode !== wanted) return null;
         const label = [street, city, area, postalCode, countryCode].filter(Boolean).join(", ");
         if (!label) return null;
         return {
@@ -77,7 +82,8 @@ export async function GET(request: Request) {
           country: countryCode,
         } satisfies AddressSuggestion;
       })
-      .filter((item): item is AddressSuggestion => Boolean(item));
+      .filter((item): item is AddressSuggestion => Boolean(item))
+      .slice(0, 6);
 
     return NextResponse.json({ suggestions });
   } catch {
