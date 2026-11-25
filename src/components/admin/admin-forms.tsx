@@ -93,11 +93,22 @@ export function DeleteTaxonomyButton({ kind, slug }: { kind: "categories" | "col
   );
 }
 
-export function InventoryAdjust({ variantId }: { variantId: string }) {
+export function InventoryAdjust({
+  variantId,
+  warehouses = [],
+  defaultWarehouseId,
+}: {
+  variantId: string;
+  warehouses?: { id: string; name: string }[];
+  defaultWarehouseId?: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState("Manual adjustment");
+  const [warehouseId, setWarehouseId] = useState(
+    defaultWarehouseId ?? warehouses[0]?.id ?? "",
+  );
   async function apply(sign: 1 | -1) {
     const change = Math.abs(qty || 1) * sign;
     setPending(true);
@@ -105,7 +116,12 @@ export function InventoryAdjust({ variantId }: { variantId: string }) {
       const response = await fetch("/api/admin/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId, change, reason: reason.trim() || "Manual adjustment" }),
+        body: JSON.stringify({
+          variantId,
+          change,
+          reason: reason.trim() || "Manual adjustment",
+          ...(warehouseId ? { warehouseId } : {}),
+        }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) toast.error(data.error ?? "Could not adjust stock.");
@@ -119,6 +135,20 @@ export function InventoryAdjust({ variantId }: { variantId: string }) {
   }
   return (
     <div className="flex flex-wrap items-center gap-1">
+      {warehouses.length > 0 ? (
+        <select
+          value={warehouseId}
+          onChange={(event) => setWarehouseId(event.target.value)}
+          className="h-8 max-w-[9rem] rounded-md border bg-background px-2 text-xs"
+          aria-label="Warehouse"
+        >
+          {warehouses.map((warehouse) => (
+            <option key={warehouse.id} value={warehouse.id}>
+              {warehouse.name}
+            </option>
+          ))}
+        </select>
+      ) : null}
       <Input
         type="number"
         min={1}

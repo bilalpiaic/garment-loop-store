@@ -13,6 +13,8 @@ import { ProductGrid } from "@/components/product-card";
 import { ProductReviews } from "@/components/product-reviews";
 import { ProductQa } from "@/components/product-qa";
 import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
+import { RecentlyViewedTracker } from "@/components/recently-viewed-tracker";
+import { RecentlyViewedShelf } from "@/components/recently-viewed-shelf";
 import { JsonLd } from "@/components/json-ld";
 import { getProductBySlug, relatedProducts } from "@/lib/catalog";
 import { getPublishedCatalog, listApprovedQuestions, listApprovedReviews } from "@/lib/platform";
@@ -93,6 +95,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <ViewItemTracker key={product.id} product={product} />
+      <RecentlyViewedTracker key={`rv-${product.id}`} product={product} />
       <JsonLd
         data={[
           productJsonLd,
@@ -169,6 +172,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ProductGrid products={related} listId="related" listName="You may also like" />
         </section>
       ) : null}
+      <RecentlyViewedShelf excludeProductId={product.id} className="mt-16 px-0 py-0" />
     </div>
   );
 }

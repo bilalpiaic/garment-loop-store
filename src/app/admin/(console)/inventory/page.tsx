@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
-import { listInventory, listMovements } from "@/lib/platform";
+import { getSettings, listInventory, listMovements } from "@/lib/platform";
+import { DEFAULT_WAREHOUSES } from "@/lib/identity";
 import { InventoryAdjust } from "@/components/admin/admin-forms";
 import { formatDateTime } from "@/lib/admin-nav";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,15 @@ export default async function AdminInventoryPage({
   const access = await loadAdminPage("inventory.manage");
   if (access.forbidden) return <Forbidden />;
   const { low } = await searchParams;
-  const [allItems, movements] = await Promise.all([listInventory(), listMovements(40)]);
+  const [allItems, movements, settings] = await Promise.all([
+    listInventory(),
+    listMovements(40),
+    getSettings(),
+  ]);
+  const warehouses = settings.warehouses?.length ? settings.warehouses : DEFAULT_WAREHOUSES;
+  const primaryId = warehouses[0]?.id;
+  const warehouseName = (id?: string) =>
+    warehouses.find((warehouse) => warehouse.id === id)?.name ?? id;
   const items = low === "1" ? allItems.filter((item) => item.low) : allItems;
   return (
     <div className="space-y-6">
@@ -23,6 +32,10 @@ export default async function AdminInventoryPage({
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stock</p>
           <h1 className="mt-1 font-serif text-3xl">Inventory</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Stock totals stay aggregate. Warehouse on adjust is cosmetic for multi-location demo
+            (no per-warehouse balances or 3PL sync).
+          </p>
         </div>
         <div className="flex gap-2 text-sm">
           <Link href="/admin/inventory" className="rounded-full border px-3 py-1">
@@ -61,7 +74,11 @@ export default async function AdminInventoryPage({
                   ) : null}
                 </td>
                 <td className="px-4 py-3">
-                  <InventoryAdjust variantId={item.variantId} />
+                  <InventoryAdjust
+                    variantId={item.variantId}
+                    warehouses={warehouses}
+                    defaultWarehouseId={primaryId}
+                  />
                 </td>
               </tr>
             ))}
@@ -81,6 +98,7 @@ export default async function AdminInventoryPage({
                 {movement.change}
               </span>{" "}
               {movement.variantId} · {movement.type}
+              {movement.warehouseId ? ` · ${warehouseName(movement.warehouseId)}` : ""}
               {movement.reason ? ` · ${movement.reason}` : ""}
               {movement.relatedOrderNumber ? ` · ${movement.relatedOrderNumber}` : ""}
               <span className="block text-xs text-muted-foreground">{formatDateTime(movement.createdAt)}</span>

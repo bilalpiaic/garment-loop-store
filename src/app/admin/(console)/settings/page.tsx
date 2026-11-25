@@ -1,5 +1,6 @@
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { getSettings, persistenceInfo } from "@/lib/platform";
+import { DEFAULT_WAREHOUSES } from "@/lib/identity";
 import { SettingsForm } from "@/components/admin/admin-forms";
 import { emailConfigured, emailMode } from "@/lib/email";
 import { easypostConfigured, easypostFromAddress } from "@/lib/easypost";
@@ -12,6 +13,7 @@ export default async function AdminSettingsPage() {
   const access = await loadAdminPage("settings.manage");
   if (access.forbidden) return <Forbidden />;
   const settings = await getSettings();
+  const warehouses = settings.warehouses?.length ? settings.warehouses : DEFAULT_WAREHOUSES;
   const mail = emailMode();
   const persistence = persistenceInfo();
   return (
@@ -63,6 +65,33 @@ export default async function AdminSettingsPage() {
               ? `Remote quotes via ${taxProviderName()} (with local PK/GCC/intl fallback).`
               : "Local region rules (PK 5% sales tax, GCC 5% VAT est., intl duties at destination). Set AVALARA_* or TAXJAR_API_KEY for live quotes."}
           </li>
+          <li>
+            <span className="text-foreground">ERP sync:</span> Not connected — no ERP API keys or
+            outbound sync jobs. Use Analytics → Download orders CSV for a thin BI export.
+          </li>
+        </ul>
+      </section>
+      <section className="rounded-xl border bg-card p-5 text-sm">
+        <h2 className="font-serif text-2xl">Warehouses</h2>
+        <p className="mt-2 text-muted-foreground">
+          Demo locations for multi-warehouse UI. Inventory stock remains a single aggregate
+          balance; 3PL APIs are not wired.
+        </p>
+        <ul className="mt-4 space-y-2">
+          {warehouses.map((warehouse, index) => (
+            <li key={warehouse.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="font-medium text-foreground">{warehouse.name}</span>
+              <span className="font-mono text-xs text-muted-foreground">{warehouse.id}</span>
+              {warehouse.city || warehouse.country ? (
+                <span className="text-muted-foreground">
+                  {[warehouse.city, warehouse.country].filter(Boolean).join(", ")}
+                </span>
+              ) : null}
+              {index === 0 ? (
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">Primary</span>
+              ) : null}
+            </li>
+          ))}
         </ul>
       </section>
       <SettingsForm settings={settings} />

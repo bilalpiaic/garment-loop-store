@@ -83,6 +83,13 @@ export type Discount = {
   active: boolean;
 };
 
+export type Warehouse = {
+  id: string;
+  name: string;
+  city?: string;
+  country?: string;
+};
+
 export type InventoryMovement = {
   id: string;
   variantId: string;
@@ -91,6 +98,8 @@ export type InventoryMovement = {
   reason?: string;
   relatedOrderNumber?: string;
   actorId?: string;
+  /** Optional warehouse for demo multi-location; stock totals stay aggregate. */
+  warehouseId?: string;
   createdAt: string;
 };
 
@@ -104,7 +113,14 @@ export type StoreSettings = {
   internationalShippingPkr: number;
   usdRate: number;
   lowStockThreshold: number;
+  /** Demo multi-warehouse locations; inventory remains globally aggregated. */
+  warehouses?: Warehouse[];
 };
+
+export const DEFAULT_WAREHOUSES: Warehouse[] = [
+  { id: "lahore-main", name: "Lahore main", city: "Lahore", country: "PK" },
+  { id: "karachi-overflow", name: "Karachi overflow", city: "Karachi", country: "PK" },
+];
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   storeName: "GarmentLoop",
@@ -116,6 +132,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   internationalShippingPkr: 7000,
   usdRate: 278,
   lowStockThreshold: 5,
+  warehouses: DEFAULT_WAREHOUSES,
 };
 
 export const CUSTOMER_COOKIE = "gl_customer";

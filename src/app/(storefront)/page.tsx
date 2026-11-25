@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductGrid } from "@/components/product-card";
+import { RecentlyViewedShelf } from "@/components/recently-viewed-shelf";
 import { HeroParallax } from "@/components/hero-parallax";
 import { Reveal } from "@/components/reveal";
 import { featuredProducts, productsByCollection } from "@/lib/catalog";
@@ -179,6 +180,8 @@ export default async function HomePage() {
           <ProductGrid products={essentials} listId="home-essentials" listName="Essentials" />
         </Reveal>
       </section>
+
+      <RecentlyViewedShelf />
     </div>
   );
 }

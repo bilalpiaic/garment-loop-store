@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ProductGrid } from "@/components/product-card";
+import { ShopPersonalizedGrid, RecentlyViewedShelf } from "@/components/recently-viewed-shelf";
 import { ShopFilters } from "@/components/shop-filters";
 import { filterProducts } from "@/lib/catalog";
 import { getPublishedCatalog } from "@/lib/platform";
@@ -52,8 +52,9 @@ export default async function ShopPage({
         <p className="mb-6 text-sm text-muted-foreground">
           {products.length} piece{products.length === 1 ? "" : "s"}
         </p>
-        <ProductGrid products={products} listId="shop" listName="Shop" />
+        <ShopPersonalizedGrid products={products} listId="shop" listName="Shop" />
       </div>
+      <RecentlyViewedShelf className="mt-16 px-0 py-0" />
     </div>
   );
 }

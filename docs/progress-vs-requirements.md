@@ -1,6 +1,6 @@
 # GarmentLoop — Progress vs Original Requirements
 
-Audit date: 2026-11-25 (Coverage gaps push: tax commit, photo UGC + Q&A, gift cards/loyalty, hreflang, GDPR export/delete, a11y/RUM). Earlier Phase 2 Should: address autocomplete, EasyPost labels, GA4 shipping/payment events; SEO + cPanel MySQL live. Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
+Audit date: 2026-11-25 (Could stubs: personalization recently-viewed, multi-warehouse demo, analytics CSV export). Earlier: tax commit, photo UGC + Q&A, gift cards/loyalty, hreflang, GDPR, a11y/RUM; Phase 2 Should + SEO + cPanel MySQL live. Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
 
 ## Scoring method
 
@@ -41,7 +41,7 @@ Audit date: 2026-11-25 (Coverage gaps push: tax commit, photo UGC + Q&A, gift ca
 | GA4 ecommerce events | Must hooks | Done | Consent + view/cart/checkout/purchase/refund + `add_shipping_info` / `add_payment_info` (needs `NEXT_PUBLIC_GA_MEASUREMENT_ID`) |
 | Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues |
 | i18n / hreflang | Could | Done | `en-PK` + `x-default` alternates; optional Google site verification |
-| Personalization | Could | Not started | |
+| Personalization | Could | Done | Thin demo: PDP → localStorage recently viewed (max 8); shelves on home/shop; soft shop sort boost (client-only) |
 
 ## Admin
 
@@ -67,8 +67,8 @@ Audit date: 2026-11-25 (Coverage gaps push: tax commit, photo UGC + Q&A, gift ca
 | Carrier label print / webhooks | Should | Done | EasyPost label buy on admin order (`/api/admin/shipping/label`) when keyed |
 | MFA / audit log UI | Should | Done | |
 | Gift cards / loyalty | Could | Done | Demo `GL-GIFT-1000` / `GL-GIFT-5000`; loyalty points on delivered |
-| Multi-warehouse / 3PL | Could | Not started | |
-| Full BI / ERP sync | Could | Not started | |
+| Multi-warehouse / 3PL | Could | Done | Thin demo: seeded Lahore main + Karachi overflow on Settings; optional `warehouseId` on inventory adjust (stock stays aggregate). No 3PL APIs |
+| Full BI / ERP sync | Could | Partial | Admin Analytics CSV export (`GET /api/admin/analytics/export`, `orders.manage`); Settings notes ERP sync not connected — no fake API |
 
 ## Integrations & NFR
 
@@ -92,15 +92,14 @@ Audit date: 2026-11-25 (Coverage gaps push: tax commit, photo UGC + Q&A, gift ca
 | --- | --- | --- |
 | **MVP Must items** | **~96%** | Residual: production inbox OTP / GA4 measurement ID / Stripe keys on host |
 | **Should (Phase 2)** | **~92%** | Tax commit + Photo UGC/Q&A closed; residual is live key enablement on host |
-| **Could / Phase 3 wish list** | **~58%** | Circular + gift/loyalty + hreflang + GDPR + a11y/RUM Done; personalization / warehouse / BI open |
-| **Blended “full original docs”** | **~89%** | `0.55·96 + 0.30·92 + 0.15·58 ≈ 89` |
+| **Could / Phase 3 wish list** | **~80%** | Circular + gift/loyalty + hreflang + GDPR + a11y/RUM + personalization + warehouse thin demos Done; BI Partial (CSV yes / ERP not connected) |
+| **Blended “full original docs”** | **~92%** | `0.55·96 + 0.30·92 + 0.15·80 ≈ 92` |
 
 ## Honest top gaps (remaining)
 
 1. Set Resend/SMTP + Stripe + EasyPost + Avalara/TaxJar + `NEXT_PUBLIC_GA_MEASUREMENT_ID` on garmentloop.com (code already wired)  
-2. Personalization  
-3. Multi-warehouse / 3PL  
-4. Full BI / ERP sync  
+2. Full ERP sync / richer BI (CSV export only today)  
+3. Per-warehouse stock balances + real 3PL APIs (UI locations only)  
 
 ## Login UX
 
