@@ -608,8 +608,13 @@ export function CheckoutForm({
           })}
         </ul>
         <div className="mt-4 space-y-2">
-          <Label htmlFor="discountCode">Discount code</Label>
-          <Input id="discountCode" name="discountCode" className="h-10" placeholder="Optional" />
+          <Label htmlFor="discountCode">Discount or gift card</Label>
+          <Input
+            id="discountCode"
+            name="discountCode"
+            className="h-10"
+            placeholder="WINTER10 or GL-GIFT-1000"
+          />
           {errors.discountCode ? <p className="text-xs text-destructive">{errors.discountCode}</p> : null}
         </div>
         <div className="mt-4 space-y-1 border-t pt-4 text-sm">

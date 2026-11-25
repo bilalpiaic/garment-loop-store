@@ -27,6 +27,9 @@ export function ProductReviews({
   async function onSubmit(formData: FormData) {
     setPending(true);
     try {
+      const photoUrls = [1, 2, 3]
+        .map((index) => String(formData.get(`photoUrl${index}`) ?? "").trim())
+        .filter(Boolean);
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,6 +41,7 @@ export function ProductReviews({
           rating: Number(formData.get("rating") ?? 5),
           title: String(formData.get("title") ?? ""),
           body: String(formData.get("body") ?? ""),
+          photoUrls: photoUrls.length ? photoUrls : undefined,
         }),
       });
       const data = (await response.json()) as { error?: string; message?: string };
@@ -78,9 +82,26 @@ export function ProductReviews({
             <li key={review.id} className="rounded-xl border p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">{review.title}</p>
-                <p className="text-xs text-muted-foreground">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {"★".repeat(review.rating)}
+                  {"☆".repeat(5 - review.rating)}
+                </p>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{review.body}</p>
+              {review.photoUrls && review.photoUrls.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {review.photoUrls.map((url) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={url}
+                      src={url}
+                      alt=""
+                      className="h-16 w-16 rounded-md object-cover"
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              ) : null}
               {review.adminReply ? (
                 <p className="mt-3 rounded-lg bg-secondary/40 px-3 py-2 text-sm">
                   <span className="font-medium">GarmentLoop:</span> {review.adminReply}
@@ -108,7 +129,12 @@ export function ProductReviews({
         </div>
         <div className="space-y-2">
           <Label htmlFor="rating">Rating</Label>
-          <select id="rating" name="rating" className="h-10 w-full rounded-lg border border-input bg-transparent px-3 text-sm" defaultValue="5">
+          <select
+            id="rating"
+            name="rating"
+            className="h-10 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
+            defaultValue="5"
+          >
             {[5, 4, 3, 2, 1].map((value) => (
               <option key={value} value={value}>
                 {value} star{value === 1 ? "" : "s"}
@@ -123,6 +149,14 @@ export function ProductReviews({
         <div className="space-y-2">
           <Label htmlFor="body">Review</Label>
           <Textarea id="body" name="body" rows={4} required minLength={10} />
+        </div>
+        <div className="space-y-2">
+          <Label>Photo URLs (optional, https, max 3)</Label>
+          <div className="grid gap-2">
+            <Input name="photoUrl1" type="url" placeholder="https://…" className="h-10" />
+            <Input name="photoUrl2" type="url" placeholder="https://…" className="h-10" />
+            <Input name="photoUrl3" type="url" placeholder="https://…" className="h-10" />
+          </div>
         </div>
         <Button type="submit" className="h-11 px-6" disabled={pending}>
           {pending ? "Sending…" : "Submit for moderation"}

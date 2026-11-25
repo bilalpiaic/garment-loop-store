@@ -1,7 +1,7 @@
 import { createId, createToken } from "@/lib/ids";
 import type { Discount } from "@/lib/identity";
 import type { Order } from "@/lib/order-model";
-import type { ProductReview } from "@/lib/commerce-types";
+import type { GiftCard, ProductReview } from "@/lib/commerce-types";
 import type { ContentPage, PlatformState } from "@/lib/platform-state";
 
 export function seedDiscounts(): Discount[] {
@@ -27,6 +27,30 @@ export function seedDiscounts(): Discount[] {
       usageLimit: 1000,
       usedCount: 48,
       active: true,
+    },
+  ];
+}
+
+export function seedGiftCards(): GiftCard[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: "gift-1000",
+      code: "GL-GIFT-1000",
+      balancePkr: 1000,
+      initialBalancePkr: 1000,
+      active: true,
+      createdAt: now,
+      note: "Demo gift card — PKR 1,000",
+    },
+    {
+      id: "gift-5000",
+      code: "GL-GIFT-5000",
+      balancePkr: 5000,
+      initialBalancePkr: 5000,
+      active: true,
+      createdAt: now,
+      note: "Demo gift card — PKR 5,000",
     },
   ];
 }
@@ -157,6 +181,18 @@ export function ensureDemoWalkthrough(state: PlatformState) {
   let changed = false;
   if (!state.discounts.length) {
     state.discounts = seedDiscounts();
+    changed = true;
+  }
+  if (!state.giftCards?.length) {
+    state.giftCards = seedGiftCards();
+    changed = true;
+  }
+  if (!state.questions) {
+    state.questions = [];
+    changed = true;
+  }
+  if (!state.orderTaxMeta) {
+    state.orderTaxMeta = {};
     changed = true;
   }
   if (!state.pages?.length) {

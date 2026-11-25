@@ -39,16 +39,25 @@ import type {
 import { readDemoState, writeDemoState } from "@/lib/platform-memory";
 import { getDialect } from "@/db/client";
 import { loadNeonState, neonAvailable, saveNeonState } from "@/lib/platform-neon";
-import { mergeStockIntoCatalog, publicCatalog, type ContentPage, type PlatformState } from "@/lib/platform-state";
+import {
+  mergeStockIntoCatalog,
+  publicCatalog,
+  syncOrderTaxMeta,
+  type ContentPage,
+  type PlatformState,
+} from "@/lib/platform-state";
 import { can, type Permission, type Role } from "@/lib/roles";
 import { isEasyPostMethodId, resolveShippingOption } from "@/lib/shipping";
 import { retrieveEasyPostRateOption } from "@/lib/easypost";
-import { quoteTax } from "@/lib/tax";
+import { commitTaxForOrder, quoteTax } from "@/lib/tax";
 import type {
   CircularPlanId,
   CircularSubscription,
   CircularSubscriptionStatus,
+  GiftCard,
+  ProductQuestion,
   ProductReview,
+  QuestionStatus,
   RepairRequest,
   RepairStatus,
   ReturnReasonCode,
@@ -360,6 +369,69 @@ function applyDiscount(discount: Discount | undefined, subtotal: number) {
   return Math.min(subtotal, discount.value);
 }
 
+/** Resolve coupon first; on miss, try demo gift card balance. */
+function resolveCheckoutDiscount(
+  state: PlatformState,
+  codeRaw: string | undefined,
+  subtotalPkr: number,
+  options?: { mutateBalance?: boolean },
+): { discountPkr: number; code?: string; discount?: Discount; giftCard?: GiftCard } {
+  const code = codeRaw?.trim().toUpperCase();
+  if (!code) return { discountPkr: 0 };
+
+  const discount = state.discounts.find((item) => item.code.toUpperCase() === code);
+  if (discount) {
+    const discountPkr = applyDiscount(discount, subtotalPkr);
+    return { discountPkr, code, discount };
+  }
+
+  state.giftCards = state.giftCards ?? [];
+  const giftCard = state.giftCards.find(
+    (item) => item.code.toUpperCase() === code && item.active && item.balancePkr > 0,
+  );
+  if (giftCard) {
+    const discountPkr = Math.min(giftCard.balancePkr, subtotalPkr);
+    if (options?.mutateBalance && discountPkr > 0) {
+      giftCard.balancePkr = Math.max(0, giftCard.balancePkr - discountPkr);
+    }
+    return { discountPkr, code, giftCard };
+  }
+
+  throw new PlatformError("That discount code is not valid.");
+}
+
+function writeOrderTaxMeta(state: PlatformState, order: Order) {
+  state.orderTaxMeta = state.orderTaxMeta ?? {};
+  if (!order.taxSource && !order.taxLabel) return;
+  state.orderTaxMeta[order.orderNumber] = {
+    taxSource: order.taxSource ?? "local",
+    taxLabel: order.taxLabel ?? "Tax",
+    taxNote: order.taxNote,
+    taxTransactionId: order.taxTransactionId,
+    taxCommittedAt: order.taxCommittedAt,
+  };
+}
+
+async function applyTaxCommit(orderNumber: string) {
+  const order = await getOrder(orderNumber);
+  if (!order || order.taxCommittedAt) return order;
+  const result = await commitTaxForOrder(order);
+  return mutate((state) => {
+    const target = state.orders.find(
+      (item) => item.orderNumber === orderNumber || item.orderNumber === orderNumber.toUpperCase(),
+    );
+    if (!target) return undefined;
+    target.taxSource = result.source;
+    target.taxCommittedAt = result.taxCommittedAt;
+    if (result.taxTransactionId) target.taxTransactionId = result.taxTransactionId;
+    if (!target.taxLabel) target.taxLabel = result.source === "local" ? "Local tax" : `Tax (${result.source})`;
+    target.updatedAt = new Date().toISOString();
+    writeOrderTaxMeta(state, target);
+    syncOrderTaxMeta(state);
+    return target;
+  });
+}
+
 export async function createOrder(input: {
   items: CheckoutItem[];
   customer: CheckoutCustomer;
@@ -428,13 +500,8 @@ export async function createOrder(input: {
         const unit = match.variant.salePricePkr ?? match.variant.pricePkr;
         subtotalPkr += unit * item.quantity;
       }
-      const code = input.discountCode?.trim().toUpperCase();
-      const discount = code
-        ? state.discounts.find((item) => item.code.toUpperCase() === code)
-        : undefined;
-      if (code && !discount) throw new PlatformError("That discount code is not valid.");
-      const discountPkr = applyDiscount(discount, subtotalPkr);
-      const afterDiscount = subtotalPkr - discountPkr;
+      const resolved = resolveCheckoutDiscount(state, input.discountCode, subtotalPkr);
+      const afterDiscount = subtotalPkr - resolved.discountPkr;
       const shipping =
         liveShipping ??
         shippingFor(state, afterDiscount, input.customer.country, input.shippingMethodId);
@@ -485,14 +552,10 @@ export async function createOrder(input: {
       }
 
       const subtotalPkr = lines.reduce((sum, line) => sum + line.totalPkr, 0);
-      const code = input.discountCode?.trim().toUpperCase();
-      const discount = code
-        ? state.discounts.find((item) => item.code.toUpperCase() === code)
-        : undefined;
-      if (code && !discount) {
-        throw new PlatformError("That discount code is not valid.");
-      }
-      const discountPkr = applyDiscount(discount, subtotalPkr);
+      const resolved = resolveCheckoutDiscount(state, input.discountCode, subtotalPkr, {
+        mutateBalance: true,
+      });
+      const discountPkr = resolved.discountPkr;
       const afterDiscount = subtotalPkr - discountPkr;
       const shipping =
         liveShipping ??
@@ -527,8 +590,8 @@ export async function createOrder(input: {
         });
       }
 
-      if (discount) {
-        discount.usedCount += 1;
+      if (resolved.discount) {
+        resolved.discount.usedCount += 1;
       }
 
       const order: Order = {
@@ -549,9 +612,13 @@ export async function createOrder(input: {
         currency: input.currency,
         shippingMethodId: shipping.id,
         shippingLabel: shipping.label,
-        discountCode: code,
+        discountCode: resolved.code,
         accessToken: createToken(),
+        taxSource: taxQuote.source,
+        taxLabel: taxQuote.label,
+        taxNote: taxQuote.note,
       };
+      writeOrderTaxMeta(state, order);
       state.orders.unshift(order);
       return order;
     });
@@ -559,7 +626,13 @@ export async function createOrder(input: {
     if (order.paymentMethod !== "stripe") {
       await sendOrderConfirmation(order).catch((error) => console.error("[email]", error));
     }
-    return { ok: true, order };
+    // Commit tax on confirmed / paid create paths (COD + card_demo).
+    if (order.status === "confirmed" || order.paymentStatus === "paid") {
+      await applyTaxCommit(order.orderNumber).catch((error) =>
+        console.error("[tax:commit]", error),
+      );
+    }
+    return { ok: true, order: (await getOrder(order.orderNumber)) ?? order };
   } catch (error) {
     if (error instanceof PlatformError) {
       return { ok: false, error: error.message };
@@ -675,6 +748,16 @@ export async function updateOrder(
         });
       }
     }
+
+    // Award loyalty points once when transitioning to delivered.
+    if (previous !== "delivered" && order.status === "delivered" && order.customerId) {
+      const customer = state.customers.find((item) => item.id === order.customerId);
+      if (customer && !customer.anonymizedAt) {
+        const points = Math.floor(order.totalPkr / 100);
+        customer.loyaltyPoints = (customer.loyaltyPoints ?? 0) + points;
+      }
+    }
+
     return { order, becameShipped: previous !== "shipped" && order.status === "shipped" };
   });
   if (result.becameShipped) {
@@ -1778,8 +1861,11 @@ export async function markOrderPaid(orderNumber: string, stripeSessionId?: strin
   });
   if (result.newlyPaid) {
     await sendOrderConfirmation(result.order).catch((error) => console.error("[email]", error));
+    await applyTaxCommit(result.order.orderNumber).catch((error) =>
+      console.error("[tax:commit]", error),
+    );
   }
-  return result.order;
+  return (await getOrder(result.order.orderNumber)) ?? result.order;
 }
 
 export async function listApprovedReviews(productId?: string) {
@@ -1802,10 +1888,15 @@ export async function submitReview(input: {
   title: string;
   body: string;
   customerId?: string;
+  photoUrls?: string[];
 }) {
   if (input.rating < 1 || input.rating > 5) {
     throw new PlatformError("Rating must be between 1 and 5.");
   }
+  const photoUrls = (input.photoUrls ?? [])
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .slice(0, 3);
   return mutate((state) => {
     state.reviews = state.reviews ?? [];
     const review: ProductReview = {
@@ -1820,6 +1911,7 @@ export async function submitReview(input: {
       body: input.body.trim(),
       status: "pending",
       createdAt: new Date().toISOString(),
+      photoUrls: photoUrls.length ? photoUrls : undefined,
     };
     state.reviews.unshift(review);
     return review;
@@ -1874,6 +1966,238 @@ export async function deleteReview(id: string, actorId?: string) {
       summary: `Deleted review ${id}`,
     });
     return { ok: true };
+  });
+}
+
+export async function listApprovedQuestions(productId?: string) {
+  return readPlatform((state) => {
+    const questions = (state.questions ?? []).filter((item) => item.status === "approved");
+    return productId ? questions.filter((item) => item.productId === productId) : questions;
+  });
+}
+
+export async function listQuestionsForAdmin() {
+  return readPlatform((state) =>
+    [...(state.questions ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+}
+
+export async function submitQuestion(input: {
+  productId: string;
+  productSlug: string;
+  authorName: string;
+  authorEmail: string;
+  body: string;
+  customerId?: string;
+}) {
+  return mutate((state) => {
+    state.questions = state.questions ?? [];
+    const question: ProductQuestion = {
+      id: createId("q"),
+      productId: input.productId,
+      productSlug: input.productSlug,
+      authorName: input.authorName.trim(),
+      authorEmail: input.authorEmail.trim().toLowerCase(),
+      body: input.body.trim(),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      customerId: input.customerId,
+    };
+    state.questions.unshift(question);
+    return question;
+  });
+}
+
+export async function moderateQuestion(
+  id: string,
+  patch: { status?: QuestionStatus; answer?: string },
+  actorId?: string,
+) {
+  return mutate((state) => {
+    const question = (state.questions ?? []).find((item) => item.id === id);
+    if (!question) throw new PlatformError("Question not found.", 404);
+    if (patch.status) question.status = patch.status;
+    if (patch.answer !== undefined) {
+      question.answer = patch.answer.trim();
+      question.answeredAt = new Date().toISOString();
+      if (question.answer && question.status === "pending") {
+        question.status = "approved";
+      }
+    }
+    writeAudit(state, auditActor(state, actorId), {
+      action: "question.moderate",
+      entity: "question",
+      entityId: id,
+      summary: `Moderated question ${id}`,
+      meta: patch,
+    });
+    return question;
+  });
+}
+
+export async function exportCustomerData(customerId: string) {
+  return readPlatform((state) => {
+    const customer = state.customers.find((item) => item.id === customerId);
+    if (!customer) throw new PlatformError("Customer not found.", 404);
+    const email = customer.email.toLowerCase();
+    return {
+      exportedAt: new Date().toISOString(),
+      customer: {
+        id: customer.id,
+        email: customer.email,
+        phone: customer.phone,
+        fullName: customer.fullName,
+        loyaltyPoints: customer.loyaltyPoints ?? 0,
+        createdAt: customer.createdAt,
+        lastLoginAt: customer.lastLoginAt,
+        tags: customer.tags,
+      },
+      addresses: state.addresses.filter((item) => item.customerId === customerId),
+      orders: state.orders
+        .filter(
+          (order) =>
+            order.customerId === customerId || order.customer.email.toLowerCase() === email,
+        )
+        .map((order) => ({
+          orderNumber: order.orderNumber,
+          createdAt: order.createdAt,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+          totalPkr: order.totalPkr,
+          items: order.items,
+          shipping: {
+            city: order.customer.city,
+            country: order.customer.country,
+          },
+        })),
+      wishlist: state.wishlists?.[customerId] ?? [],
+      reviews: (state.reviews ?? []).filter(
+        (item) => item.customerId === customerId || item.authorEmail.toLowerCase() === email,
+      ),
+      returns: (state.returns ?? []).filter(
+        (item) => item.customerId === customerId || item.customerEmail.toLowerCase() === email,
+      ),
+      circular: {
+        takeBacks: (state.takeBacks ?? []).filter(
+          (item) => item.customerId === customerId || item.customerEmail.toLowerCase() === email,
+        ),
+        repairs: (state.repairs ?? []).filter(
+          (item) => item.customerId === customerId || item.customerEmail.toLowerCase() === email,
+        ),
+        subscriptions: (state.circularSubscriptions ?? []).filter(
+          (item) => item.customerId === customerId || item.customerEmail.toLowerCase() === email,
+        ),
+      },
+      questions: (state.questions ?? []).filter(
+        (item) => item.customerId === customerId || item.authorEmail.toLowerCase() === email,
+      ),
+    };
+  });
+}
+
+export async function anonymizeCustomer(customerId: string, actorId?: string) {
+  return mutate((state) => {
+    const customer = state.customers.find((item) => item.id === customerId);
+    if (!customer) throw new PlatformError("Customer not found.", 404);
+    if (customer.anonymizedAt) return { customer, already: true as const };
+
+    const email = customer.email.toLowerCase();
+    const hash = sha256(email).slice(0, 16);
+    const anonEmail = `deleted-${hash}@anonymized.local`;
+    const now = new Date().toISOString();
+
+    customer.email = anonEmail;
+    customer.fullName = "Deleted customer";
+    customer.phone = undefined;
+    customer.notes = undefined;
+    customer.tags = undefined;
+    customer.anonymizedAt = now;
+
+    for (const address of state.addresses.filter((item) => item.customerId === customerId)) {
+      address.fullName = "Deleted";
+      address.phone = "";
+      address.address = "[redacted]";
+      address.area = "[redacted]";
+      address.city = "[redacted]";
+      address.postalCode = undefined;
+    }
+
+    for (const order of state.orders) {
+      if (order.customerId === customerId || order.customer.email.toLowerCase() === email) {
+        order.customer = {
+          ...order.customer,
+          fullName: "Deleted customer",
+          email: anonEmail,
+          phone: "",
+          address: "[redacted]",
+          area: "[redacted]",
+          city: order.customer.city,
+          notes: undefined,
+        };
+      }
+    }
+
+    for (const review of state.reviews ?? []) {
+      if (review.customerId === customerId || review.authorEmail.toLowerCase() === email) {
+        review.authorName = "Deleted";
+        review.authorEmail = anonEmail;
+        review.photoUrls = undefined;
+      }
+    }
+
+    for (const question of state.questions ?? []) {
+      if (question.customerId === customerId || question.authorEmail.toLowerCase() === email) {
+        question.authorName = "Deleted";
+        question.authorEmail = anonEmail;
+      }
+    }
+
+    for (const item of state.returns ?? []) {
+      if (item.customerId === customerId || item.customerEmail.toLowerCase() === email) {
+        item.customerName = "Deleted";
+        item.customerEmail = anonEmail;
+      }
+    }
+
+    for (const item of state.takeBacks ?? []) {
+      if (item.customerId === customerId || item.customerEmail.toLowerCase() === email) {
+        item.customerName = "Deleted";
+        item.customerEmail = anonEmail;
+        item.phone = undefined;
+        item.address = undefined;
+      }
+    }
+
+    for (const item of state.repairs ?? []) {
+      if (item.customerId === customerId || item.customerEmail.toLowerCase() === email) {
+        item.customerName = "Deleted";
+        item.customerEmail = anonEmail;
+        item.phone = undefined;
+      }
+    }
+
+    for (const item of state.circularSubscriptions ?? []) {
+      if (item.customerId === customerId || item.customerEmail.toLowerCase() === email) {
+        item.customerName = "Deleted";
+        item.customerEmail = anonEmail;
+      }
+    }
+
+    delete state.wishlists?.[customerId];
+    state.sessions = state.sessions.filter(
+      (session) => !(session.kind === "customer" && session.userId === customerId),
+    );
+    state.otp = state.otp.filter((item) => item.email !== email);
+
+    writeAudit(state, auditActor(state, actorId), {
+      action: "customer.anonymize",
+      entity: "customer",
+      entityId: customerId,
+      summary: `Anonymized customer ${customerId}`,
+    });
+
+    return { customer, already: false as const };
   });
 }
 

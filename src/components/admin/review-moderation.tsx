@@ -83,6 +83,20 @@ export function ReviewModeration({ reviews }: { reviews: ProductReview[] }) {
             {"☆".repeat(5 - review.rating)}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">{review.body}</p>
+          {review.photoUrls && review.photoUrls.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {review.photoUrls.map((url) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={url}
+                  src={url}
+                  alt=""
+                  className="h-14 w-14 rounded-md object-cover"
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          ) : null}
           {review.adminReply ? (
             <p className="mt-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm">
               <span className="font-medium">House reply:</span> {review.adminReply}

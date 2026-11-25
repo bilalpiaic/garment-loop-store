@@ -15,6 +15,34 @@ export type ProductReview = {
   moderatedAt?: string;
   adminReply?: string;
   repliedAt?: string;
+  /** Optional shopper photo URLs (https, max 3). */
+  photoUrls?: string[];
+};
+
+export type QuestionStatus = "pending" | "approved" | "rejected";
+
+export type ProductQuestion = {
+  id: string;
+  productId: string;
+  productSlug: string;
+  authorName: string;
+  authorEmail: string;
+  body: string;
+  status: QuestionStatus;
+  answer?: string;
+  answeredAt?: string;
+  createdAt: string;
+  customerId?: string;
+};
+
+export type GiftCard = {
+  id: string;
+  code: string;
+  balancePkr: number;
+  initialBalancePkr: number;
+  active: boolean;
+  createdAt: string;
+  note?: string;
 };
 
 export type ReturnStatus = "requested" | "approved" | "received" | "restocked" | "rejected" | "refunded";

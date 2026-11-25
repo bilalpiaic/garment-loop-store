@@ -18,7 +18,9 @@ import type { Order, PaymentMethod, PaymentStatus, OrderStatus } from "@/lib/ord
 import { desc } from "drizzle-orm";
 import {
   emptyPlatformState,
+  syncOrderTaxMeta,
   type PlatformState,
+  PLATFORM_VERSION,
 } from "@/lib/platform-state";
 
 function seedCatalog() {
@@ -124,14 +126,14 @@ function rowToOrder(row: {
 
 function buildMeta(raw: Partial<StoredMeta> | undefined, base: PlatformState): StoredMeta {
   return {
-    version: 3,
+    version: PLATFORM_VERSION,
     catalog: raw?.catalog ?? base.catalog,
     customers: raw?.customers ?? [],
     addresses: raw?.addresses ?? [],
     adminUsers: raw?.adminUsers ?? [],
     sessions: raw?.sessions ?? [],
     otp: raw?.otp ?? [],
-    discounts: raw?.discounts ?? [],
+    discounts: raw?.discounts?.length ? raw.discounts : base.discounts,
     inventoryMovements: raw?.inventoryMovements ?? [],
     settings: { ...DEFAULT_SETTINGS, ...raw?.settings },
     reviews: raw?.reviews?.length ? raw.reviews : base.reviews,
@@ -143,6 +145,9 @@ function buildMeta(raw: Partial<StoredMeta> | undefined, base: PlatformState): S
     pages: raw?.pages?.length ? raw.pages : base.pages,
     auditLogs: raw?.auditLogs ?? [],
     mfaChallenges: raw?.mfaChallenges ?? [],
+    questions: raw?.questions ?? [],
+    giftCards: raw?.giftCards?.length ? raw.giftCards : base.giftCards,
+    orderTaxMeta: raw?.orderTaxMeta ?? {},
   };
 }
 
@@ -171,12 +176,14 @@ async function loadPostgresState(): Promise<PlatformState> {
     stock[row.variantId] = row.stock;
   }
 
-  return {
+  const state: PlatformState = {
     ...meta,
     stock,
     orders: orderRows.map(rowToOrder),
     orderSeq: orderRows.length,
   };
+  syncOrderTaxMeta(state);
+  return state;
 }
 
 async function loadMysqlState(): Promise<PlatformState> {
@@ -207,12 +214,14 @@ async function loadMysqlState(): Promise<PlatformState> {
     stock[row.variantId] = row.stock;
   }
 
-  return {
+  const state: PlatformState = {
     ...meta,
     stock,
     orders: orderRows.map(rowToOrder),
     orderSeq: orderRows.length,
   };
+  syncOrderTaxMeta(state);
+  return state;
 }
 
 export async function loadNeonState(): Promise<PlatformState> {
@@ -227,8 +236,9 @@ async function savePostgresState(state: PlatformState) {
   if (!sql) {
     throw new Error("DATABASE_URL is not set.");
   }
+  syncOrderTaxMeta(state);
   const meta: StoredMeta = {
-    version: 3,
+    version: PLATFORM_VERSION,
     catalog: state.catalog,
     customers: state.customers,
     addresses: state.addresses,
@@ -247,6 +257,9 @@ async function savePostgresState(state: PlatformState) {
     pages: state.pages ?? [],
     auditLogs: state.auditLogs ?? [],
     mfaChallenges: state.mfaChallenges ?? [],
+    questions: state.questions ?? [],
+    giftCards: state.giftCards ?? [],
+    orderTaxMeta: state.orderTaxMeta ?? {},
   };
   const payload = JSON.stringify(meta);
   await sql`
@@ -325,8 +338,9 @@ async function saveMysqlState(state: PlatformState) {
   if (!pool) {
     throw new Error("MySQL DATABASE_URL or MYSQL_* is not set.");
   }
+  syncOrderTaxMeta(state);
   const meta: StoredMeta = {
-    version: 3,
+    version: PLATFORM_VERSION,
     catalog: state.catalog,
     customers: state.customers,
     addresses: state.addresses,
@@ -345,6 +359,9 @@ async function saveMysqlState(state: PlatformState) {
     pages: state.pages ?? [],
     auditLogs: state.auditLogs ?? [],
     mfaChallenges: state.mfaChallenges ?? [],
+    questions: state.questions ?? [],
+    giftCards: state.giftCards ?? [],
+    orderTaxMeta: state.orderTaxMeta ?? {},
   };
   const payload = JSON.stringify(meta);
   await pool.query(

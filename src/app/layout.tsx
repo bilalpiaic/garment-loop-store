@@ -24,6 +24,8 @@ const serif = Newsreader({
   style: ["normal", "italic"],
 });
 
+const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {
@@ -33,6 +35,10 @@ export const metadata: Metadata = {
   description: site.description,
   alternates: {
     canonical: absoluteUrl("/"),
+    languages: {
+      "en-PK": absoluteUrl("/"),
+      "x-default": absoluteUrl("/"),
+    },
   },
   openGraph: {
     title: site.name,
@@ -49,6 +55,9 @@ export const metadata: Metadata = {
     description: site.description,
     images: [absoluteUrl(DEFAULT_OG_IMAGE)],
   },
+  ...(googleVerification
+    ? { verification: { google: googleVerification } }
+    : {}),
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

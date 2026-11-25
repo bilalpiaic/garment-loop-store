@@ -1,6 +1,11 @@
 import { categories, collections, products } from "@/lib/catalog";
 import { DEFAULT_SETTINGS } from "@/lib/identity";
-import { emptyPlatformState, type PlatformState } from "@/lib/platform-state";
+import {
+  emptyPlatformState,
+  PLATFORM_VERSION,
+  syncOrderTaxMeta,
+  type PlatformState,
+} from "@/lib/platform-state";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -37,10 +42,10 @@ function candidatePaths() {
 
 function hydrate(parsed: Partial<PlatformState>): PlatformState {
   const base = emptyPlatformState(seedCatalog(), DEFAULT_SETTINGS);
-  return {
+  const state: PlatformState = {
     ...base,
     ...parsed,
-    version: 3,
+    version: PLATFORM_VERSION,
     catalog: parsed.catalog ?? base.catalog,
     stock: parsed.stock ?? base.stock,
     orders: parsed.orders ?? [],
@@ -62,7 +67,12 @@ function hydrate(parsed: Partial<PlatformState>): PlatformState {
     pages: parsed.pages?.length ? parsed.pages : base.pages ?? [],
     auditLogs: parsed.auditLogs ?? [],
     mfaChallenges: parsed.mfaChallenges ?? [],
+    questions: parsed.questions ?? [],
+    giftCards: parsed.giftCards?.length ? parsed.giftCards : base.giftCards,
+    orderTaxMeta: parsed.orderTaxMeta ?? {},
   };
+  syncOrderTaxMeta(state);
+  return state;
 }
 
 export function readDemoState(): PlatformState {

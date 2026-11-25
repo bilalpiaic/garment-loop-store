@@ -141,3 +141,87 @@ export async function fetchAvalaraTax(input: {
           ],
   };
 }
+
+/**
+ * Commit a SalesInvoice (commit:true) so AvaTax records the transaction for filing.
+ * Env-gated — no-ops when Avalara credentials are unset. Never invents keys.
+ */
+export async function commitAvalaraSalesInvoice(input: {
+  orderNumber: string;
+  taxablePkr: number;
+  shippingPkr: number;
+  taxPkr: number;
+  address: TaxAddress;
+  customerCode?: string;
+  usdRate: number;
+}): Promise<{ transactionId: string } | null> {
+  if (!avalaraConfigured()) return null;
+
+  const amountUsd = Number((input.taxablePkr / input.usdRate).toFixed(2));
+  const shippingUsd = Number((input.shippingPkr / input.usdRate).toFixed(2));
+  const auth = Buffer.from(`${avalaraAccountId()}:${avalaraLicenseKey()}`).toString("base64");
+
+  const body = {
+    type: "SalesInvoice",
+    companyCode: avalaraCompanyCode(),
+    date: new Date().toISOString().slice(0, 10),
+    customerCode: input.customerCode || "GUEST",
+    currencyCode: "USD",
+    code: input.orderNumber,
+    commit: true,
+    addresses: {
+      singleLocation: {
+        line1: input.address.address || "Address",
+        city: input.address.city || "City",
+        region: input.address.area || undefined,
+        country: input.address.country,
+        postalCode: input.address.postalCode || undefined,
+      },
+    },
+    lines: [
+      {
+        number: "1",
+        quantity: 1,
+        amount: amountUsd,
+        taxCode: "P0000000",
+        description: `GarmentLoop ${input.orderNumber}`,
+      },
+      ...(shippingUsd > 0
+        ? [
+            {
+              number: "2",
+              quantity: 1,
+              amount: shippingUsd,
+              taxCode: "FR",
+              description: "Shipping",
+            },
+          ]
+        : []),
+    ],
+  };
+
+  const response = await fetch(`${avalaraBaseUrl()}/api/v2/transactions/create`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+      "X-Avalara-Client": "GarmentLoop;1.0;checkout;tax-commit",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    id?: number | string;
+    code?: string;
+    error?: { message?: string };
+    message?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.error?.message ?? data.message ?? `Avalara commit HTTP ${response.status}`);
+  }
+
+  const transactionId = String(data.code ?? data.id ?? input.orderNumber);
+  return { transactionId };
+}
