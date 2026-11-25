@@ -44,3 +44,14 @@ Visible first-viewport upgrade for GarmentLoop’s circular atelier brand (Soft 
 - Storefront first viewport: brand dominates, full-bleed hero, no overlay clutter
 - `/admin` sidebar reads Deep Olive, not blue-gray
 - `npm run build` clean; smoke home + cart + admin login
+
+## Freshness pass 2026-11-25
+
+Branch: `cursor/atelier-visual-refresh-4fca`
+
+- Atmosphere: Soft Cream `#F3EBE0` body with Olive Deep / Ink Night radials + cooler moss; champagne kept as accent only; subtle `ambient-drift` (reduced-motion safe)
+- Utilities: `.page-shell`, `.section-kicker`, `.ink-band`, `.glass-header`, refined `.atelier-panel`
+- Home: larger brand lockup + tracking; ink→olive-deep hero wash (copper wash removed); image-led category tiles without card chrome
+- Chrome: olive-deep announcement bar; frosted glass header with champagne hairline; ink-band footer + champagne rule
+- Commerce surfaces: shop/PDP/cart/checkout/account use shell + kickers + atelier panels; calmer PDP gallery; olive lux CTAs
+- Admin: Ink Night sidebar with champagne active rail; cream canvas + glass top bar — tables unchanged

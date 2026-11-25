@@ -352,10 +352,10 @@ export function CheckoutForm({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border px-6 py-16 text-center">
+      <div className="atelier-panel px-6 py-16 text-center">
         <p className="font-serif text-3xl">Nothing to check out</p>
         <p className="mt-2 text-sm text-muted-foreground">Add a jacket or knit before placing an order.</p>
-        <Button className="mt-6 h-11 px-6" render={<a href="/shop" />}>
+        <Button className="btn-lux mt-6 h-11 px-6" render={<a href="/shop" />}>
           Continue shopping
         </Button>
       </div>
@@ -365,21 +365,34 @@ export function CheckoutForm({
   return (
     <form action={onSubmit} className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="space-y-8">
-        <ol className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        <ol className="flex flex-wrap gap-3 border-b border-champagne/25 pb-5">
           {steps.map((item) => (
             <li
               key={item.id}
               className={cn(
-                "rounded-full border px-3 py-1.5",
-                step === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                "text-xs uppercase tracking-[0.16em]",
+                step === item.id ? "text-olive" : "text-muted-foreground",
               )}
             >
-              {item.id}. {item.label}
+              <span
+                className={cn(
+                  "mr-2 inline-flex size-5 items-center justify-center border text-[10px]",
+                  step === item.id
+                    ? "border-olive bg-olive text-cream"
+                    : "border-border text-muted-foreground",
+                )}
+              >
+                {item.id}
+              </span>
+              {item.label}
             </li>
           ))}
         </ol>
         <section className={cn("space-y-4", step !== 1 && "hidden")}>
-          <h2 className="font-serif text-2xl">Contact</h2>
+          <div>
+            <p className="section-kicker">Step 1</p>
+            <h2 className="mt-1 font-serif text-2xl tracking-tight">Contact</h2>
+          </div>
           <Field
             label="Full name"
             name="fullName"
@@ -408,7 +421,10 @@ export function CheckoutForm({
           </div>
         </section>
         <section className={cn("space-y-4", step !== 1 && "hidden")}>
-          <h2 className="font-serif text-2xl">Delivery</h2>
+          <div>
+            <p className="section-kicker">Address</p>
+            <h2 className="mt-1 font-serif text-2xl tracking-tight">Delivery</h2>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="country">Country</Label>
             <select
@@ -458,7 +474,7 @@ export function CheckoutForm({
         <div className={cn("flex gap-3", step !== 1 && "hidden")}>
           <Button
             type="button"
-            className="h-11 px-6"
+            className="btn-lux h-11 px-6"
             onClick={(event) => {
               const form = event.currentTarget.form;
               if (!form) return;
@@ -470,7 +486,10 @@ export function CheckoutForm({
           </Button>
         </div>
         <section className={cn("space-y-4", step !== 2 && step !== 3 && "hidden")}>
-          <h2 className="font-serif text-2xl">Shipping</h2>
+          <div>
+            <p className="section-kicker">Step 2</p>
+            <h2 className="mt-1 font-serif text-2xl tracking-tight">Shipping</h2>
+          </div>
           {errors.shippingMethodId ? (
             <p className="text-xs text-destructive">{errors.shippingMethodId}</p>
           ) : null}
@@ -516,7 +535,10 @@ export function CheckoutForm({
           </p>
         </section>
         <section className={cn("space-y-4", step !== 2 && step !== 3 && "hidden")}>
-          <h2 className="font-serif text-2xl">Payment</h2>
+          <div>
+            <p className="section-kicker">Pay</p>
+            <h2 className="mt-1 font-serif text-2xl tracking-tight">Payment</h2>
+          </div>
           {errors.paymentMethod ? (
             <p className="text-xs text-destructive">{errors.paymentMethod}</p>
           ) : null}
@@ -558,7 +580,7 @@ export function CheckoutForm({
           </Button>
           <Button
             type="button"
-            className="h-11 px-6"
+            className="btn-lux h-11 px-6"
             onClick={() => {
               trackAddShippingInfo(
                 analyticsItems,
@@ -572,8 +594,11 @@ export function CheckoutForm({
             Review order
           </Button>
         </div>
-        <section className={cn("space-y-3 rounded-xl border p-4 text-sm", step !== 3 && "hidden")}>
-          <h2 className="font-serif text-2xl">Review</h2>
+        <section className={cn("atelier-panel space-y-3 p-5 text-sm", step !== 3 && "hidden")}>
+          <div>
+            <p className="section-kicker">Step 3</p>
+            <h2 className="mt-1 font-serif text-2xl tracking-tight">Review</h2>
+          </div>
           <p className="text-muted-foreground">
             Confirm shipping ({selectedShipping?.label}) and payment (
             {paymentMethod.replace("_", " ")}), then place your order. Guest checkout stays available.
@@ -586,7 +611,8 @@ export function CheckoutForm({
         </section>
       </div>
       <aside className="atelier-panel h-fit rounded-lg p-5 lg:sticky lg:top-24">
-        <h2 className="font-serif text-2xl">Order summary</h2>
+        <p className="section-kicker text-champagne">Bag</p>
+        <h2 className="mt-1 font-serif text-2xl tracking-tight">Order summary</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {items.map((item) => {
             const match = getVariant(item.variantId, products);
@@ -653,7 +679,7 @@ export function CheckoutForm({
         </div>
         <Button
           type="submit"
-          className="mt-5 h-11 w-full"
+          className="btn-lux btn-shimmer mt-5 h-11 w-full"
           disabled={pending || ratesLoading || step !== 3}
         >
           {pending

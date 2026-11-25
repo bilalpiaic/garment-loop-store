@@ -30,9 +30,9 @@ export function CartDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {open ? (
-        <SheetContent className="w-full border-l border-champagne/20 bg-[color-mix(in_oklab,var(--ivory)_92%,white)] sm:max-w-md">
+        <SheetContent className="atelier-panel w-full border-l border-champagne/25 sm:max-w-md">
           <SheetHeader>
-            <p className="px-4 text-[11px] uppercase tracking-[0.2em] text-champagne">Cart</p>
+            <p className="section-kicker px-4 text-champagne">Cart</p>
             <SheetTitle className="font-serif text-2xl font-normal tracking-tight">Your bag</SheetTitle>
           </SheetHeader>
           <CartLines compact onNavigate={() => onOpenChange(false)} />
@@ -210,7 +210,10 @@ export function CartSummary({
           </p>
         )}
       </div>
-      <Button className="h-11 w-full" render={<Link href={checkoutHref} onClick={onNavigate} />}>
+      <Button
+        className="btn-lux btn-shimmer h-11 w-full bg-primary text-primary-foreground hover:bg-[color:var(--olive-jewel)]"
+        render={<Link href={checkoutHref} onClick={onNavigate} />}
+      >
         Checkout
       </Button>
     </SheetFooter>

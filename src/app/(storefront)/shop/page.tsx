@@ -38,10 +38,10 @@ export default async function ShopPage({
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Catalog</p>
-      <h1 className="mt-2 font-serif text-4xl">Shop</h1>
-      <p className="mt-2 max-w-xl text-muted-foreground">
+    <div className="page-shell py-12">
+      <p className="section-kicker">Catalog</p>
+      <h1 className="mt-2 font-serif text-4xl tracking-tight sm:text-5xl">Shop</h1>
+      <p className="mt-3 max-w-xl text-muted-foreground leading-relaxed">
         Circular wardrobe essentials. Combine filters for color, size, and category — guest checkout
         stays available.
       </p>

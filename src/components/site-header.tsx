@@ -44,13 +44,13 @@ export function SiteHeader({ customerEmail }: { customerEmail?: string }) {
 
   return (
     <>
-      <div className="bg-ink text-cream">
-        <p className="mx-auto max-w-6xl px-4 py-2 text-center text-[11px] tracking-[0.2em] uppercase text-cream/90 sm:text-xs">
+      <div className="bg-[color:var(--olive-deep)] text-cream">
+        <p className="page-shell py-2 text-center text-[11px] tracking-[0.2em] uppercase text-cream/90 sm:text-xs">
           Winter collection now live · Free delivery over PKR 8,000
         </p>
       </div>
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_oklab,var(--cream)_86%,transparent)] backdrop-blur-md">
-        <div className="mx-auto flex h-[4.25rem] max-w-6xl items-center justify-between gap-3 px-4">
+      <header className="glass-header sticky top-0 z-40">
+        <div className="page-shell flex h-[4.25rem] items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
