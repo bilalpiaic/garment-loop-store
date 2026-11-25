@@ -87,6 +87,10 @@ type EasyPostShipment = {
   messages?: { message?: string }[];
   to_address?: EasyPostAddress | null;
   parcel?: EasyPostParcel | null;
+  tracking_code?: string | null;
+  tracker?: { public_url?: string | null; tracking_code?: string | null } | null;
+  postage_label?: { label_url?: string | null; label_pdf_url?: string | null } | null;
+  selected_rate?: EasyPostRate | null;
 };
 
 function norm(value: string | null | undefined) {
@@ -347,10 +351,56 @@ export async function quoteShippingOptions(input: {
   }
 }
 
-/** Label purchase is intentionally stubbed — prepaid RMA labels come later. */
 export function shippingLabelStubMessage() {
   if (!easypostConfigured()) {
-    return "Set EASYPOST_API_KEY (and EASYPOST_FROM_*) to enable carrier label purchase. Prepaid RMA labels are planned next.";
+    return "Set EASYPOST_API_KEY (and EASYPOST_FROM_*) to enable carrier label purchase.";
   }
-  return "EasyPost is configured for live rates. Buying outbound / prepaid RMA labels is stubbed for a later release.";
+  return "EasyPost is configured. Order must use a live EasyPost shipping method to buy a label.";
+}
+
+export type BoughtShippingLabel = {
+  labelUrl: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  carrier?: string;
+  service?: string;
+  shipmentId: string;
+  rateId: string;
+};
+
+/**
+ * Buy an EasyPost rate for a checkout shipping method id (`easypost:shipment:rate`).
+ * Returns postage label URL + tracking when the carrier purchase succeeds.
+ */
+export async function buyEasyPostLabel(shippingMethodId: string): Promise<BoughtShippingLabel> {
+  if (!easypostConfigured()) {
+    throw new Error(shippingLabelStubMessage());
+  }
+  const parsed = parseEasyPostMethodId(shippingMethodId);
+  if (!parsed) {
+    throw new Error("This order used zone rates — live EasyPost shipping is required to buy a label.");
+  }
+
+  const bought = await easypostFetch<EasyPostShipment>(`/shipments/${parsed.shipmentId}/buy`, {
+    method: "POST",
+    body: JSON.stringify({ rate: { id: parsed.rateId } }),
+  });
+
+  const labelUrl =
+    bought.postage_label?.label_pdf_url ||
+    bought.postage_label?.label_url ||
+    "";
+  if (!labelUrl) {
+    throw new Error("EasyPost purchased the rate but returned no label URL.");
+  }
+
+  return {
+    labelUrl,
+    trackingNumber: bought.tracking_code || bought.tracker?.tracking_code || undefined,
+    trackingUrl: bought.tracker?.public_url || undefined,
+    carrier: bought.selected_rate?.carrier,
+    service: bought.selected_rate?.service,
+    shipmentId: bought.id || parsed.shipmentId,
+    rateId: parsed.rateId,
+  };
 }

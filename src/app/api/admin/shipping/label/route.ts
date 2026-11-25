@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse } from "@/lib/http";
-import { easypostConfigured, shippingLabelStubMessage } from "@/lib/easypost";
-import { getOrder, requireAdmin } from "@/lib/platform";
+import {
+  buyEasyPostLabel,
+  easypostConfigured,
+  shippingLabelStubMessage,
+} from "@/lib/easypost";
+import { getOrder, requireAdmin, updateOrder } from "@/lib/platform";
+import { isEasyPostMethodId } from "@/lib/shipping";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +16,12 @@ const bodySchema = z.object({
 });
 
 /**
- * Stub endpoint for carrier label purchase / prepaid RMA labels.
- * Tracking fields remain on the order form; buying labels is intentionally not live yet.
+ * Buy an EasyPost outbound label for an order that used a live carrier rate.
+ * Attaches tracking + courier on the order when purchase succeeds.
  */
 export async function POST(request: Request) {
   try {
-    await requireAdmin("orders.manage");
+    const session = await requireAdmin("orders.manage");
 
     let body: unknown;
     try {
@@ -35,16 +40,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    return NextResponse.json(
+    if (!easypostConfigured()) {
+      return NextResponse.json(
+        {
+          error: shippingLabelStubMessage(),
+          easypostConfigured: false,
+          orderNumber: order.orderNumber,
+        },
+        { status: 503 },
+      );
+    }
+
+    const methodId = order.shippingMethodId ?? "";
+    if (!isEasyPostMethodId(methodId)) {
+      return NextResponse.json(
+        {
+          error:
+            "Order shipping is not an EasyPost rate. Customers must check out with a live carrier option first.",
+          easypostConfigured: true,
+          orderNumber: order.orderNumber,
+          shippingMethodId: methodId || null,
+        },
+        { status: 400 },
+      );
+    }
+
+    const label = await buyEasyPostLabel(methodId);
+    const courier = [label.carrier, label.service].filter(Boolean).join(" · ");
+    await updateOrder(
+      order.orderNumber,
       {
-        stub: true,
-        easypostConfigured: easypostConfigured(),
-        orderNumber: order.orderNumber,
-        message: shippingLabelStubMessage(),
-        next: "Prepaid RMA / outbound label purchase will attach PDF + tracking here in a later release.",
+        trackingNumber: label.trackingNumber ?? order.trackingNumber,
+        courier: courier || order.courier,
+        notes: [order.notes, `Label: ${label.labelUrl}`].filter(Boolean).join("\n").slice(0, 2000),
       },
-      { status: 501 },
+      session.user.id,
     );
+
+    return NextResponse.json({
+      ok: true,
+      orderNumber: order.orderNumber,
+      labelUrl: label.labelUrl,
+      trackingNumber: label.trackingNumber,
+      trackingUrl: label.trackingUrl,
+      carrier: label.carrier,
+      service: label.service,
+      message: "Carrier label purchased. Tracking saved on the order.",
+    });
   } catch (error) {
     return errorResponse(error);
   }

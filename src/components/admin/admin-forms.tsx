@@ -220,16 +220,30 @@ export function OrderStatusForm({ order }: { order: Order }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ orderNumber: order.orderNumber }),
               });
-              const data = (await response.json()) as { message?: string; error?: string; next?: string };
-              toast.message(data.message ?? data.error ?? "Label purchase is not available yet.", {
-                description: data.next,
+              const data = (await response.json()) as {
+                ok?: boolean;
+                message?: string;
+                error?: string;
+                labelUrl?: string;
+                trackingNumber?: string;
+              };
+              if (!response.ok) {
+                toast.error(data.error ?? data.message ?? "Could not buy label.");
+                return;
+              }
+              toast.success(data.message ?? "Label purchased.", {
+                description: data.trackingNumber
+                  ? `Tracking ${data.trackingNumber}`
+                  : data.labelUrl,
               });
+              if (data.labelUrl) window.open(data.labelUrl, "_blank", "noopener,noreferrer");
+              router.refresh();
             } finally {
               setPending(false);
             }
           }}
         >
-          Create label (stub)
+          Create shipping label
         </Button>
       </div>
     </form>
