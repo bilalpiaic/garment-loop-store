@@ -57,6 +57,7 @@ export const inventorySchema = z.object({
   variantId: z.string().min(1),
   change: z.number().int().refine((value) => value !== 0, "Change cannot be zero."),
   reason: z.string().trim().optional(),
+  warehouseId: z.string().trim().min(1).optional(),
 });
 
 export const orderPatchSchema = z.object({

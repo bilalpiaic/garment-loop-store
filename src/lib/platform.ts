@@ -994,10 +994,19 @@ export async function adjustInventory(input: {
   change: number;
   reason?: string;
   actorId?: string;
+  warehouseId?: string;
 }) {
   return mutate((state) => {
     const match = getVariant(input.variantId, state.catalog.products);
     if (!match) throw new PlatformError("Variant not found.", 404);
+    const warehouses = state.settings.warehouses ?? DEFAULT_SETTINGS.warehouses ?? [];
+    const warehouseId =
+      input.warehouseId ??
+      warehouses[0]?.id ??
+      "lahore-main";
+    if (input.warehouseId && warehouses.length > 0 && !warehouses.some((w) => w.id === input.warehouseId)) {
+      throw new PlatformError("Unknown warehouse.", 400);
+    }
     const current = state.stock[input.variantId] ?? match.variant.stock;
     const next = current + input.change;
     if (next < 0) throw new PlatformError("Stock cannot go below zero.");
@@ -1007,7 +1016,7 @@ export async function adjustInventory(input: {
       entity: "inventory",
       entityId: input.variantId,
       summary: `Adjusted stock for ${input.variantId} by ${input.change}`,
-      meta: { change: input.change, reason: input.reason, next },
+      meta: { change: input.change, reason: input.reason, next, warehouseId },
     });
     match.variant.stock = next;
     const product = state.catalog.products.find((item) => item.id === match.product.id);
@@ -1022,6 +1031,7 @@ export async function adjustInventory(input: {
       type: input.change >= 0 ? "restock" : "manual",
       reason: input.reason,
       actorId: input.actorId,
+      warehouseId,
       createdAt: new Date().toISOString(),
     });
     return next;
@@ -1569,6 +1579,49 @@ export async function importProductCsv(csvText: string, actorId: string) {
 
 export async function exportProductCsv() {
   return readPlatform((state) => productsToCsv(mergeStockIntoCatalog(state).products));
+}
+
+/** Orders summary CSV for admin BI export (date, status, payment, totals). */
+export async function exportOrdersAnalyticsCsv() {
+  return readPlatform((state) => {
+    const header = [
+      "date",
+      "orderNumber",
+      "status",
+      "paymentMethod",
+      "paymentStatus",
+      "subtotalPkr",
+      "shippingPkr",
+      "taxPkr",
+      "discountPkr",
+      "totalPkr",
+      "currency",
+    ];
+    const escape = (value: string) => {
+      if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+      return value;
+    };
+    const rows = [...state.orders]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((order) =>
+        [
+          order.createdAt,
+          order.orderNumber,
+          order.status,
+          order.paymentMethod,
+          order.paymentStatus,
+          String(order.subtotalPkr),
+          String(order.shippingPkr),
+          String(order.taxPkr ?? 0),
+          String(order.discountPkr ?? 0),
+          String(order.totalPkr),
+          order.currency,
+        ]
+          .map(escape)
+          .join(","),
+      );
+    return [header.join(","), ...rows].join("\n");
+  });
 }
 
 export async function listAuditLogs(filters?: {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Forbidden, loadAdminPage } from "@/lib/admin-page";
 import { getDashboardMetrics } from "@/lib/platform";
 import { formatPkr } from "@/lib/admin-nav";
+import { AnalyticsExportButton } from "@/components/admin/analytics-export-button";
 
 export const metadata = { title: "Analytics" };
 
@@ -13,12 +14,16 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reports</p>
-        <h1 className="mt-1 font-serif text-3xl">Analytics</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Live totals from MySQL-backed platform state — orders, customers, catalog, and ops queues.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reports</p>
+          <h1 className="mt-1 font-serif text-3xl">Analytics</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Live totals from platform state — orders, customers, catalog, and ops queues. ERP sync is
+            not connected; download CSV for a thin BI export.
+          </p>
+        </div>
+        <AnalyticsExportButton />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border bg-card p-5">
