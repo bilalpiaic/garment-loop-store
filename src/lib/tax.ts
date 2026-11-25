@@ -1,7 +1,16 @@
+import type { Order } from "@/lib/order-model";
 import { shippingZoneForCountry, type ShippingZoneId } from "@/lib/shipping";
 import { site } from "@/lib/site";
-import { fetchAvalaraTax, avalaraConfigured } from "@/lib/tax-avalara";
-import { fetchTaxJarTax, taxjarConfigured } from "@/lib/tax-taxjar";
+import {
+  avalaraConfigured,
+  commitAvalaraSalesInvoice,
+  fetchAvalaraTax,
+} from "@/lib/tax-avalara";
+import {
+  commitTaxJarOrder,
+  fetchTaxJarTax,
+  taxjarConfigured,
+} from "@/lib/tax-taxjar";
 
 export type TaxRegion = "pk" | "gcc" | "intl";
 
@@ -204,4 +213,95 @@ export async function quoteTax(input: {
   }
 
   return local;
+}
+
+export type TaxCommitResult = {
+  source: "local" | "avalara" | "taxjar";
+  taxCommittedAt: string;
+  taxTransactionId?: string;
+};
+
+/**
+ * Commit tax after order is confirmed/paid.
+ * Local: stamp taxCommittedAt + source local.
+ * Remote: Avalara SalesInvoice commit or TaxJar order transaction when keyed.
+ */
+export async function commitTaxForOrder(
+  order: Pick<
+    Order,
+    | "orderNumber"
+    | "subtotalPkr"
+    | "discountPkr"
+    | "shippingPkr"
+    | "taxPkr"
+    | "taxSource"
+    | "customer"
+    | "taxCommittedAt"
+  >,
+): Promise<TaxCommitResult> {
+  if (order.taxCommittedAt) {
+    return {
+      source: order.taxSource ?? "local",
+      taxCommittedAt: order.taxCommittedAt,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const taxablePkr = Math.max(0, order.subtotalPkr - (order.discountPkr ?? 0));
+  const address = {
+    country: order.customer.country,
+    city: order.customer.city,
+    area: order.customer.area,
+    address: order.customer.address,
+    postalCode: order.customer.postalCode,
+  };
+
+  const source = order.taxSource ?? "local";
+
+  if (source === "avalara" && avalaraConfigured()) {
+    try {
+      const remote = await commitAvalaraSalesInvoice({
+        orderNumber: order.orderNumber,
+        taxablePkr,
+        shippingPkr: order.shippingPkr,
+        taxPkr: order.taxPkr ?? 0,
+        address,
+        customerCode: order.customer.email,
+        usdRate: site.usdRate,
+      });
+      if (remote) {
+        return {
+          source: "avalara",
+          taxCommittedAt: now,
+          taxTransactionId: remote.transactionId,
+        };
+      }
+    } catch (error) {
+      console.error("[tax:avalara:commit]", error);
+    }
+  }
+
+  if (source === "taxjar" && taxjarConfigured()) {
+    try {
+      const remote = await commitTaxJarOrder({
+        orderNumber: order.orderNumber,
+        taxablePkr,
+        shippingPkr: order.shippingPkr,
+        taxPkr: order.taxPkr ?? 0,
+        address,
+        usdRate: site.usdRate,
+      });
+      if (remote) {
+        return {
+          source: "taxjar",
+          taxCommittedAt: now,
+          taxTransactionId: remote.transactionId,
+        };
+      }
+    } catch (error) {
+      console.error("[tax:taxjar:commit]", error);
+    }
+  }
+
+  return { source: "local", taxCommittedAt: now };
 }

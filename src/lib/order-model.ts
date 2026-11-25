@@ -51,6 +51,17 @@ export type OrderLine = {
   totalPkr: number;
 };
 
+export type OrderTaxSource = "local" | "avalara" | "taxjar";
+
+/** Tax metadata persisted on Order (demo) and mirrored in platform_state.orderTaxMeta (MySQL/Neon). */
+export type OrderTaxMeta = {
+  taxSource: OrderTaxSource;
+  taxLabel: string;
+  taxNote?: string;
+  taxTransactionId?: string;
+  taxCommittedAt?: string;
+};
+
 export type Order = {
   orderNumber: string;
   createdAt: string;
@@ -78,6 +89,11 @@ export type Order = {
   stripePaymentIntentId?: string;
   /** Opaque capability token for guest order confirmation / pay links. */
   accessToken?: string;
+  taxSource?: OrderTaxSource;
+  taxLabel?: string;
+  taxNote?: string;
+  taxTransactionId?: string;
+  taxCommittedAt?: string;
 };
 
 export function whatsappOrderLink(order: Order) {

@@ -11,10 +11,11 @@ import { ProductGallery } from "@/components/product-gallery";
 import { ProductForm } from "@/components/product-form";
 import { ProductGrid } from "@/components/product-card";
 import { ProductReviews } from "@/components/product-reviews";
+import { ProductQa } from "@/components/product-qa";
 import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
 import { JsonLd } from "@/components/json-ld";
 import { getProductBySlug, relatedProducts } from "@/lib/catalog";
-import { getPublishedCatalog, listApprovedReviews } from "@/lib/platform";
+import { getPublishedCatalog, listApprovedQuestions, listApprovedReviews } from "@/lib/platform";
 import { site } from "@/lib/site";
 import { absoluteUrl, breadcrumbJsonLd, pageMeta } from "@/lib/seo";
 
@@ -41,7 +42,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = getProductBySlug(slug, catalog.products);
   if (!product) notFound();
   const related = relatedProducts(product, 4, catalog.products);
-  const reviews = await listApprovedReviews(product.id);
+  const [reviews, questions] = await Promise.all([
+    listApprovedReviews(product.id),
+    listApprovedQuestions(product.id),
+  ]);
   const avg =
     reviews.length === 0
       ? undefined
@@ -158,6 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
       <ProductReviews productId={product.id} productSlug={product.slug} initialReviews={reviews} />
+      <ProductQa productId={product.id} productSlug={product.slug} initialQuestions={questions} />
       {related.length > 0 ? (
         <section className="mt-16">
           <h2 className="mb-6 font-serif text-3xl">You may also like</h2>

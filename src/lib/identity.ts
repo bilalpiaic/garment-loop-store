@@ -35,6 +35,10 @@ export type Customer = {
   tags?: string[];
   createdAt: string;
   lastLoginAt?: string;
+  /** Demo loyalty: 1 point per PKR 100 on delivered orders. */
+  loyaltyPoints?: number;
+  /** Set when GDPR anonymize runs — email becomes a hashed placeholder. */
+  anonymizedAt?: string;
 };
 
 export type CustomerAddress = {

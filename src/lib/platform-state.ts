@@ -13,16 +13,18 @@ import type {
 } from "@/lib/identity";
 import type {
   CircularSubscription,
+  GiftCard,
+  ProductQuestion,
   ProductReview,
   RepairRequest,
   ReturnRequest,
   TakeBackRequest,
   WishlistEntry,
 } from "@/lib/commerce-types";
-import type { Order } from "@/lib/order-model";
-import { seedContentPages, seedDiscounts } from "@/lib/seed-demo";
+import type { Order, OrderTaxMeta } from "@/lib/order-model";
+import { seedContentPages, seedDiscounts, seedGiftCards } from "@/lib/seed-demo";
 
-export const PLATFORM_VERSION = 3;
+export const PLATFORM_VERSION = 4;
 
 export type ContentPage = {
   slug: string;
@@ -56,6 +58,14 @@ export type PlatformState = {
   pages: ContentPage[];
   auditLogs: AuditEntry[];
   mfaChallenges: MfaChallenge[];
+  questions: ProductQuestion[];
+  giftCards: GiftCard[];
+  /**
+   * Tax commit metadata keyed by orderNumber.
+   * Used so MySQL/Neon can persist tax fields without ALTER-ing the orders table;
+   * merged onto Order when loading.
+   */
+  orderTaxMeta: Record<string, OrderTaxMeta>;
 };
 
 export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings): PlatformState {
@@ -96,6 +106,9 @@ export function emptyPlatformState(catalog: CatalogData, settings: StoreSettings
     pages: seedContentPages(),
     auditLogs: [],
     mfaChallenges: [],
+    questions: [],
+    giftCards: seedGiftCards(),
+    orderTaxMeta: {},
   };
 }
 
@@ -135,6 +148,31 @@ function seedReviews(catalog: CatalogData): ProductReview[] {
     });
   }
   return reviews;
+}
+
+/** Sync Order tax fields ↔ orderTaxMeta map (call before persist / after load). */
+export function syncOrderTaxMeta(state: PlatformState) {
+  state.orderTaxMeta = state.orderTaxMeta ?? {};
+  for (const order of state.orders) {
+    if (order.taxSource || order.taxLabel || order.taxCommittedAt || order.taxTransactionId) {
+      state.orderTaxMeta[order.orderNumber] = {
+        taxSource: order.taxSource ?? "local",
+        taxLabel: order.taxLabel ?? "Tax",
+        taxNote: order.taxNote,
+        taxTransactionId: order.taxTransactionId,
+        taxCommittedAt: order.taxCommittedAt,
+      };
+    }
+  }
+  for (const [orderNumber, meta] of Object.entries(state.orderTaxMeta)) {
+    const order = state.orders.find((item) => item.orderNumber === orderNumber);
+    if (!order) continue;
+    order.taxSource = order.taxSource ?? meta.taxSource;
+    order.taxLabel = order.taxLabel ?? meta.taxLabel;
+    order.taxNote = order.taxNote ?? meta.taxNote;
+    order.taxTransactionId = order.taxTransactionId ?? meta.taxTransactionId;
+    order.taxCommittedAt = order.taxCommittedAt ?? meta.taxCommittedAt;
+  }
 }
 
 export function mergeStockIntoCatalog(state: PlatformState): CatalogData {

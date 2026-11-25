@@ -45,6 +45,10 @@ export function pageMeta({
     description,
     alternates: {
       canonical: url,
+      languages: {
+        "en-PK": url,
+        "x-default": url,
+      },
     },
     openGraph: {
       title: displayTitle,

@@ -141,3 +141,66 @@ export async function fetchTaxJarTax(input: {
           ],
   };
 }
+
+/**
+ * Record a TaxJar order transaction for filing (POST /v2/transactions/orders).
+ * Env-gated — no-ops when TAXJAR_API_KEY is unset. Never invents keys.
+ */
+export async function commitTaxJarOrder(input: {
+  orderNumber: string;
+  taxablePkr: number;
+  shippingPkr: number;
+  taxPkr: number;
+  address: TaxAddress;
+  usdRate: number;
+}): Promise<{ transactionId: string } | null> {
+  if (!taxjarConfigured()) return null;
+
+  const amount = Number((input.taxablePkr / input.usdRate).toFixed(2));
+  const shipping = Number((input.shippingPkr / input.usdRate).toFixed(2));
+  const salesTax = Number((input.taxPkr / input.usdRate).toFixed(2));
+
+  const fromCountry = (process.env.TAXJAR_FROM_COUNTRY ?? "US").trim().toUpperCase() || "US";
+  const fromZip = (process.env.TAXJAR_FROM_ZIP ?? "").trim();
+  const fromState = (process.env.TAXJAR_FROM_STATE ?? "").trim();
+  const fromCity = (process.env.TAXJAR_FROM_CITY ?? "").trim();
+
+  const body: Record<string, unknown> = {
+    transaction_id: input.orderNumber,
+    transaction_date: new Date().toISOString().slice(0, 10),
+    from_country: fromCountry,
+    to_country: input.address.country,
+    to_city: input.address.city,
+    to_state: input.address.area,
+    to_zip: input.address.postalCode,
+    to_street: input.address.address,
+    amount,
+    shipping,
+    sales_tax: salesTax,
+  };
+  if (fromZip) body.from_zip = fromZip;
+  if (fromState) body.from_state = fromState;
+  if (fromCity) body.from_city = fromCity;
+
+  const response = await fetch(`${taxjarBaseUrl()}/v2/transactions/orders`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${taxjarApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    order?: { transaction_id?: string };
+    error?: string;
+    detail?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || `TaxJar commit HTTP ${response.status}`);
+  }
+
+  return { transactionId: data.order?.transaction_id ?? input.orderNumber };
+}

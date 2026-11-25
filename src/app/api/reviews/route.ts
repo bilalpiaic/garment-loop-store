@@ -14,6 +14,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const httpsUrl = z
+  .string()
+  .trim()
+  .url()
+  .refine((value) => value.startsWith("https://"), { message: "Photo URLs must use https." });
+
 const submitSchema = z.object({
   productId: z.string().min(1),
   productSlug: z.string().min(1),
@@ -22,6 +28,7 @@ const submitSchema = z.object({
   rating: z.number().int().min(1).max(5),
   title: z.string().trim().min(3).max(80),
   body: z.string().trim().min(10).max(1200),
+  photoUrls: z.array(httpsUrl).max(3).optional(),
 });
 
 export async function GET(request: Request) {
