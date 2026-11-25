@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils";
 import { cardDemoAllowed } from "@/lib/card-demo";
 import type { CustomerAddress } from "@/lib/identity";
 import { orderAccessPath, type Order } from "@/lib/order-model";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { trackAddPaymentInfo, trackAddShippingInfo } from "@/lib/analytics/track";
+import { variantToItem } from "@/lib/analytics/items";
 
 type PaymentId = "cod" | "bank_transfer" | "card_demo" | "stripe";
 
@@ -130,6 +133,16 @@ export function CheckoutForm({
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items],
+  );
+
+  const analyticsItems = useMemo(
+    () =>
+      items.flatMap((item) => {
+        const match = getVariant(item.variantId, products);
+        if (!match) return [];
+        return [variantToItem(match.product, match.variant, item.quantity)];
+      }),
+    [items, products],
   );
 
   const selectedShipping =
@@ -418,47 +431,24 @@ export function CheckoutForm({
               ))}
             </select>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                name="city"
-                list="city-list"
-                className="h-10"
-                defaultValue={defaults?.address?.city}
-                aria-invalid={Boolean(errors.city)}
-              />
-              <datalist id="city-list">
-                {pakistanCities.map((city) => (
-                  <option key={city} value={city} />
-                ))}
-              </datalist>
-              {errors.city ? <p className="text-xs text-destructive">{errors.city}</p> : null}
-            </div>
-            <Field
-              label={country === "PK" ? "Area / locality" : "State / area"}
-              name="area"
-              error={errors.area}
-              defaultValue={defaults?.address?.area}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Street address</Label>
-            <Textarea
-              id="address"
-              name="address"
-              rows={3}
-              defaultValue={defaults?.address?.address}
-              aria-invalid={Boolean(errors.address)}
-            />
-            {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
-          </div>
-          <Field
-            label="Postal / ZIP (for live rates, wallets & BNPL)"
-            name="postalCode"
-            autoComplete="postal-code"
-            defaultValue={defaults?.address?.postalCode}
+          <datalist id="city-list">
+            {pakistanCities.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
+          <AddressAutocomplete
+            country={country}
+            cityListId="city-list"
+            defaultStreet={defaults?.address?.address}
+            defaultCity={defaults?.address?.city}
+            defaultArea={defaults?.address?.area}
+            defaultPostalCode={defaults?.address?.postalCode}
+            errors={{
+              address: errors.address,
+              city: errors.city,
+              area: errors.area,
+              postalCode: errors.postalCode,
+            }}
           />
           <div className="space-y-2">
             <Label htmlFor="notes">Order notes (optional)</Label>
@@ -566,7 +556,19 @@ export function CheckoutForm({
           <Button type="button" variant="outline" className="h-11 px-6" onClick={() => setStep(1)}>
             Back
           </Button>
-          <Button type="button" className="h-11 px-6" onClick={() => setStep(3)}>
+          <Button
+            type="button"
+            className="h-11 px-6"
+            onClick={() => {
+              trackAddShippingInfo(
+                analyticsItems,
+                total,
+                selectedShipping?.label ?? effectiveShippingMethodId,
+              );
+              trackAddPaymentInfo(analyticsItems, total, paymentMethod);
+              setStep(3);
+            }}
+          >
             Review order
           </Button>
         </div>

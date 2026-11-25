@@ -32,6 +32,20 @@ export type TaxAddress = {
 const GCC_VAT_RATE = 0.05;
 const PK_SALES_TAX_RATE = 0.05;
 
+/** Illustrative destination VAT when Avalara/TaxJar are unset (not collected at checkout). */
+const ILLUSTRATIVE_VAT: Record<string, { label: string; ratePercent: number }> = {
+  GB: { label: "UK VAT", ratePercent: 20 },
+  UK: { label: "UK VAT", ratePercent: 20 },
+  US: { label: "US sales tax", ratePercent: 0 },
+  CA: { label: "Canada GST/HST", ratePercent: 5 },
+  AU: { label: "Australia GST", ratePercent: 10 },
+  DE: { label: "EU VAT", ratePercent: 19 },
+  FR: { label: "EU VAT", ratePercent: 20 },
+  IT: { label: "EU VAT", ratePercent: 22 },
+  ES: { label: "EU VAT", ratePercent: 21 },
+  NL: { label: "EU VAT", ratePercent: 21 },
+};
+
 function zoneToRegion(zone: ShippingZoneId): TaxRegion {
   if (zone === "pk-domestic") return "pk";
   if (zone === "gcc") return "gcc";
@@ -76,6 +90,27 @@ export function estimateTaxLocal(taxablePkr: number, countryCode: string): TaxQu
           description: "GCC VAT",
           ratePercent: GCC_VAT_RATE * 100,
           amountPkr,
+        },
+      ],
+    };
+  }
+
+  // Illustrative destination VAT for common markets when Avalara/TaxJar are unset.
+  // Still not collected at checkout — shown as 0 charge with a clear note for shoppers.
+  const illustrative = ILLUSTRATIVE_VAT[countryCode.toUpperCase()];
+  if (illustrative) {
+    return {
+      amountPkr: 0,
+      label: `${illustrative.label} (at destination)`,
+      region: "intl",
+      source: "local",
+      ratePercent: illustrative.ratePercent,
+      note: `Estimated ${illustrative.ratePercent}% ${illustrative.label} may apply on arrival. We do not collect it at checkout unless Avalara/TaxJar is configured.`,
+      lines: [
+        {
+          description: `${illustrative.label} (not charged here)`,
+          ratePercent: illustrative.ratePercent,
+          amountPkr: 0,
         },
       ],
     };

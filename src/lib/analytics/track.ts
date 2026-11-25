@@ -121,6 +121,34 @@ export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
   });
 }
 
+export function trackAddShippingInfo(
+  items: AnalyticsItem[],
+  value: number,
+  shippingTier?: string,
+) {
+  if (items.length === 0) return;
+  pushGa("add_shipping_info", {
+    currency: "PKR",
+    value,
+    shipping_tier: shippingTier,
+    items,
+  });
+}
+
+export function trackAddPaymentInfo(
+  items: AnalyticsItem[],
+  value: number,
+  paymentType?: string,
+) {
+  if (items.length === 0) return;
+  pushGa("add_payment_info", {
+    currency: "PKR",
+    value,
+    payment_type: paymentType,
+    items,
+  });
+}
+
 export function trackPurchase(order: Order) {
   const items = orderToItems(order);
   const value = order.totalPkr;

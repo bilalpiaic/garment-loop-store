@@ -1,6 +1,6 @@
 # GarmentLoop — Progress vs Original Requirements
 
-Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #15 merged; admin portal MySQL completeness). Earlier Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
+Audit date: 2026-11-25 (Phase 2 Should push: address autocomplete, EasyPost labels, GA4 shipping/payment events; SEO + cPanel MySQL already live). Earlier Neon QA: 2026-11-22 — see [qa-report.md](./qa-report.md). Sources: living `docs/requirements.md`.
 
 ## Scoring method
 
@@ -9,7 +9,8 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 - **Not started** = not in the running demo
 
 **MVP Must %** ≈ share of Must-row cells that are Done (Partial counts half).  
-**Full wish list %** ≈ Must + Should + Could (Could weighted lightly).
+**Full wish list %** ≈ Must + Should + Could (Could weighted lightly).  
+**Blended** ≈ `0.55·Must + 0.30·Should + 0.15·Could`.
 
 ---
 
@@ -17,7 +18,7 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 
 | Area | Source emphasis | Status | Notes |
 | --- | --- | --- | --- |
-| Homepage hero + collections CTAs | Must | Done | Brand-first full-bleed hero polish (2026-11-22); see ui-polish-notes.md |
+| Homepage hero + collections CTAs | Must | Done | Brand-first full-bleed hero polish |
 | Catalog / variants / categories / collections | Must | Done | Seeded + admin CRUD |
 | Multi-facet filters + sort | Must | Done | Shop filters verified |
 | Search + suggestions | Must | Done | Page + API verified |
@@ -25,46 +26,46 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 | Wishlist | Must | Done | Guest + account paths |
 | Reviews display + submit | Must | Done | Submit → pending moderation |
 | Cart persistent | Must | Done | Zustand + localStorage |
-| Guest multi-step checkout | Must | Done | COD verified (Neon historically; cPanel MySQL live) |
-| Zone shipping + tax line | Must | Done | Config rates; PK tax estimate |
-| Payments COD / bank / card_demo / Stripe | Must | Done | COD verified; Stripe when keyed; production rejects `card_demo` unless `ALLOW_CARD_DEMO` |
+| Guest multi-step checkout | Must | Done | COD verified (cPanel MySQL live) |
+| Zone shipping + tax line | Must | Done | Config rates; PK/GCC + illustrative intl notes |
+| Payments COD / bank / card_demo / Stripe | Must | Done | Stripe Payment Element when keyed; prod rejects `card_demo` unless `ALLOW_CARD_DEMO` |
 | Account OTP + orders + returns portal | Must | Done | Prod OTP hides `devCode`; RMA via admin |
 | Static pages + policies + consent | Must | Done | Content editor |
-| SEO meta + Product JSON-LD + sitemap | Must | Done | `.com` canonicals; pageMeta; robots/sitemap from origin |
+| SEO meta + Product JSON-LD + sitemap | Must | Done | `.com` canonicals; pageMeta; robots/sitemap |
 | BreadcrumbList + OG/Twitter | Should | Done | Org/WebSite/FAQ schema; default OG image |
-| Address autocomplete | Should | Not started | |
-| Express pay / BNPL / wallets | Should–Could | Not started | |
-| Live carrier rates | Should | Not started | |
-| Avalara / full VAT | Should | Partial | Simple PK estimate only |
+| Address autocomplete | Should | Done | Checkout Photon/OSM suggestions (`/api/address/suggest`) — no API key |
+| Express pay / BNPL / wallets | Should–Could | Done | Stripe Express Checkout + Payment Element (Dashboard enablement + keys) |
+| Live carrier rates | Should | Done | EasyPost quote + checkout re-verify; zone fallback without keys |
+| Avalara / full VAT | Should | Partial | Local PK/GCC + Avalara/TaxJar quote path; no SalesInvoice commit |
 | Photo UGC / Q&A | Should–Could | Not started | |
-| GA4 ecommerce events | Must hooks | Partial | Consent stub; no GA4 wired |
-| Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues; Stripe or mock |
-| i18n / hreflang | Could | Deferred | EN + PKR/USD display; SEO Could deferred |
+| GA4 ecommerce events | Must hooks | Done | Consent + view/cart/checkout/purchase/refund + `add_shipping_info` / `add_payment_info` (needs `NEXT_PUBLIC_GA_MEASUREMENT_ID`) |
+| Circular take-back / repair subscriptions | Brand Could | Done | `/circular` hub + account + admin queues |
+| i18n / hreflang | Could | Deferred | EN + PKR/USD display |
 | Personalization | Could | Not started | |
 
 ## Admin
 
 | Module | Source emphasis | Status | Notes |
 | --- | --- | --- | --- |
-| Password login + RBAC (Owner/Admin/Staff) | Must | Done | Discoverability verified on prod |
-| Owner-level module CRUD (forms + bulk) | Must | Done | Create/archive/adjust verified |
+| Password login + RBAC (Owner/Admin/Staff) | Must | Done | |
+| Owner-level module CRUD (forms + bulk) | Must | Done | |
 | Dashboard KPIs + low stock | Must | Done | |
 | Orders lifecycle | Must | Done | |
-| Products CRUD + variants | Must | Done | Persisted on DB (cPanel MySQL live / Neon on Vercel) |
+| Products CRUD + variants | Must | Done | cPanel MySQL / Neon |
 | Inventory adjust + low stock | Must | Done | |
 | Customers list + profile | Must | Done | |
 | Categories / collections CRUD | Must | Done | |
-| Discounts / coupons | Must | Done | QA10 created |
-| Analytics basic | Must | Done | Revenue, status breakdown, ops queues |
+| Discounts / coupons | Must | Done | |
+| Analytics basic | Must | Done | |
 | Users / invite RBAC | Must | Done | |
-| Settings | Must | Done | Shows MySQL / Neon / demo mode + editable store settings |
-| Admin login (no public demo passwords) | Must | Done | Demo credentials box removed (#12); env-only owner seed (#15) |
-| Returns / RMA queue | Must | Done | RMA for GL-0006; audited |
-| Reviews moderation | Must | Done | Audited |
-| Content pages editor | Must | Done | Create/edit/delete; MySQL copy |
-| CSV import/export | Should | Done | `/admin/products/import` + export API |
-| Carrier label print / webhooks | Should | Partial | Label API stub 501 (Phase 2) |
-| MFA / audit log UI | Should | Done | `/admin/security` + `/admin/audit`; broader mutation coverage |
+| Settings | Must | Done | MySQL / Neon / demo + EasyPost status |
+| Admin login (no public demo passwords) | Must | Done | Env-only owner seed |
+| Returns / RMA queue | Must | Done | |
+| Reviews moderation | Must | Done | |
+| Content pages editor | Must | Done | |
+| CSV import/export | Should | Done | |
+| Carrier label print / webhooks | Should | Done | EasyPost label buy on admin order (`/api/admin/shipping/label`) when keyed |
+| MFA / audit log UI | Should | Done | |
 | Gift cards / loyalty | Could | Not started | |
 | Multi-warehouse / 3PL | Could | Not started | |
 | Full BI / ERP sync | Could | Not started | |
@@ -73,14 +74,14 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Zero required DB locally | Done | Demo/file/memory without DB URL |
-| Neon on Vercel (optional) | Done | Postgres path retained |
-| cPanel MySQL on garmentloop.com | Done | Tables migrated; live Settings → MySQL/MariaDB |
-| Stripe Checkout + webhook | Partial | Works when keyed; demo otherwise |
-| Transactional email | Partial | Resend/SMTP or mock; OTP emails wired — set keys on Vercel for inbox |
+| Zero required DB locally | Done | |
+| Neon on Vercel (optional) | Done | |
+| cPanel MySQL on garmentloop.com | Done | |
+| Stripe Checkout + webhook | Partial | Code ready; live keys unset on cPanel as of 2026-11-25 |
+| Transactional email | Partial | Resend/SMTP code ready; live keys unset — OTP falls back to mock |
 | WhatsApp confirm links | Partial | Env number optional |
-| Performance / a11y AA basics | Partial | Brand atmosphere + reduced-motion; no formal audit |
-| Theme / visual system | Must | Done | Soft Cream atmosphere, Olive Deep admin, Rust sale, motion — ui-polish-notes.md |
+| Performance / a11y AA basics | Partial | |
+| Theme / visual system | Must | Done | |
 | GDPR export/delete tooling | Not started | Policy pages only |
 
 ---
@@ -89,22 +90,21 @@ Audit date: 2026-11-24 (cPanel MySQL live on garmentloop.com; security harden #1
 
 | Scope | Estimate | Rationale |
 | --- | --- | --- |
-| **MVP Must items** | **~95%** | cPanel MySQL live + admin login hardened; residual: production inbox OTP keys / GA4 IDs |
-| **Should (Phase 2)** | **~30%** | DB + webhooks/email paths; carriers, autocomplete still open |
-| **Could / Phase 3 wish list** | **~25%** | Circular MVP shipped; loyalty points, i18n, personalization open |
-| **Blended “full original docs”** | **~60–64%** | Must coverage + cPanel MySQL production; Phase 2–3 tail remains |
+| **MVP Must items** | **~96%** | Residual: production inbox OTP / GA4 measurement ID / Stripe keys on host |
+| **Should (Phase 2)** | **~72%** | Autocomplete + EasyPost rates/labels + Stripe wallets/BNPL code + GA4 events Done; Avalara commit + Photo UGC open |
+| **Could / Phase 3 wish list** | **~28%** | Circular MVP; loyalty / i18n / personalization / BI open |
+| **Blended “full original docs”** | **~72%** | `0.55·96 + 0.30·72 + 0.15·28 ≈ 72` |
 
-## Honest top gaps
+## Honest top gaps (remaining)
 
-1. Set Resend/SMTP on garmentloop.com / Vercel so production OTP reaches inboxes (code already sends via email stack)  
-2. Live carrier rates / prepaid RMA labels  
-3. Stripe wallets / BNPL / express pay  
-4. Tax engine beyond PK estimate  
-5. CSV product import, MFA, audit log UI  
-6. ~~Circular take-back / repair / recycling subscriptions~~ (MVP done — `/circular`, admin Circular)
-7. GA4 + marketing pixels beyond consent stub  
+1. Set Resend/SMTP + Stripe + EasyPost + `NEXT_PUBLIC_GA_MEASUREMENT_ID` on garmentloop.com (code already wired)  
+2. Avalara/TaxJar SalesInvoice commit / filing (quoting path exists)  
+3. Photo UGC / Q&A  
+4. Gift cards / loyalty / multi-warehouse / full BI  
+5. Formal a11y / Core Web Vitals audit  
+6. GDPR data export/delete tooling  
 
 ## Login UX
 
 - **Customers:** `/account/login` — email OTP (production: email via Resend/SMTP; no `devCode` unless `AUTH_SHOW_OTP`)  
-- **Staff/Owner:** `/admin/login` — email + password; linked from footer + account login
+- **Staff/Owner:** `/admin/login` — email + password; MFA optional unless `ADMIN_MFA_REQUIRED=1`
